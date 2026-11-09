@@ -40,16 +40,16 @@
 
   <screenshots>
     <screenshot type="default">
-      <caption>Your clipboard history: text, code, links and images</caption>
-      <image>https://saikatnjm.github.io/superv/screenshot-dark.png</image>
+      <caption>Your clipboard history: text, code, links and images, in dark or light</caption>
+      <image type="source" width="1280" height="720">https://saikatnjm.github.io/superv/store-1.png</image>
     </screenshot>
     <screenshot>
       <caption>Pin, delete or clear items from the ⋯ menu</caption>
-      <image>https://saikatnjm.github.io/superv/screenshot-menu.png</image>
+      <image type="source" width="1280" height="720">https://saikatnjm.github.io/superv/store-2.png</image>
     </screenshot>
     <screenshot>
       <caption>Light theme</caption>
-      <image>https://saikatnjm.github.io/superv/screenshot-light.png</image>
+      <image type="source" width="1280" height="720">https://saikatnjm.github.io/superv/store-3.png</image>
     </screenshot>
   </screenshots>
 
@@ -80,6 +80,11 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="1.2.2" date="2026-11-09">
+      <description>
+        <p>Screenshots in the app store: larger, landscape images that Ubuntu Software and GNOME Software can display.</p>
+      </description>
+    </release>
     <release version="1.2.1" date="2026-11-09">
       <description>
         <p>Proper app-store listing: name, icon, screenshots, open-source licence, age rating and release notes in Ubuntu Software, GNOME Software and KDE Discover.</p>

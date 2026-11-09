@@ -2,7 +2,7 @@
 # Build: rpmbuild -bb packaging/rpm/superv.spec --define "_sourcedir $PWD/dist" (expects dist/superv-VERSION.tar.gz)
 # The GitHub release workflow does this automatically for every tagged version.
 Name:           superv
-Version:        1.2.1
+Version:        1.2.2
 Release:        1%{?dist}
 Summary:        Win+V clipboard history for Linux
 License:        MIT
@@ -76,6 +76,9 @@ fi
 %{_modulesloaddir}/superv-uinput.conf
 
 %changelog
+* Mon Nov 09 2026 SuperV <saikatnjm@users.noreply.github.com> - 1.2.2-1
+- App-store screenshots: 1280x720 landscape images with declared sizes
+
 * Mon Nov 09 2026 SuperV <saikatnjm@users.noreply.github.com> - 1.2.1-1
 - App-store listing: name, icon, screenshots, MIT licence, age rating, release notes
 
