@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SuperV – Win+V Clipboard History for Linux (Ubuntu &amp; Linux Mint)</title>
-<meta name="description" content="SuperV is a free, open-source clipboard manager that brings Windows Win+V clipboard history to Ubuntu and Linux Mint. Press Super+V to paste from your last 25 copies. 76 KB, ~7 MB RAM.">
+<meta name="description" content="SuperV is a free, open-source clipboard manager that brings Windows Win+V clipboard history to Ubuntu and Linux Mint. Press Super+V to paste from your last 25 copies. 88 KB, ~7 MB RAM.">
 <meta name="keywords" content="clipboard history linux, win+v linux, clipboard manager ubuntu, clipboard manager linux mint, super+v, windows clipboard for linux, wayland clipboard manager, gnome clipboard history">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#7c3aed">
@@ -15,7 +15,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:url" content="https://saikatnjm.github.io/superv/">
 <meta property="og:title" content="SuperV – Win+V clipboard history for Linux">
-<meta property="og:description" content="Press Super+V on Ubuntu or Linux Mint and get the clipboard history you know from Windows. Free, open source, 76 KB.">
+<meta property="og:description" content="Press Super+V on Ubuntu or Linux Mint and get the clipboard history you know from Windows. Free, open source, 88 KB.">
 <meta property="og:image" content="https://saikatnjm.github.io/superv/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -41,8 +41,8 @@
       "description": "Windows-style Win+V clipboard history for Ubuntu and Linux Mint. Keeps your last 25 copied texts and images; press Super+V to paste any of them.",
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "Ubuntu 22.04+, Linux Mint 21+ (GNOME, Cinnamon, MATE, Xfce; Wayland and X11)",
-      "softwareVersion": "1.1.1",
-      "fileSize": "28 KB",
+      "softwareVersion": "1.1.2",
+      "fileSize": "31 KB",
       "license": "https://opensource.org/licenses/MIT",
       "url": "https://saikatnjm.github.io/superv/",
       "downloadUrl": "https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb",
@@ -72,11 +72,13 @@
         { "@type": "Question", "name": "Does SuperV work on Wayland?",
           "acceptedAnswer": { "@type": "Answer", "text": "Yes. Ubuntu's default GNOME Wayland session is fully supported, including copying from and pasting into native Wayland apps." } },
         { "@type": "Question", "name": "Can I use a different shortcut than Super+V?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the panel, click the gear icon, choose Shortcut and press any key combination. SuperV moves conflicting desktop shortcuts out of the way and restores them if you change your mind." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the panel, click the gear icon, choose Shortcut and press a combination with Super or Ctrl+Alt, such as Ctrl+Alt+V. A green tick confirms it is saved; combinations apps need, like Ctrl+V, are refused with the reason shown." } },
         { "@type": "Question", "name": "How much memory does SuperV use?",
-          "acceptedAnswer": { "@type": "Answer", "text": "SuperV is a 76 KB C program that uses about 7 MB of private memory and no CPU while idle." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "SuperV is an 88 KB C program that uses about 7 MB of private memory and no CPU while idle." } },
         { "@type": "Question", "name": "Where is my clipboard history stored?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Only on your computer, in ~/.local/share/superv, readable by you alone. SuperV never connects to the internet. Unpinned items are removed on reboot, and passwords copied from password managers are never saved." } }
+          "acceptedAnswer": { "@type": "Answer", "text": "Only on your computer, in ~/.local/share/superv, readable by you alone. SuperV never connects to the internet. Unpinned items are removed on reboot, and passwords copied from password managers are never saved." } },
+        { "@type": "Question", "name": "How do I uninstall SuperV?",
+          "acceptedAnswer": { "@type": "Answer", "text": "On Ubuntu, open Ubuntu Software, go to Installed and uninstall SuperV. On Linux Mint, right-click SuperV in the Menu and choose Uninstall. Or run sudo apt remove superv. Your desktop shortcuts are restored. To also delete your clipboard history and settings, run rm -r ~/.local/share/superv ~/.config/superv." } }
       ]
     }
   ]
@@ -272,12 +274,12 @@
       <p class="kicker">Clipboard manager for Ubuntu &amp; Linux Mint</p>
       <div class="combo" aria-hidden="true"><span class="key">Super</span><span class="plus">+</span><span class="key hot">V</span></div>
       <h1 id="title">Win+V clipboard history,<br>now on <em>Linux</em>.</h1>
-      <p class="lead">SuperV brings the Windows clipboard history to Ubuntu and Linux Mint. Press <kbd>Super</kbd>+<kbd>V</kbd> to see the last 25 things you copied, then click one to paste it. It's free, open source and tiny: 76&nbsp;KB on disk, about 7&nbsp;MB of memory.</p>
+      <p class="lead">SuperV brings the Windows clipboard history to Ubuntu and Linux Mint. Press <kbd>Super</kbd>+<kbd>V</kbd> to see the last 25 things you copied, then click one to paste it. It's free, open source and tiny: 88&nbsp;KB on disk, about 7&nbsp;MB of memory.</p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">Download for Ubuntu / Mint (.deb)</a>
         <a class="btn ghost" href="#install">Other ways to install</a>
       </div>
-      <p class="meta-line">Version 1.1.1 · Ubuntu 22.04+ · Linux Mint 21+ · Wayland &amp; X11 · MIT license</p>
+      <p class="meta-line">Version 1.1.2 · Ubuntu 22.04+ · Linux Mint 21+ · Wayland &amp; X11 · MIT license</p>
     </div>
     <div class="shots">
       <img class="shot-dark" src="screenshot-dark.png" width="382" height="622" fetchpriority="high"
@@ -290,7 +292,7 @@
 
 <div class="stats" role="region" aria-label="SuperV at a glance">
   <ul>
-    <li><b>76 KB</b><span>single C program</span></li>
+    <li><b>88 KB</b><span>single C program</span></li>
     <li><b>~7 MB</b><span>private memory</span></li>
     <li><b>0%</b><span>CPU while idle</span></li>
     <li><b>25</b><span>items, like Windows</span></li>
@@ -410,7 +412,7 @@
         <span class="tag">Easiest · no terminal</span>
         <h3>Double-click the .deb</h3>
         <ol>
-          <li>Download <a href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">superv_amd64.deb</a> (28 KB).</li>
+          <li>Download <a href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">superv_amd64.deb</a> (31 KB).</li>
           <li>Double-click it and choose <b>Install</b> (Ubuntu Software / Mint's Package Installer). Enter your password once.</li>
           <li><b>Open SuperV once to finish setup.</b> On Ubuntu, press <kbd>Super</kbd>, type <b>SuperV</b> and press <kbd>Enter</kbd>. On Mint, open the <b>Menu</b> and search for <b>SuperV</b>. This sets up <kbd>Super</kbd>+<kbd>V</kbd>; after that SuperV starts by itself at every login.</li>
         </ol>
@@ -448,13 +450,13 @@
     <details><summary>Does SuperV work on Wayland?</summary>
       <p>Yes. Ubuntu's default GNOME Wayland session is fully supported, including copying from and pasting into native Wayland apps.</p></details>
     <details><summary>Can I use a different shortcut than Super+V?</summary>
-      <p>Yes. Open the panel, click ⚙ → <b>Shortcut</b> and press any key combination. SuperV moves conflicting desktop shortcuts out of the way and puts them back if you change your mind.</p></details>
+      <p>Yes. Open the panel, click ⚙ → <b>Shortcut</b> and press a combination with <kbd>Super</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>, such as <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd>. A green ✓ confirms it's saved; if a combination can't be used (like <kbd>Ctrl</kbd>+<kbd>V</kbd>, which apps need for pasting), SuperV tells you why.</p></details>
     <details><summary>How much memory does SuperV use?</summary>
-      <p>SuperV is a 76 KB C program that uses about 7 MB of private memory. It uses no CPU until the clipboard changes.</p></details>
+      <p>SuperV is an 88 KB C program that uses about 7 MB of private memory. It uses no CPU until the clipboard changes.</p></details>
     <details><summary>Where is my clipboard history stored?</summary>
       <p>Only on your computer, in <code class="inl">~/.local/share/superv/</code>, readable by you alone. SuperV never connects to the internet: no telemetry, no analytics, no update checks. Unpinned items are removed on reboot, and passwords copied from password managers are never saved.</p></details>
     <details><summary>How do I uninstall SuperV?</summary>
-      <p>Remove it from Ubuntu Software / Software Manager, or run <code class="inl">sudo apt remove superv</code>. Installed from source? Run <code class="inl">~/.local/lib/superv/uninstall.sh</code>. Either way, your desktop's shortcuts are restored.</p></details>
+      <p>On Ubuntu, open Ubuntu Software → <b>Installed</b> → SuperV → <b>Uninstall</b>. On Linux Mint, right-click <b>SuperV</b> in the Menu → <b>Uninstall</b>. Or run <code class="inl">sudo apt remove superv</code>. Your desktop's shortcuts are restored. Your clipboard history and settings are kept for a reinstall; to delete them too, run <code class="inl">rm -r ~/.local/share/superv ~/.config/superv</code>. Installed from source? Run <code class="inl">~/.local/lib/superv/uninstall.sh --purge</code> instead.</p></details>
   </div>
 </section>
 

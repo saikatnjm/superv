@@ -331,6 +331,11 @@ def main(argv):
         if not re.fullmatch(r"(<[A-Za-z0-9]+>)+[A-Za-z0-9_]+", accel):
             print("Shortcut should look like <Super>v or <Ctrl><Alt>v", file=sys.stderr)
             return 2
+        mods = normalize(accel)[0]
+        if not ("super" in mods or {"ctrl", "alt"} <= mods):
+            # Ctrl+V, Ctrl+Shift+V, Alt+V... are needed by apps (paste, menus)
+            print("Use Super or Ctrl+Alt in the shortcut, e.g. <Super>v or <Ctrl><Alt>v", file=sys.stderr)
+            return 2
         setup(cmd, accel)
     else:
         print(__doc__)

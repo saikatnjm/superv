@@ -9,7 +9,7 @@ Press <kbd>Super</kbd> + <kbd>V</kbd> on Ubuntu or Linux Mint and get the clipbo
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%2B-7c3aed?style=flat-square)
 ![Linux Mint](https://img.shields.io/badge/Linux%20Mint-21%2B-7c3aed?style=flat-square)
 ![Wayland + X11](https://img.shields.io/badge/Wayland%20%2B%20X11-supported-a78bfa?style=flat-square)
-![Binary size](https://img.shields.io/badge/binary-76%20KB-a78bfa?style=flat-square)
+![Binary size](https://img.shields.io/badge/binary-88%20KB-a78bfa?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square)
 
 <picture>
@@ -47,7 +47,7 @@ Linux has no clipboard history out of the box, and some desktops lose the clipbo
 
 ### Easiest: double-click (no terminal)
 
-1. Download **[superv_amd64.deb](https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb)** (28 KB).
+1. Download **[superv_amd64.deb](https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb)** (31 KB).
 2. Double-click it and choose **Install** (Ubuntu Software, or Package Installer on Mint). Enter your password once.
 3. **Open SuperV once to finish setup.** On Ubuntu, press <kbd>Super</kbd>, type **SuperV** and press <kbd>Enter</kbd>. On Linux Mint, open the **Menu** and search for **SuperV**.
    This first launch starts SuperV and sets up the <kbd>Super</kbd> + <kbd>V</kbd> shortcut. After that, SuperV starts by itself every time you log in.
@@ -68,9 +68,10 @@ The installer asks for your password **once** to turn on click-to-paste. Skip th
 
 Open the panel and click ⚙:
 
-- **Shortcut:** click it and press any combo. SuperV moves conflicting desktop shortcuts out of the way and restores them if you change your mind.
+- **Shortcut:** click it and press a combo that uses **Super**, or **Ctrl+Alt**, plus a key (e.g. <kbd>Super</kbd>+<kbd>V</kbd>, <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd>). A green ✓ confirms it's saved; if a combo can't be used, SuperV tells you why. (Ctrl+V, Ctrl+Shift+V and Alt+V are refused because apps need them for pasting and menus.) SuperV moves conflicting desktop shortcuts out of the way and restores them if you change your mind. Changed it in your desktop's own keyboard settings instead? SuperV picks that up too.
 - **Theme:** System, Light or Dark.
-- **Text size:** A− / A+, from 80% to 160%. The default is 100%, your desktop's normal size.
+- **Text size:** A− / A+, from 80% to 160%, for the clipboard items. The default is 100%, your desktop's normal size.
+- **Clear history** removes everything except pinned items. **Reset settings** puts theme, text size, panel size and position, and the shortcut back to their defaults; your history is kept.
 
 Drag the panel's header to move it and drag any edge to resize it; SuperV remembers both. Double-click the header to reset.
 
@@ -88,11 +89,11 @@ Drag the panel's header to move it and drag any edge to resize it; SuperV rememb
 
 ## Lightweight by design
 
-SuperV is a single **76 KB** C program built on GTK 3, which Ubuntu and Mint already have loaded in memory. It uses no interpreter, no Electron and no runtime.
+SuperV is a single **88 KB** C program built on GTK 3, which Ubuntu and Mint already have loaded in memory. It uses no interpreter, no Electron and no runtime.
 
 | | |
 |---|---|
-| Binary | 76 KB (28 KB .deb) |
+| Binary | 88 KB (31 KB .deb) |
 | Memory | ~7 MB private (~27 MB RSS, most of it GTK pages shared with your desktop) |
 | CPU when idle | 0%: it wakes only when the clipboard changes |
 | Popup | ~0.1 s from shortcut to panel |
@@ -171,22 +172,33 @@ superv-setup --hotkey "<Ctrl><Alt>v"   change the shortcut
 
 Run `superv --doctor` first.
 
-- **Super+V does nothing.** Log out and back in once after installing (GNOME reloads custom shortcuts at login), then check `superv --doctor`.
+- **Super+V does nothing.** Open SuperV once from the app menu (or log out and back in), then check `superv --doctor`.
+- **A copied image doesn't show up, or shows as text.** Run `superv --quit`, then `SUPERV_DEBUG=1 superv --daemon` in a terminal, and copy the image again. The log lists the clipboard *formats* the app offered (never the content), which is exactly what a bug report needs.
 - **The item is copied but not pasted.** Click-to-paste isn't enabled yet: open the panel and click **Enable**, or install the `.deb`. (Apps running under X11, such as Chrome, VS Code and Electron apps, paste even without it.)
 - **An app doesn't paste with Shift+Insert.** Set `paste_keys=ctrl+v` in the config.
 
 ## Uninstall
 
-Installed the `.deb`? Remove **SuperV** in Ubuntu Software / Software Manager, or run `sudo apt remove superv`.
+Either way, SuperV stops, and your desktop's shortcuts go back to how they were (Super+V opens the notification list again on Ubuntu).
 
-Installed from source:
+**Installed the `.deb`** (pick one):
+
+- **Ubuntu:** Ubuntu Software → **Installed** → SuperV → **Uninstall**
+- **Linux Mint:** open the **Menu**, right-click **SuperV** → **Uninstall** (or use Software Manager)
+- **Terminal:** `sudo apt remove superv`
+
+Your clipboard history and settings are kept in case you reinstall. To delete them as well:
 
 ```bash
-~/.local/lib/superv/uninstall.sh          # keeps your history
-~/.local/lib/superv/uninstall.sh --purge  # deletes history and settings too
+rm -r ~/.local/share/superv ~/.config/superv
 ```
 
-This restores every desktop shortcut SuperV changed.
+**Installed from source:**
+
+```bash
+~/.local/lib/superv/uninstall.sh          # keeps your history and settings
+~/.local/lib/superv/uninstall.sh --purge  # deletes them too
+```
 
 ## Build from source
 

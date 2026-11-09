@@ -30,7 +30,8 @@
 #include <X11/keysym.h>
 
 #define APP_ID  "io.github.superv.SuperV"
-#define VERSION "1.1.1"
+#define VERSION "1.1.2"
+#define REPO_URL "https://github.com/saikatnjm/superv"
 #define WIN_W   380
 #define WIN_H   500
 
@@ -49,18 +50,18 @@ static struct {
 
 static GPtrArray *items;             /* newest first */
 static char *data_dir, *img_dir, *hist_path, *cfg_dir, *cfg_path, *self_exe, *self_dir;
-static char *current_id, *paste_err;
-static gboolean is_wayland, reading, had_focus, capturing, prev_is_x11, geom_dirty, enabling;
+static char *current_id, *paste_err, *image_link;
+static gboolean debug_log, is_wayland, reading, had_focus, capturing, prev_is_x11, geom_dirty, enabling;
 static int thumb_w, enable_tries;
 static guint relayout_src;
-static gint64 ignore_until;
+static gint64 ignore_until, hotkey_applied_at;
 static guint pending_src;
 static int ui_fd = -1;
 static int (*xtest_fake)(Display *, unsigned int, int, unsigned long);
 static GtkApplication *app;
 static GtkClipboard *clip, *prim;
 static GtkWidget *win, *listbox, *stack, *clear_btn, *switch_w, *settings_pop, *hotkey_btn, *hint_lbl;
-static GtkWidget *banner, *banner_lbl, *banner_btn, *theme_btns[3], *size_lbl;
+static GtkWidget *hk_status, *banner, *banner_lbl, *banner_btn, *theme_btns[3], *size_lbl;
 static GtkCssProvider *font_css;
 static gboolean syncing;
 static GHashTable *thumbs;
@@ -110,14 +111,21 @@ static void config_save(void) {
     g_key_file_unref(k);
 }
 
-static void config_load(void) {
+#define DEFAULT_HOTKEY "<Super>v"
+
+/* Everything except the shortcut, which is applied separately (it changes desktop settings). */
+static void config_defaults(void) {
     cfg.history_enabled = TRUE; cfg.clear_on_reboot = TRUE; cfg.restore_on_exit = TRUE;
     cfg.max_items = 25; cfg.max_text_bytes = 4 * 1024 * 1024; cfg.paste_delay_ms = 180;
-    cfg.paste_keys = g_strdup("shift+insert");
-    cfg.hotkey = g_strdup("<Super>v");
-    cfg.theme = g_strdup("auto");
+    g_free(cfg.paste_keys); cfg.paste_keys = g_strdup("shift+insert");
+    g_free(cfg.theme); cfg.theme = g_strdup("auto");
     cfg.font_scale = 100;
     cfg.width = WIN_W + 20; cfg.height = WIN_H + 20; cfg.pos_x = cfg.pos_y = -1;
+}
+
+static void config_load(void) {
+    config_defaults();
+    cfg.hotkey = g_strdup(DEFAULT_HOTKEY);
     GKeyFile *k = g_key_file_new();
     if (g_key_file_load_from_file(k, cfg_path, G_KEY_FILE_NONE, NULL)) {
         GError *e = NULL;
@@ -413,8 +421,34 @@ static void got_item(Item *it) {
     history_changed();
 }
 
-static void on_text(GtkClipboard *c, const char *text, gpointer d) {
+static void on_image(GtkClipboard *c, GdkPixbuf *pb, gpointer d);
+
+/* Browsers put the image's address next to a copied image; that copy is an image, not a link. */
+static gboolean is_bare_link(const char *text) {
+    char *t = g_strstrip(g_strdup(text));
+    gboolean link = !*t || (!strchr(t, '\n') &&
+        (g_str_has_prefix(t, "http://") || g_str_has_prefix(t, "https://") ||
+         g_str_has_prefix(t, "file://") || g_str_has_prefix(t, "data:image/")));
+    g_free(t);
+    return link;
+}
+
+static void on_text(GtkClipboard *c, const char *text, gpointer has_image) {
+    if (has_image && (!text || is_bare_link(text))) {
+        if (debug_log) logmsg("image + link offered: saving the image");
+        g_free(image_link);
+        image_link = g_strdup(text ? text : "");
+        gtk_clipboard_request_image(c, on_image, NULL);
+        return;
+    }
     reading = FALSE;
+    /* When the app that copied an image quits, the desktop may keep only its link: not a new copy. */
+    if (image_link && text && !strcmp(text, image_link)) {
+        if (debug_log) logmsg("link of the last image re-offered: ignored");
+        g_clear_pointer(&image_link, g_free);
+        return;
+    }
+    g_clear_pointer(&image_link, g_free);
     if (!text || !*text || g_str_has_prefix(text, "x-special/nautilus-clipboard")) return;
     if (strlen(text) > (size_t)cfg.max_text_bytes) { logmsg("skipped text over max_text_bytes"); return; }
     got_item(add_text(text));
@@ -423,6 +457,7 @@ static void on_text(GtkClipboard *c, const char *text, gpointer d) {
 static void on_image(GtkClipboard *c, GdkPixbuf *pb, gpointer d) {
     reading = FALSE;
     if (pb) got_item(add_image(pb));
+    else if (debug_log) logmsg("image could not be read");
 }
 
 static void on_targets(GtkClipboard *c, GdkAtom *atoms, gint n, gpointer d) {
@@ -434,16 +469,25 @@ static void on_targets(GtkClipboard *c, GdkAtom *atoms, gint n, gpointer d) {
         return;
     }
     gboolean skip = !cfg.history_enabled;
-    for (int i = 0; i < n && !skip; i++) {
+    GString *names = debug_log ? g_string_new(NULL) : NULL;   /* format names only, never content */
+    for (int i = 0; i < n; i++) {
         char *name = gdk_atom_name(atoms[i]);
-        skip = !g_strcmp0(name, "x-kde-passwordManagerHint")          /* password managers */
+        skip = skip || !g_strcmp0(name, "x-kde-passwordManagerHint")  /* password managers */
             || !g_strcmp0(name, "x-special/gnome-copied-files")       /* copied files, like Windows */
             || !g_strcmp0(name, "application/x-kde-cutselection");
+        if (names) g_string_append_printf(names, "%s%s", i ? " " : "", name);
         g_free(name);
     }
+    gboolean has_text = gtk_targets_include_text(atoms, n);
+    gboolean has_image = gtk_targets_include_image(atoms, n, FALSE);   /* any format we can read */
+    if (names) {
+        logmsg("clipboard offers: %s -> %s", names->str,
+               skip ? "skipped" : has_text ? (has_image ? "text or image" : "text") : has_image ? "image" : "ignored");
+        g_string_free(names, TRUE);
+    }
     if (skip) reading = FALSE;
-    else if (gtk_targets_include_text(atoms, n)) gtk_clipboard_request_text(c, on_text, NULL);
-    else if (gtk_targets_include_image(atoms, n, TRUE)) gtk_clipboard_request_image(c, on_image, NULL);
+    else if (has_text) gtk_clipboard_request_text(c, on_text, GINT_TO_POINTER(has_image));
+    else if (has_image) gtk_clipboard_request_image(c, on_image, NULL);
     else reading = FALSE;
 }
 
@@ -509,6 +553,28 @@ static const char *CSS =
     ".cbh-size { padding: 0 6px; }"
     ".cbh-dark .cbh-seg button:checked { background-image: none; background-color: #8b5cf6; color: #ffffff; border-color: #7c3aed; }"
     ".cbh-light .cbh-seg button:checked { background-image: none; background-color: #7c3aed; color: #ffffff; border-color: #6d28d9; }"
+    ".cbh-settings label, .cbh-settings button { font-size: 13px; }"
+    ".cbh-settings button { padding: 2px 9px; min-height: 24px; }"
+    ".cbh-settings switch { min-width: 34px; min-height: 18px; padding: 0; margin: 0; border-radius: 9px; }"
+    ".cbh-settings switch slider { min-width: 14px; min-height: 14px; margin: 2px; padding: 0;"
+    "  border-radius: 7px; border-width: 0; box-shadow: none; }"
+    ".cbh-settings .cbh-seg button { padding: 2px 8px; }"
+    ".cbh-settings .cbh-status { font-size: 11.5px; }"
+    ".cbh-dark .cbh-status { color: #a29db4; } .cbh-light .cbh-status { color: #5f5a70; }"
+    ".cbh-dark .cbh-status.cbh-ok { color: #4ade80; } .cbh-light .cbh-status.cbh-ok { color: #15803d; }"
+    ".cbh-dark .cbh-status.cbh-err { color: #f87171; } .cbh-light .cbh-status.cbh-err { color: #b91c1c; }"
+    ".cbh-keys .cbh-keydesc { font-size: 11px; }"
+    ".cbh-dark .cbh-keydesc { color: #a29db4; } .cbh-light .cbh-keydesc { color: #5f5a70; }"
+    ".cbh-settings .cbh-kbd { font-family: monospace; font-size: 10px; padding: 0 5px; border-radius: 4px; }"
+    ".cbh-dark .cbh-kbd { background-color: #2a2638; border: 1px solid #3f3a55; color: #ebe8f5; }"
+    ".cbh-light .cbh-kbd { background-color: #f1eef9; border: 1px solid #d6d0e8; color: #1d1a26; }"
+    ".cbh-settings .cbh-footbtn, .cbh-settings .cbh-footbtn label, .cbh-settings .cbh-ver { font-size: 11px; }"
+    ".cbh-settings button.cbh-footbtn { padding: 1px 4px; min-height: 0; background-color: transparent;"
+    "  background-image: none; border: none; box-shadow: none; text-shadow: none; border-radius: 5px; }"
+    ".cbh-dark .cbh-footbtn, .cbh-dark .cbh-ver { color: #8a84a0; }"
+    ".cbh-light .cbh-footbtn, .cbh-light .cbh-ver { color: #6f6a82; }"
+    ".cbh-dark button.cbh-footbtn:hover, .cbh-dark button.cbh-footbtn:checked { color: #a78bfa; background-color: #2f2a45; }"
+    ".cbh-light button.cbh-footbtn:hover, .cbh-light button.cbh-footbtn:checked { color: #7c3aed; background-color: #ebe5fb; }"
     ".cbh-banner { border-radius: 8px; padding: 8px 8px 8px 12px; }"
     ".cbh-dark .cbh-banner { background-color: #2a2342; border: 1px solid #4c3d7a; }"
     ".cbh-light .cbh-banner { background-color: #f1ebff; border: 1px solid #d9ccfb; }"
@@ -726,9 +792,8 @@ static void update_hotkey_labels(void) {
     gtk_accelerator_parse(cfg.hotkey, &key, &mods);
     char *label = key ? gtk_accelerator_get_label(key, mods) : g_strdup(cfg.hotkey);
     if (!capturing) gtk_button_set_label(GTK_BUTTON(hotkey_btn), label);
-    char *hint = g_strdup_printf("%s  open      Enter  paste\nDelete  remove      Esc  close", label);
-    gtk_label_set_text(GTK_LABEL(hint_lbl), hint);
-    g_free(hint); g_free(label);
+    gtk_label_set_text(GTK_LABEL(hint_lbl), label);
+    g_free(label);
 }
 
 static void update_banner(void) {
@@ -861,6 +926,7 @@ static gboolean on_header_press(GtkWidget *w, GdkEventButton *e, gpointer d) {
         return TRUE;
     }
     if (e->type != GDK_BUTTON_PRESS) return FALSE;
+    if (debug_log) logmsg("header pressed: moving the panel");
     geom_dirty = TRUE;
     gtk_window_begin_move_drag(GTK_WINDOW(win), e->button, (int)e->x_root, (int)e->y_root, e->time);
     return TRUE;
@@ -903,6 +969,22 @@ static void reload_hotkey(void) {   /* superv-setup --hotkey may have changed it
     g_key_file_unref(k);
 }
 
+static char *desktop_hotkey(void);
+static void hotkey_status(const char *text, gboolean ok);
+
+/* Show the shortcut the desktop really uses: people also change it in their desktop's settings. */
+static void sync_hotkey_from_desktop(void) {
+    if (g_get_monotonic_time() - hotkey_applied_at < 5 * G_USEC_PER_SEC) return;   /* our own change is still being applied */
+    char *d = desktop_hotkey();
+    if (d && g_strcmp0(d, cfg.hotkey)) {
+        g_free(cfg.hotkey);
+        cfg.hotkey = d;
+        config_save();
+    } else {
+        g_free(d);
+    }
+}
+
 static void show_popup(void) {
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     GdkWindow *aw = gdk_screen_get_active_window(gdk_screen_get_default());
@@ -911,8 +993,10 @@ static void show_popup(void) {
     prev_is_x11 = aw && (!gtk_widget_get_realized(win) || aw != gtk_widget_get_window(win));
     if (aw) g_object_unref(aw);
     reload_hotkey();
+    sync_hotkey_from_desktop();
     apply_theme();
     capturing = FALSE;
+    hotkey_status(NULL, TRUE);
     refresh(0);
     had_focus = FALSE;
     place_window();
@@ -933,19 +1017,51 @@ static char *setup_path(void) {
     return p;
 }
 
+static void hotkey_status(const char *text, gboolean ok) {
+    if (!hk_status) return;
+    GtkStyleContext *c = gtk_widget_get_style_context(hk_status);
+    gtk_style_context_remove_class(c, ok ? "cbh-err" : "cbh-ok");
+    gtk_style_context_add_class(c, ok ? "cbh-ok" : "cbh-err");
+    gtk_label_set_text(GTK_LABEL(hk_status), text);
+    gtk_widget_set_visible(hk_status, text != NULL);
+}
+
+static char *accel_label(const char *accel) {
+    guint key; GdkModifierType mods;
+    gtk_accelerator_parse(accel, &key, &mods);
+    return key ? gtk_accelerator_get_label(key, mods) : g_strdup(accel);
+}
+
+static void on_hotkey_applied(GPid pid, gint status, gpointer accel) {
+    g_spawn_close_pid(pid);
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        char *label = accel_label(accel), *msg = g_strdup_printf("✓ Shortcut set to %s", label);
+        hotkey_status(msg, TRUE);
+        g_free(msg); g_free(label);
+    } else {
+        hotkey_status("Couldn't save the shortcut. Run “superv --doctor” to see why.", FALSE);
+    }
+    g_free(accel);
+}
+
 /* custom shortcut: press the new keys while the button says "Press keys…" */
 static void apply_hotkey(const char *new_accel) {
     char *accel = g_strdup(new_accel);   /* new_accel may be cfg.hotkey itself */
     g_free(cfg.hotkey);
     cfg.hotkey = accel;
     cfg.setup_done = TRUE;
+    hotkey_applied_at = g_get_monotonic_time();
     config_save();
     char *setup = setup_path();
     char *quoted = g_shell_quote(self_exe), *cmd = g_strdup_printf("%s --toggle", quoted);
     char *argv[] = { "python3", setup, "--setup-hotkeys", cmd, "--hotkey", (char *)accel, NULL };
     GError *e = NULL;
-    if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &e)) {
+    GPid pid;
+    if (g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &e)) {
+        g_child_watch_add(pid, on_hotkey_applied, g_strdup(accel));
+    } else {
         logmsg("could not run %s: %s", setup, e->message);
+        hotkey_status("Couldn't save the shortcut: the SuperV setup helper is missing.", FALSE);
         g_error_free(e);
     }
     g_free(setup); g_free(quoted); g_free(cmd);
@@ -976,6 +1092,62 @@ static gboolean strv_setting_has(const char *schema_id, const char *key, const c
     return found;
 }
 
+#define GNOME_KB_SCHEMA "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding"
+#define GNOME_KB_PATH   "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/superv/"
+#define CIN_KB_SCHEMA   "org.cinnamon.desktop.keybindings.custom-keybinding"
+
+static gboolean schema_has_key(const char *schema_id, const char *key) {
+    GSettingsSchemaSource *src = g_settings_schema_source_get_default();
+    GSettingsSchema *schema = src ? g_settings_schema_source_lookup(src, schema_id, TRUE) : NULL;
+    gboolean ok = schema && g_settings_schema_has_key(schema, key);
+    if (schema) g_settings_schema_unref(schema);
+    return ok;
+}
+
+static char *gnome_hotkey(void) {
+    gboolean known = FALSE;
+    if (!strv_setting_has("org.gnome.settings-daemon.plugins.media-keys", "custom-keybindings", GNOME_KB_PATH, &known))
+        return NULL;
+    GSettings *kb = g_settings_new_with_path(GNOME_KB_SCHEMA, GNOME_KB_PATH);
+    char *b = g_settings_get_string(kb, "binding");
+    g_object_unref(kb);
+    if (!*b) { g_free(b); return NULL; }
+    return b;
+}
+
+static char *cinnamon_hotkey(void) {
+    if (!schema_has_key("org.cinnamon.desktop.keybindings", "custom-list")) return NULL;
+    GSettings *s = g_settings_new("org.cinnamon.desktop.keybindings");
+    char **ids = g_settings_get_strv(s, "custom-list"), *found = NULL;
+    for (int i = 0; ids[i] && !found; i++) {
+        char *path = g_strdup_printf("/org/cinnamon/desktop/keybindings/custom-keybindings/%s/", ids[i]);
+        GSettings *kb = g_settings_new_with_path(CIN_KB_SCHEMA, path);
+        char *name = g_settings_get_string(kb, "name");
+        if (!g_strcmp0(name, "SuperV")) {
+            GVariant *v = g_settings_get_value(kb, "binding");
+            if (g_variant_is_of_type(v, G_VARIANT_TYPE_STRING_ARRAY)) {
+                const char **b = g_variant_get_strv(v, NULL);
+                if (b[0] && *b[0]) found = g_strdup(b[0]);
+                g_free(b);
+            } else if (g_variant_is_of_type(v, G_VARIANT_TYPE_STRING) && *g_variant_get_string(v, NULL)) {
+                found = g_variant_dup_string(v, NULL);
+            }
+            g_variant_unref(v);
+        }
+        g_free(name); g_object_unref(kb); g_free(path);
+    }
+    g_strfreev(ids); g_object_unref(s);
+    return found;
+}
+
+/* The shortcut as the running desktop sees it (NULL if we can't tell, e.g. MATE/Xfce). */
+static char *desktop_hotkey(void) {
+    const char *de = g_getenv("XDG_CURRENT_DESKTOP");
+    gboolean cinnamon = de && g_strrstr(de, "Cinnamon");
+    char *k = cinnamon ? cinnamon_hotkey() : gnome_hotkey();
+    return k ? k : (cinnamon ? gnome_hotkey() : cinnamon_hotkey());
+}
+
 /* Is SuperV's shortcut actually registered with the desktop? (TRUE when we can't tell, e.g. Xfce) */
 static gboolean shortcut_bound(void) {
     gboolean known = FALSE;
@@ -989,21 +1161,38 @@ static gboolean shortcut_bound(void) {
 
 static void on_hotkey_btn(GtkButton *b, gpointer d) {
     capturing = TRUE;
-    gtk_button_set_label(b, "Press keys… (Esc cancels)");
+    gtk_button_set_label(b, "Press keys…");
+    hotkey_status("Press the new shortcut, e.g. Super+V or Ctrl+Alt+V. Esc cancels.", TRUE);
+    gtk_style_context_remove_class(gtk_widget_get_style_context(hk_status), "cbh-ok");
 }
 
 static gboolean capture_key(GdkEventKey *e) {
     if (e->is_modifier) return TRUE;
-    if (e->keyval == GDK_KEY_Escape) { capturing = FALSE; update_hotkey_labels(); return TRUE; }
+    if (e->keyval == GDK_KEY_Escape) { capturing = FALSE; hotkey_status(NULL, TRUE); update_hotkey_labels(); return TRUE; }
     GdkModifierType state = e->state;
     gdk_keymap_add_virtual_modifiers(gdk_keymap_get_for_display(gdk_display_get_default()), &state);
     state &= gtk_accelerator_get_default_mod_mask() & ~(GDK_HYPER_MASK | GDK_META_MASK);
     guint key = gdk_keyval_to_lower(e->keyval);
-    if (!(state & (GDK_CONTROL_MASK | GDK_MOD1_MASK | GDK_SUPER_MASK))) {
-        gtk_button_set_label(GTK_BUTTON(hotkey_btn), "Add Super, Ctrl or Alt…");
-        return TRUE;
+    /* Must use Super, or Ctrl+Alt: Ctrl+V, Ctrl+Shift+V, Alt+V… belong to apps (paste, menus). */
+    gboolean ctrl = state & GDK_CONTROL_MASK, alt = state & GDK_MOD1_MASK, super = state & GDK_SUPER_MASK;
+    if (!super && !(ctrl && alt)) {
+        char *name = gtk_accelerator_name(key, state), *label = accel_label(name), *msg;
+        g_free(name);
+        if (ctrl)
+            msg = g_strdup_printf("%s isn't allowed: apps use Ctrl shortcuts (copy, paste, undo…). "
+                                  "Use Super or Ctrl+Alt with a key.", label);
+        else if (alt)
+            msg = g_strdup_printf("%s isn't allowed: apps use Alt shortcuts for their menus. "
+                                  "Use Super or Ctrl+Alt with a key.", label);
+        else
+            msg = g_strdup_printf("%s isn't allowed: a shortcut needs Super, or Ctrl+Alt, plus a key.", label);
+        hotkey_status(msg, FALSE);
+        g_free(msg); g_free(label);
+        return TRUE;   /* keep listening for a valid combination */
     }
     capturing = FALSE;
+    hotkey_status("Saving…", TRUE);
+    gtk_style_context_remove_class(gtk_widget_get_style_context(hk_status), "cbh-ok");
     char *accel = gtk_accelerator_name(key, state);
     apply_hotkey(accel);
     g_free(accel);
@@ -1035,6 +1224,7 @@ static gboolean on_key(GtkWidget *w, GdkEventKey *e, gpointer d) {
 
 static gboolean hide_if_inactive(gpointer d) {
     if (gtk_widget_get_visible(win) && !gtk_window_is_active(GTK_WINDOW(win)) && !any_menu_open()) {
+        if (debug_log) logmsg("panel lost focus: closing");
         capturing = FALSE;
         gtk_widget_hide(win);
     }
@@ -1155,6 +1345,66 @@ static GtkWidget *size_control(void) {
     return seg;
 }
 
+static void on_reset(GtkButton *b, gpointer d) {
+    reload_hotkey();
+    config_defaults();
+    apply_font();
+    apply_theme();
+    if (g_strcmp0(cfg.hotkey, DEFAULT_HOTKEY)) apply_hotkey(DEFAULT_HOTKEY);   /* also saves */
+    else config_save();
+    place_window();
+    g_hash_table_remove_all(thumbs);
+    refresh(focused_index());
+}
+
+static GtkWidget *keys_revealer;
+
+static void on_keys_toggled(GtkToggleButton *b, gpointer d) {
+    gboolean open = gtk_toggle_button_get_active(b);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(keys_revealer), open);
+    gtk_button_set_image(GTK_BUTTON(b), gtk_image_new_from_icon_name(open ? "pan-down-symbolic" : "pan-end-symbolic",
+                                                                     GTK_ICON_SIZE_MENU));
+}
+
+static void on_open_repo(GtkButton *b, gpointer d) {
+    GError *e = NULL;
+    if (!gtk_show_uri_on_window(GTK_WINDOW(win), REPO_URL, gtk_get_current_event_time(), &e)) {
+        logmsg("could not open the browser: %s", e->message);
+        g_error_free(e);
+    }
+}
+
+static GtkWidget *keys_help(void) {
+    static const char *rows[][2] = {
+        { NULL,      "Open or close this panel" },
+        { "↑  ↓",    "Choose an item" },
+        { "Enter",   "Paste the chosen item" },
+        { "Delete",  "Remove the chosen item" },
+        { "Esc",     "Close the panel" },
+    };
+    GtkWidget *grid = gtk_grid_new();
+    add_class(grid, "cbh-keys");
+    gtk_widget_set_margin_bottom(grid, 4);
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 3);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
+    for (int i = 0; i < (int)G_N_ELEMENTS(rows); i++) {
+        GtkWidget *key = gtk_label_new(rows[i][0] ? rows[i][0] : ""), *what = gtk_label_new(rows[i][1]);
+        if (!rows[i][0]) hint_lbl = key;   /* shows the current shortcut */
+        add_class(key, "cbh-kbd");
+        gtk_widget_set_halign(key, GTK_ALIGN_START);
+        gtk_label_set_xalign(GTK_LABEL(what), 0);
+        add_class(what, "cbh-keydesc");
+        gtk_grid_attach(GTK_GRID(grid), key, 0, i, 1, 1);
+        gtk_grid_attach(GTK_GRID(grid), what, 1, i, 1, 1);
+    }
+    return grid;
+}
+
+static void fit_settings(GtkWidget *pop, gpointer scroll) {
+    int h = gtk_widget_get_allocated_height(win) - 90;   /* room below the header */
+    gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroll), MAX(h, 160));
+}
+
 static GtkWidget *settings_button(void) {
     GtkWidget *btn = gtk_menu_button_new(), *old = gtk_bin_get_child(GTK_BIN(btn));
     if (old) gtk_container_remove(GTK_CONTAINER(btn), old);
@@ -1162,12 +1412,14 @@ static GtkWidget *settings_button(void) {
     add_class(btn, "cbh-icon");
     gtk_widget_set_tooltip_text(btn, "Clipboard settings");
     settings_pop = gtk_popover_new(btn);
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_container_set_border_width(GTK_CONTAINER(box), 12);
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_container_set_border_width(GTK_CONTAINER(box), 10);
+    add_class(box, "cbh-settings");   /* compact, fixed-size text (not changed by A-/A+) */
 
     GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16), *l = gtk_label_new("Clipboard history");
     gtk_label_set_xalign(GTK_LABEL(l), 0);
     switch_w = gtk_switch_new();
+    gtk_widget_set_valign(switch_w, GTK_ALIGN_CENTER);   /* don't stretch to the row height */
     g_signal_connect(switch_w, "state-set", G_CALLBACK(on_switch), NULL);
     gtk_box_pack_start(GTK_BOX(row), l, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(row), switch_w, FALSE, FALSE, 0);
@@ -1182,20 +1434,66 @@ static GtkWidget *settings_button(void) {
     gtk_box_pack_start(GTK_BOX(row), l, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(row), hotkey_btn, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(box), row, FALSE, FALSE, 0);
+    hk_status = gtk_label_new(NULL);
+    gtk_label_set_line_wrap(GTK_LABEL(hk_status), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(hk_status), 34);
+    gtk_label_set_xalign(GTK_LABEL(hk_status), 0);
+    add_class(hk_status, "cbh-status");
+    gtk_widget_set_no_show_all(hk_status, TRUE);
+    gtk_box_pack_start(GTK_BOX(box), hk_status, FALSE, FALSE, 0);
 
     settings_row(box, "Theme", theme_control());
     settings_row(box, "Text size", size_control());
 
-    GtkWidget *clear = gtk_button_new_with_label("Clear clipboard data");
+    GtkWidget *actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_set_homogeneous(GTK_BOX(actions), TRUE);
+    GtkWidget *clear = gtk_button_new_with_label("Clear history");
     gtk_widget_set_tooltip_text(clear, "Removes everything except pinned items");
     g_signal_connect(clear, "clicked", G_CALLBACK(on_clear), NULL);
-    gtk_box_pack_start(GTK_BOX(box), clear, FALSE, FALSE, 0);
-    hint_lbl = gtk_label_new("");
-    gtk_label_set_xalign(GTK_LABEL(hint_lbl), 0);
-    add_class(hint_lbl, "cbh-sub");
-    gtk_box_pack_start(GTK_BOX(box), hint_lbl, FALSE, FALSE, 0);
-    gtk_widget_show_all(box);
-    gtk_container_add(GTK_CONTAINER(settings_pop), box);
+    GtkWidget *reset = gtk_button_new_with_label("Reset settings");
+    gtk_widget_set_tooltip_text(reset, "Back to defaults: theme, text size, panel size and position, and the "
+                                       "Super+V shortcut. Your clipboard history is kept.");
+    g_signal_connect(reset, "clicked", G_CALLBACK(on_reset), NULL);
+    gtk_box_pack_start(GTK_BOX(actions), clear, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(actions), reset, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(box), actions, FALSE, FALSE, 0);
+
+    /* Footer: one divider, the shortcut list (slides open), then "Shortcuts ›  ·  v1.1.2 · GitHub ↗" */
+    gtk_box_pack_start(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL), FALSE, FALSE, 2);
+    keys_revealer = gtk_revealer_new();
+    gtk_revealer_set_transition_type(GTK_REVEALER(keys_revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
+    gtk_revealer_set_transition_duration(GTK_REVEALER(keys_revealer), 150);
+    gtk_container_add(GTK_CONTAINER(keys_revealer), keys_help());
+    gtk_box_pack_start(GTK_BOX(box), keys_revealer, FALSE, FALSE, 0);
+
+    GtkWidget *foot = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    add_class(foot, "cbh-foot");
+    GtkWidget *keys = gtk_toggle_button_new_with_label("Shortcuts");
+    gtk_button_set_image(GTK_BUTTON(keys), gtk_image_new_from_icon_name("pan-end-symbolic", GTK_ICON_SIZE_MENU));
+    gtk_button_set_image_position(GTK_BUTTON(keys), GTK_POS_RIGHT);
+    gtk_button_set_always_show_image(GTK_BUTTON(keys), TRUE);
+    gtk_widget_set_tooltip_text(keys, "Show keyboard shortcuts");
+    g_signal_connect(keys, "toggled", G_CALLBACK(on_keys_toggled), NULL);
+    GtkWidget *ver = gtk_label_new("v" VERSION " ·");
+    GtkWidget *repo = gtk_button_new_with_label("GitHub ↗");   /* opens the browser only when clicked */
+    gtk_widget_set_tooltip_text(repo, REPO_URL);
+    g_signal_connect(repo, "clicked", G_CALLBACK(on_open_repo), NULL);
+    add_class(keys, "cbh-footbtn");
+    add_class(repo, "cbh-footbtn");
+    add_class(ver, "cbh-ver");
+    gtk_box_pack_start(GTK_BOX(foot), keys, FALSE, FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(foot), repo, FALSE, FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(foot), ver, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(box), foot, FALSE, FALSE, 0);
+    /* Never taller than the panel: scroll inside instead (e.g. at large text sizes). */
+    GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(scroll), TRUE);
+    gtk_scrolled_window_set_propagate_natural_width(GTK_SCROLLED_WINDOW(scroll), TRUE);
+    gtk_container_add(GTK_CONTAINER(scroll), box);
+    gtk_widget_show_all(scroll);
+    gtk_container_add(GTK_CONTAINER(settings_pop), scroll);
+    g_signal_connect(settings_pop, "show", G_CALLBACK(fit_settings), scroll);
     gtk_menu_button_set_popover(GTK_MENU_BUTTON(btn), settings_pop);
     return btn;
 }
@@ -1423,6 +1721,7 @@ int main(int argc, char **argv) {
         perror("python3");
         return 1;
     }
+    debug_log = g_getenv("SUPERV_DEBUG") != NULL;
     is_wayland = !g_strcmp0(g_getenv("XDG_SESSION_TYPE"), "wayland") || g_getenv("WAYLAND_DISPLAY");
     if (!g_getenv("DISPLAY")) { fputs("superv: no X11/XWayland display (DISPLAY not set)\n", stderr); return 1; }
     /* Use X11/XWayland: on GNOME Wayland only X clients may watch the clipboard in the background. */

@@ -59,7 +59,7 @@ Description: Win+V clipboard history for Linux
  one to paste it into the app you are using, pin favourites, and clear the
  rest. Works on GNOME (Wayland and X11), Cinnamon, MATE and Xfce.
  .
- A single 76 KB C program that uses about 7 MB of memory.
+ A single 88 KB C program that uses about 7 MB of memory.
 EOF
 echo /etc/xdg/autostart/superv.desktop > "$PKG/DEBIAN/conffiles"
 
