@@ -1,0 +1,326 @@
+#!/usr/bin/env python3
+"""SuperV one-time setup helper: keyboard shortcuts + diagnostics.
+
+Only runs during install, or when you change the shortcut. The SuperV daemon itself is C.
+
+  superv-setup --setup-hotkeys "<command>" [--hotkey "<Super>v"]
+  superv-setup --hotkey "<Ctrl><Alt>v"       change the shortcut (any combo you like)
+  superv-setup --remove-hotkeys               put the desktop's shortcuts back
+  superv-setup --doctor                       check that everything is set up
+"""
+import json
+import os
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+
+from gi.repository import Gio, GLib
+
+APP_NAME = "SuperV"
+APP_ID = "io.github.superv.SuperV"
+CONFIG_DIR = os.path.join(GLib.get_user_config_dir(), "superv")
+BACKUP = os.path.join(CONFIG_DIR, "hotkey-backup.json")
+CONFIG = os.path.join(CONFIG_DIR, "config.ini")
+GNOME_PATH = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/superv/"
+CIN_PATH = "/org/cinnamon/desktop/keybindings/custom-keybindings/%s/"
+SCREENSHOT = "<Shift><Super>s"
+CONFLICT_SCHEMAS = [
+    "org.gnome.shell.keybindings", "org.gnome.desktop.wm.keybindings",
+    "org.gnome.mutter.keybindings", "org.gnome.mutter.wayland.keybindings",
+    "org.gnome.settings-daemon.plugins.media-keys",
+    "org.cinnamon.desktop.keybindings.wm", "org.cinnamon.desktop.keybindings.media-keys",
+    "org.cinnamon.desktop.keybindings",
+]
+MOD_ALIASES = {"control": "ctrl", "primary": "ctrl", "ctl": "ctrl", "mod4": "super",
+               "mod1": "alt", "meta": "alt", "win": "super"}
+
+
+def settings(schema_id, path=None):
+    src = Gio.SettingsSchemaSource.get_default()
+    schema = src.lookup(schema_id, True) if src else None
+    return Gio.Settings.new_full(schema, None, path) if schema else None
+
+
+def has_key(s, key):
+    return s is not None and s.props.settings_schema.has_key(key)
+
+
+def normalize(accel):
+    """'<Primary><Super>V' and '<Super><Control>v' -> same tuple, for conflict checks."""
+    mods = frozenset(MOD_ALIASES.get(m.lower(), m.lower()) for m in re.findall(r"<([^>]+)>", accel))
+    return mods, re.sub(r"<[^>]+>", "", accel).strip().lower()
+
+
+def to_mate(accel):
+    return accel.replace("<Super>", "<Mod4>")
+
+
+def load_backup():
+    try:
+        with open(BACKUP) as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+    data.setdefault("freed", {})
+    data.setdefault("added", {})
+    return data
+
+
+def save_backup(data):
+    os.makedirs(CONFIG_DIR, mode=0o700, exist_ok=True)
+    fd = os.open(BACKUP, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def restore(entries):
+    for schema_id, keys in entries.items():
+        s = settings(schema_id)
+        for key, value in keys.items():
+            if has_key(s, key):
+                s.set_strv(key, value)
+
+
+def save_hotkey_to_config(accel):
+    kf = GLib.KeyFile()
+    try:
+        kf.load_from_file(CONFIG, GLib.KeyFileFlags.KEEP_COMMENTS)
+    except GLib.Error:
+        pass
+    kf.set_string("superv", "hotkey", accel)
+    os.makedirs(CONFIG_DIR, mode=0o700, exist_ok=True)
+    kf.save_to_file(CONFIG)
+    os.chmod(CONFIG, 0o600)
+
+
+def read_hotkey_from_config():
+    kf = GLib.KeyFile()
+    try:
+        kf.load_from_file(CONFIG, GLib.KeyFileFlags.NONE)
+        return kf.get_string("superv", "hotkey").strip()
+    except GLib.Error:
+        return "<Super>v"
+
+
+def default_command():
+    exe = os.path.join(os.path.dirname(os.path.realpath(__file__)), "superv")
+    if not os.path.exists(exe):
+        exe = shutil.which("superv") or "/usr/bin/superv"
+    return shlex.quote(exe) + " --toggle"
+
+
+def setup(command, accel):
+    out = []
+    backup = load_backup()
+    # put back whatever we freed for a previous shortcut, then free the new one
+    restore(backup["freed"])
+    backup["freed"] = {}
+    want = normalize(accel)
+    for schema_id in CONFLICT_SCHEMAS:
+        s = settings(schema_id)
+        if not s:
+            continue
+        for key in s.props.settings_schema.list_keys():
+            v = s.get_value(key)
+            if v.get_type_string() != "as" or (schema_id.startswith("org.cinnamon.desktop.keybindings")
+                                                and key == "custom-list"):
+                continue
+            cur = list(v.unpack())
+            new = [b for b in cur if normalize(b) != want]
+            if new != cur:
+                backup["freed"].setdefault(schema_id, {})[key] = cur
+                s.set_strv(key, new)
+                out.append("freed %s from %s → %s" % (accel, schema_id.split(".")[-1], key))
+
+    def add_screenshot(schema_id, key):
+        s = settings(schema_id)
+        if not has_key(s, key) or s.get_value(key).get_type_string() != "as":
+            return False
+        cur = s.get_strv(key)
+        if normalize(SCREENSHOT) not in [normalize(b) for b in cur] and normalize(SCREENSHOT) != want:
+            backup["added"].setdefault(schema_id, {}).setdefault(key, cur)
+            s.set_strv(key, cur + [SCREENSHOT])
+        return True
+
+    # GNOME / Ubuntu
+    mk = settings("org.gnome.settings-daemon.plugins.media-keys")
+    if has_key(mk, "custom-keybindings"):
+        paths = mk.get_strv("custom-keybindings")
+        if GNOME_PATH not in paths:
+            mk.set_strv("custom-keybindings", paths + [GNOME_PATH])
+        kb = settings("org.gnome.settings-daemon.plugins.media-keys.custom-keybinding", GNOME_PATH)
+        kb.set_string("name", APP_NAME)
+        kb.set_string("command", command)
+        kb.set_string("binding", accel)
+        out.append("GNOME: %s → SuperV" % accel)
+        if add_screenshot("org.gnome.shell.keybindings", "show-screenshot-ui"):
+            out.append("GNOME: Super+Shift+S → screenshot (lands in your clipboard history)")
+
+    # Cinnamon (Linux Mint)
+    cin = settings("org.cinnamon.desktop.keybindings")
+    if has_key(cin, "custom-list"):
+        ids = cin.get_strv("custom-list")
+        mine = next((i for i in ids if settings("org.cinnamon.desktop.keybindings.custom-keybinding",
+                                                 CIN_PATH % i).get_string("name") == APP_NAME), None)
+        if mine is None:
+            n = 0
+            while "custom%d" % n in ids:
+                n += 1
+            mine = "custom%d" % n
+            cin.set_strv("custom-list", ids + [mine])
+        kb = settings("org.cinnamon.desktop.keybindings.custom-keybinding", CIN_PATH % mine)
+        kb.set_string("name", APP_NAME)
+        kb.set_string("command", command)
+        if kb.get_value("binding").get_type_string() == "as":
+            kb.set_strv("binding", [accel])
+        else:
+            kb.set_string("binding", accel)
+        out.append("Cinnamon: %s → SuperV" % accel)
+        if add_screenshot("org.cinnamon.desktop.keybindings.media-keys", "area-screenshot-clip"):
+            out.append("Cinnamon: Super+Shift+S → area screenshot to clipboard")
+
+    # MATE
+    cmds = settings("org.mate.Marco.keybinding-commands")
+    gkb = settings("org.mate.Marco.global-keybindings")
+    if cmds and gkb:
+        slot = None
+        for n in range(1, 13):
+            c = cmds.get_string("command-%d" % n)
+            if "superv" in c:
+                slot = n
+                break
+            if slot is None and not c:
+                slot = n
+        if slot:
+            cmds.set_string("command-%d" % slot, command)
+            gkb.set_string("run-command-%d" % slot, to_mate(accel))
+            out.append("MATE: %s → SuperV" % accel)
+
+    # Xfce
+    if "XFCE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper() and shutil.which("xfconf-query"):
+        base = ["xfconf-query", "-c", "xfce4-keyboard-shortcuts"]
+        old = backup.get("xfce_prop")
+        if old:
+            subprocess.run(base + ["-p", old, "-r"], stderr=subprocess.DEVNULL)
+        prop = "/commands/custom/" + accel
+        subprocess.run(base + ["-p", prop, "-n", "-t", "string", "-s", command])
+        backup["xfce_prop"] = prop
+        if shutil.which("xfce4-screenshooter"):
+            subprocess.run(base + ["-p", "/commands/custom/" + SCREENSHOT, "-n", "-t", "string",
+                                   "-s", "xfce4-screenshooter -r -c"])
+        out.append("Xfce: %s → SuperV" % accel)
+
+    Gio.Settings.sync()
+    save_backup(backup)
+    save_hotkey_to_config(accel)
+    for line in out:
+        print("  ✓", line)
+    if not any("→ SuperV" in line for line in out):
+        print("  ! Couldn't find your desktop's shortcut settings.")
+        print("    Add a custom shortcut yourself that runs:", command)
+
+
+def remove():
+    backup = load_backup()
+    restore(backup["freed"])
+    restore(backup["added"])
+    mk = settings("org.gnome.settings-daemon.plugins.media-keys")
+    if has_key(mk, "custom-keybindings"):
+        mk.set_strv("custom-keybindings", [p for p in mk.get_strv("custom-keybindings") if p != GNOME_PATH])
+        kb = settings("org.gnome.settings-daemon.plugins.media-keys.custom-keybinding", GNOME_PATH)
+        for k in ("name", "command", "binding"):
+            kb.reset(k)
+    cin = settings("org.cinnamon.desktop.keybindings")
+    if has_key(cin, "custom-list"):
+        keep = []
+        for cid in cin.get_strv("custom-list"):
+            kb = settings("org.cinnamon.desktop.keybindings.custom-keybinding", CIN_PATH % cid)
+            if kb.get_string("name") == APP_NAME:
+                for k in ("name", "command", "binding"):
+                    kb.reset(k)
+            else:
+                keep.append(cid)
+        cin.set_strv("custom-list", keep)
+    cmds = settings("org.mate.Marco.keybinding-commands")
+    gkb = settings("org.mate.Marco.global-keybindings")
+    if cmds and gkb:
+        for n in range(1, 13):
+            if "superv" in cmds.get_string("command-%d" % n):
+                cmds.reset("command-%d" % n)
+                gkb.reset("run-command-%d" % n)
+    if shutil.which("xfconf-query"):
+        for p in filter(None, [backup.get("xfce_prop"), "/commands/custom/" + SCREENSHOT]):
+            subprocess.run(["xfconf-query", "-c", "xfce4-keyboard-shortcuts", "-p", p, "-r"],
+                           stderr=subprocess.DEVNULL)
+    Gio.Settings.sync()
+    try:
+        os.remove(BACKUP)
+    except OSError:
+        pass
+    print("  ✓ desktop shortcuts restored")
+
+
+def doctor():
+    def mark(b):
+        return "\033[38;5;141m✓\033[0m" if b else "\033[31m✗\033[0m"
+    print("Session : %s / %s" % (os.environ.get("XDG_SESSION_TYPE", "?"),
+                                 os.environ.get("XDG_CURRENT_DESKTOP", "?")))
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+    running = bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+                            "NameHasOwner", GLib.Variant("(s)", (APP_ID,)), GLib.VariantType("(b)"),
+                            Gio.DBusCallFlags.NONE, -1, None).unpack()[0]
+    print(mark(running), "SuperV running" + ("" if running else " — start it: superv --daemon &"))
+    if running:
+        pid = bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+                            "GetConnectionUnixProcessID", GLib.Variant("(s)", (APP_ID,)),
+                            GLib.VariantType("(u)"), Gio.DBusCallFlags.NONE, -1, None).unpack()[0]
+        try:
+            with open("/proc/%d/status" % pid) as f:
+                st = dict(line.split(":", 1) for line in f if ":" in line)
+            print("   memory: %s RSS, %s private" % (st["VmRSS"].strip(), st["RssAnon"].strip()))
+        except OSError:
+            pass
+    up = os.access("/dev/uinput", os.W_OK)
+    x11 = os.environ.get("XDG_SESSION_TYPE") == "x11"
+    print(mark(up or x11), "auto-paste:", "uinput" if up else ("XTest (X11)" if x11 else
+          "not available — run install.sh again (needs your password once), then log out/in"))
+    accel = read_hotkey_from_config()
+    print("   shortcut (config):", accel)
+    kb = settings("org.gnome.settings-daemon.plugins.media-keys.custom-keybinding", GNOME_PATH)
+    if kb and kb.get_string("binding"):
+        print(mark(True), "GNOME shortcut:", kb.get_string("binding"), "→", kb.get_string("command"))
+    cin = settings("org.cinnamon.desktop.keybindings")
+    if has_key(cin, "custom-list"):
+        for cid in cin.get_strv("custom-list"):
+            kb = settings("org.cinnamon.desktop.keybindings.custom-keybinding", CIN_PATH % cid)
+            if kb.get_string("name") == APP_NAME:
+                print(mark(True), "Cinnamon shortcut:", kb.get_value("binding").unpack(), "→",
+                      kb.get_string("command"))
+    shell = settings("org.gnome.shell.keybindings")
+    if has_key(shell, "toggle-message-tray"):
+        tray = shell.get_strv("toggle-message-tray")
+        clash = normalize(accel) in [normalize(b) for b in tray]
+        print(mark(not clash), "notification list doesn't use %s %s" % (accel, tray))
+
+
+def main(argv):
+    if "--doctor" in argv:
+        doctor()
+    elif "--remove-hotkeys" in argv:
+        remove()
+    elif "--setup-hotkeys" in argv or "--hotkey" in argv:
+        cmd = argv[argv.index("--setup-hotkeys") + 1] if "--setup-hotkeys" in argv else default_command()
+        accel = argv[argv.index("--hotkey") + 1] if "--hotkey" in argv else read_hotkey_from_config()
+        if not re.fullmatch(r"(<[A-Za-z0-9]+>)+[A-Za-z0-9_]+", accel):
+            print("Shortcut should look like <Super>v or <Ctrl><Alt>v", file=sys.stderr)
+            return 2
+        setup(cmd, accel)
+    else:
+        print(__doc__)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

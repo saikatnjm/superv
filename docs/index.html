@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SuperV – Win+V Clipboard History for Linux (Ubuntu &amp; Linux Mint)</title>
+<meta name="description" content="SuperV is a free, open-source clipboard manager that brings Windows Win+V clipboard history to Ubuntu and Linux Mint. Press Super+V to paste from your last 25 copies. 76 KB, ~7 MB RAM.">
+<meta name="keywords" content="clipboard history linux, win+v linux, clipboard manager ubuntu, clipboard manager linux mint, super+v, windows clipboard for linux, wayland clipboard manager, gnome clipboard history">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c3aed">
+<link rel="canonical" href="https://saikatnjm.github.io/superv/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SuperV">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://saikatnjm.github.io/superv/">
+<meta property="og:title" content="SuperV – Win+V clipboard history for Linux">
+<meta property="og:description" content="Press Super+V on Ubuntu or Linux Mint and get the clipboard history you know from Windows. Free, open source, 76 KB.">
+<meta property="og:image" content="https://saikatnjm.github.io/superv/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SuperV clipboard history panel on Linux, opened with Super+V">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SuperV – Win+V clipboard history for Linux">
+<meta name="twitter:description" content="Clipboard history for Ubuntu & Linux Mint, the Windows way. Free and open source.">
+<meta name="twitter:image" content="https://saikatnjm.github.io/superv/og-image.png">
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='#a78bfa'/%3E%3Cstop offset='1' stop-color='#6d28d9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='8' y='8' width='112' height='112' rx='26' fill='url%28#g%29'/%3E%3Crect x='30' y='26' width='60' height='76' rx='9' fill='none' stroke='#fff' stroke-opacity='.35' stroke-width='5'/%3E%3Crect x='44' y='20' width='32' height='13' rx='5' fill='#fff' fill-opacity='.55'/%3E%3Cpath d='M48 52 L64 86 L80 52' fill='none' stroke='#fff' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="preload" as="image" href="screenshot-dark.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "SuperV",
+      "alternateName": "SuperV clipboard history",
+      "description": "Windows-style Win+V clipboard history for Ubuntu and Linux Mint. Keeps your last 25 copied texts and images; press Super+V to paste any of them.",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Ubuntu 22.04+, Linux Mint 21+ (GNOME, Cinnamon, MATE, Xfce; Wayland and X11)",
+      "softwareVersion": "1.1.0",
+      "fileSize": "28 KB",
+      "license": "https://opensource.org/licenses/MIT",
+      "url": "https://saikatnjm.github.io/superv/",
+      "downloadUrl": "https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb",
+      "installUrl": "https://saikatnjm.github.io/superv/#install",
+      "screenshot": "https://saikatnjm.github.io/superv/screenshot-dark.png",
+      "image": "https://saikatnjm.github.io/superv/og-image.png",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "Clipboard history on Super+V, like Win+V on Windows",
+        "Text and image history (last 25 items)",
+        "Click or Enter to paste into the active app",
+        "Pin items that survive restarts",
+        "Custom keyboard shortcut",
+        "System, light and dark theme; adjustable text size",
+        "Move and resize the panel",
+        "Works on Wayland and X11"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "How do I get clipboard history like Win+V on Ubuntu?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Install SuperV by double-clicking its .deb file, then press Super+V. A panel opens with your last 25 copied items; click one to paste it into the app you are using." } },
+        { "@type": "Question", "name": "Is there a Win+V clipboard for Linux Mint?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. SuperV works on Linux Mint 21 and newer (Cinnamon, MATE and Xfce) and binds Super+V automatically on first launch." } },
+        { "@type": "Question", "name": "Does SuperV work on Wayland?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Ubuntu's default GNOME Wayland session is fully supported, including copying from and pasting into native Wayland apps." } },
+        { "@type": "Question", "name": "Can I use a different shortcut than Super+V?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the panel, click the gear icon, choose Shortcut and press any key combination. SuperV moves conflicting desktop shortcuts out of the way and restores them if you change your mind." } },
+        { "@type": "Question", "name": "How much memory does SuperV use?",
+          "acceptedAnswer": { "@type": "Answer", "text": "SuperV is a 76 KB C program that uses about 7 MB of private memory and no CPU while idle." } },
+        { "@type": "Question", "name": "Where is my clipboard history stored?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Only on your computer, in ~/.local/share/superv, readable by you alone. SuperV never connects to the internet. Unpinned items are removed on reboot, and passwords copied from password managers are never saved." } }
+      ]
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --sans: system-ui, -apple-system, "Segoe UI", Ubuntu, Cantarell, "Noto Sans", Roboto, sans-serif;
+    --mono: ui-monospace, "Ubuntu Mono", "DejaVu Sans Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --bg: #0f0d16; --bg-2: #17151f; --card: #1d1a28; --line: #2c283b; --line-2: #3a3550;
+    --text: #ece9f6; --muted: #a29db4; --dim: #7a748e;
+    --accent: #a78bfa; --accent-strong: #8b5cf6; --accent-ink: #17151f; --glow: rgba(139, 92, 246, .28);
+    --code-bg: #120f1b; --ok: #a78bfa; --no: #7a748e;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #fbfaff; --bg-2: #f3f0fb; --card: #ffffff; --line: #e4e0f0; --line-2: #d6d0e8;
+      --text: #1b1726; --muted: #5d5770; --dim: #77718a;
+      --accent: #7c3aed; --accent-strong: #6d28d9; --accent-ink: #ffffff; --glow: rgba(124, 58, 237, .18);
+      --code-bg: #f6f3fd; --ok: #7c3aed; --no: #8b8599;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #fbfaff; --bg-2: #f3f0fb; --card: #ffffff; --line: #e4e0f0; --line-2: #d6d0e8;
+    --text: #1b1726; --muted: #5d5770; --dim: #77718a;
+    --accent: #7c3aed; --accent-strong: #6d28d9; --accent-ink: #ffffff; --glow: rgba(124, 58, 237, .18);
+    --code-bg: #f6f3fd; --ok: #7c3aed; --no: #8b8599;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre, kbd { font-family: var(--mono); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  h1, h2, h3 { font-family: var(--sans); letter-spacing: -0.02em; line-height: 1.15; margin: 0; }
+  .skip { position: absolute; left: -999px; } .skip:focus { left: 16px; top: 12px; z-index: 99; background: var(--card); padding: 8px 12px; border-radius: 8px; }
+
+  header.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 84%, transparent);
+               backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; font: 700 18px var(--sans); color: var(--text); }
+  .brand:hover { text-decoration: none; }
+  .brand svg { width: 28px; height: 28px; flex: none; }
+  nav.links { display: flex; gap: 22px; margin-left: auto; align-items: center; }
+  nav.links a { color: var(--muted); font-size: 14.5px; font-weight: 500; }
+  nav.links a:hover { color: var(--text); text-decoration: none; }
+  .theme-btn { background: none; border: 1px solid var(--line-2); color: var(--muted); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; font-size: 15px; }
+  .theme-btn:hover { color: var(--text); border-color: var(--accent); }
+
+  .hero { position: relative; padding: 80px 0 72px; overflow: hidden; }
+  .hero::before { content: ""; position: absolute; inset: -20% -10% auto auto; width: 720px; height: 720px;
+                  background: radial-gradient(closest-side, var(--glow), transparent); pointer-events: none; }
+  .hero .wrap { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 56px; align-items: center; position: relative; }
+  .kicker { font: 600 13px var(--mono); color: var(--accent); text-transform: uppercase; letter-spacing: .08em; margin: 0 0 18px; }
+  .combo { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+  .key { display: inline-grid; place-items: center; min-width: 52px; height: 52px; padding: 0 14px; border-radius: 12px;
+         background: var(--card); border: 1px solid var(--line-2); box-shadow: 0 3px 0 var(--line-2); font: 600 17px var(--mono); color: var(--text); }
+  .key.hot { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; box-shadow: 0 3px 0 #5b21b6, 0 0 28px var(--glow); }
+  .plus { color: var(--dim); font: 600 18px var(--mono); }
+  h1 { font-size: clamp(40px, 6vw, 66px); }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lead { font-size: 19px; color: var(--muted); max-width: 560px; margin: 20px 0 32px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 15px; border: 1px solid transparent; }
+  .btn:hover { text-decoration: none; }
+  .btn.primary { background: var(--accent-strong); color: #fff; }
+  .btn.primary:hover { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { border-color: var(--line-2); color: var(--text); }
+  .btn.ghost:hover { border-color: var(--accent); }
+  .meta-line { margin-top: 14px; color: var(--dim); font-size: 13.5px; }
+  .shots { justify-self: center; width: 100%; max-width: 380px; }
+  .shots img { width: 100%; height: auto; display: block; filter: drop-shadow(0 24px 48px rgba(20, 8, 50, .45)); }
+  .shot-light { display: none !important; }
+  :root[data-theme="light"] .shot-light { display: block !important; } :root[data-theme="light"] .shot-dark { display: none !important; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .shot-light { display: block !important; }
+    :root:not([data-theme="dark"]) .shot-dark { display: none !important; }
+  }
+
+  .stats { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg-2); }
+  .stats ul { list-style: none; margin: 0 auto; padding: 0 24px; max-width: 1120px; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .stats li { padding: 28px 8px; text-align: center; }
+  .stats li + li { border-left: 1px solid var(--line); }
+  .stats b { display: block; font: 700 30px var(--sans); color: var(--text); }
+  .stats span { color: var(--muted); font-size: 14px; }
+
+  section { padding: 88px 0; }
+  section.alt { background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .eyebrow { font: 600 13px var(--mono); color: var(--accent); text-transform: uppercase; letter-spacing: .08em; margin: 0; }
+  h2 { font-size: clamp(30px, 4vw, 40px); margin: 10px 0 14px; }
+  .sub { color: var(--muted); max-width: 660px; margin: 0 0 44px; font-size: 17px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; list-style: none; padding: 0; margin: 0; }
+  .feat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .feat:hover { border-color: var(--line-2); }
+  .feat .ic { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; margin-bottom: 14px;
+              background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+  .feat .ic svg { width: 20px; height: 20px; }
+  .feat h3 { font-size: 18px; margin-bottom: 6px; }
+  .feat p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .keys { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card); margin: 0; }
+  .krow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; }
+  .krow + .krow { border-top: 1px solid var(--line); }
+  .krow dd { color: var(--muted); font-size: 15px; text-align: right; margin: 0; }
+  .krow dt { margin: 0; }
+  kbd { display: inline-block; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-2); box-shadow: 0 2px 0 var(--line-2);
+        background: var(--bg-2); font-size: 13px; color: var(--text); white-space: nowrap; }
+  .menu-shot { width: 100%; max-width: 380px; height: auto; justify-self: center; filter: drop-shadow(0 20px 40px rgba(20, 8, 50, .35)); }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); }
+  caption { text-align: left; padding: 0 0 12px; color: var(--muted); }
+  th, td { padding: 13px 18px; text-align: left; border-bottom: 1px solid var(--line); font-size: 15px; }
+  tbody tr:last-child td, tbody tr:last-child th { border-bottom: none; }
+  thead th { font: 600 13px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; background: var(--bg-2); }
+  tbody th { font-weight: 500; }
+  td.c, th.c { text-align: center; width: 130px; }
+  .y { color: var(--ok); font-weight: 700; } .n { color: var(--no); }
+
+  .ways { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .way { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; min-width: 0; }
+  .way h3 { font-size: 20px; margin-bottom: 4px; }
+  .way .tag { font: 600 12px var(--mono); color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+  .way ol { margin: 14px 0 18px; padding-left: 20px; color: var(--muted); }
+  .way ol li + li { margin-top: 6px; }
+  .term { background: var(--code-bg); border: 1px solid var(--line-2); border-radius: 12px; overflow: hidden; margin-top: 14px; }
+  .term-bar { display: flex; align-items: center; gap: 7px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .term-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line-2); }
+  .copy { margin-left: auto; background: none; border: 1px solid var(--line-2); color: var(--muted); border-radius: 7px; padding: 3px 10px; font: 12.5px var(--mono); cursor: pointer; }
+  .copy:hover { color: var(--text); border-color: var(--accent); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-size: 14px; line-height: 1.75; color: var(--text); }
+  pre .p { color: var(--accent); user-select: none; } pre .c { color: var(--dim); }
+
+  details { border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 0 20px; }
+  details + details { margin-top: 10px; }
+  summary { cursor: pointer; padding: 17px 0; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--accent); font: 600 18px var(--mono); }
+  details[open] summary::after { content: "–"; }
+  details p { margin: 0 0 18px; color: var(--muted); }
+  code.inl { background: var(--bg-2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 5px; font-size: .88em; }
+
+  .star { text-align: center; }
+  .star h2 { margin-bottom: 10px; }
+  .star .sub { margin: 0 auto 28px; }
+  footer { border-top: 1px solid var(--line); padding: 32px 0 44px; color: var(--dim); font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+  @media (max-width: 900px) {
+    .hero .wrap, .split, .ways { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: 1fr 1fr; }
+    .stats ul { grid-template-columns: 1fr 1fr; }
+    .stats li:nth-child(3) { border-left: none; }
+    .stats li:nth-child(n+3) { border-top: 1px solid var(--line); }
+  }
+  @media (max-width: 600px) {
+    .wrap, .stats ul { padding: 0 16px; }
+    nav.links a:not(.gh) { display: none; }
+    .hero { padding: 52px 0 48px; }
+    .grid { grid-template-columns: 1fr; }
+    section { padding: 64px 0; }
+    td.c, th.c { width: 64px; padding: 12px 8px; }
+    th, td { padding: 12px; font-size: 14px; }
+    .krow { padding: 12px 14px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="SuperV home"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="28" height="28" aria-hidden="true" focusable="false"><defs><linearGradient id="sv-logo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#6d28d9"/></linearGradient></defs><rect x="8" y="8" width="112" height="112" rx="26" fill="url(#sv-logo)"/><rect x="30" y="26" width="60" height="76" rx="9" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="5"/><rect x="44" y="20" width="32" height="13" rx="5" fill="#fff" fill-opacity=".55"/><path d="M48 52 L64 86 L80 52" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>SuperV</a>
+    <nav class="links" aria-label="Main">
+      <a href="#features">Features</a>
+      <a href="#compare">Windows vs SuperV</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+      <a class="gh" href="https://github.com/saikatnjm/superv">GitHub ↗</a>
+      <button class="theme-btn" id="theme" title="Toggle light / dark" aria-label="Toggle light or dark theme">◐</button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<section class="hero" aria-labelledby="title">
+  <div class="wrap">
+    <div>
+      <p class="kicker">Clipboard manager for Ubuntu &amp; Linux Mint</p>
+      <div class="combo" aria-hidden="true"><span class="key">Super</span><span class="plus">+</span><span class="key hot">V</span></div>
+      <h1 id="title">Win+V clipboard history,<br>now on <em>Linux</em>.</h1>
+      <p class="lead">SuperV brings the Windows clipboard history to Ubuntu and Linux Mint. Press <kbd>Super</kbd>+<kbd>V</kbd> to see the last 25 things you copied, then click one to paste it. It's free, open source and tiny: 76&nbsp;KB on disk, about 7&nbsp;MB of memory.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">Download for Ubuntu / Mint (.deb)</a>
+        <a class="btn ghost" href="#install">Other ways to install</a>
+      </div>
+      <p class="meta-line">Version 1.1.0 · Ubuntu 22.04+ · Linux Mint 21+ · Wayland &amp; X11 · MIT license</p>
+    </div>
+    <div class="shots">
+      <img class="shot-dark" src="screenshot-dark.png" width="382" height="622" fetchpriority="high"
+           alt="SuperV clipboard history panel in dark mode showing a message, an SQL query, a pinned link, a chart image and a docker command">
+      <img class="shot-light" src="screenshot-light.png" width="382" height="622" loading="lazy"
+           alt="SuperV clipboard history panel in light mode">
+    </div>
+  </div>
+</section>
+
+<div class="stats" role="region" aria-label="SuperV at a glance">
+  <ul>
+    <li><b>76 KB</b><span>single C program</span></li>
+    <li><b>~7 MB</b><span>private memory</span></li>
+    <li><b>0%</b><span>CPU while idle</span></li>
+    <li><b>25</b><span>items, like Windows</span></li>
+  </ul>
+</div>
+
+<section id="features" aria-labelledby="features-h">
+  <div class="wrap">
+    <p class="eyebrow">Features</p>
+    <h2 id="features-h">Everything Win+V does on Windows, on Linux</h2>
+    <p class="sub">If you've used clipboard history on Windows 10 or 11, you already know how to use SuperV. It keeps the same habits and adds a few extras.</p>
+    <ul class="grid">
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M8 12h8M8 16h5"/></svg></div>
+        <h3>Text and image history</h3>
+        <p>Keeps your last 25 copies, newest first, including screenshots and copied images.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <h3>Click to paste</h3>
+        <p>Pick an item and it's pasted into the document, browser or terminal you were using.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76V6h6v4.76a2 2 0 0 0 1.11 1.79l1.78.9A2 2 0 0 1 19 15.24V17H5v-1.76a2 2 0 0 1 1.11-1.79l1.78-.9A2 2 0 0 0 9 10.76Z"/></svg></div>
+        <h3>Pin what matters</h3>
+        <p>Pinned items survive reboots and <em>Clear all</em>. Everything else clears on restart, as on Windows.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></div>
+        <h3>Any shortcut you like</h3>
+        <p><kbd>Super</kbd>+<kbd>V</kbd> by default. Open ⚙ → Shortcut and press any combo; conflicting shortcuts are moved out of the way for you.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18" fill="currentColor"/></svg></div>
+        <h3>System, light or dark</h3>
+        <p>Follows your desktop theme, or pick light or dark yourself. Make the text bigger or smaller with A− / A+.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></div>
+        <h3>Move and resize</h3>
+        <p>Drag the header to put the panel anywhere and drag an edge to resize it. SuperV remembers both.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3>Private by default</h3>
+        <p>Nothing leaves your computer. Passwords copied from password managers are never recorded.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+        <h3>Feather-light</h3>
+        <p>Plain C on the GTK your desktop already runs. No Electron, no runtime, no polling.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <h3>Wayland and X11</h3>
+        <p>Works on Ubuntu's default GNOME Wayland session and on Cinnamon, MATE and Xfce under X11.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section id="shortcuts" class="alt" aria-labelledby="shortcuts-h">
+  <div class="wrap split">
+    <div>
+      <p class="eyebrow">Keyboard shortcuts</p>
+      <h2 id="shortcuts-h">Your Windows habits carry over</h2>
+      <p class="sub">Every key does what you expect from Win+V.</p>
+      <dl class="keys">
+        <div class="krow"><dt><kbd>Super</kbd> + <kbd>V</kbd></dt><dd>Open / close clipboard history</dd></div>
+        <div class="krow"><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Move between items</dd></div>
+        <div class="krow"><dt><kbd>Enter</kbd> or click</dt><dd>Paste into your app</dd></div>
+        <div class="krow"><dt><kbd>Delete</kbd></dt><dd>Remove the item</dd></div>
+        <div class="krow"><dt><kbd>Esc</kbd></dt><dd>Close the panel</dd></div>
+        <div class="krow"><dt><kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></dt><dd>Screenshot → history</dd></div>
+      </dl>
+    </div>
+    <img class="menu-shot" src="screenshot-menu.png" width="382" height="622" loading="lazy"
+         alt="SuperV item menu with Delete, Pin and Clear all options">
+  </div>
+</section>
+
+<section id="compare" aria-labelledby="compare-h">
+  <div class="wrap">
+    <p class="eyebrow">Side by side</p>
+    <h2 id="compare-h">Windows clipboard history vs SuperV</h2>
+    <p class="sub">Everything Windows clipboard history does, feature for feature, plus a few things it can't.</p>
+    <div class="table-wrap">
+      <table>
+        <caption class="sr-only" style="position:absolute;left:-9999px">Feature comparison between Windows clipboard history (Win+V) and SuperV for Linux</caption>
+        <thead><tr><th scope="col">Feature</th><th scope="col" class="c">Windows</th><th scope="col" class="c">SuperV</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">History panel on Win/Super + V</th><td class="c y">✓</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">Text and images</th><td class="c y">✓</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">Pick an item to paste it into your app</th><td class="c y">✓</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">Pin items; pinned survive restarts</th><td class="c y">✓</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">History clears on restart (except pinned)</th><td class="c y">✓</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">⋯ menu: Delete, Pin, Clear all</th><td class="c y">✓</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">Turn history off / on</th><td class="c y">✓</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">Clipboard survives closing the source app</th><td class="c y">✓</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">Ignores password-manager copies</th><td class="c y">✓</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">Choose your own shortcut</th><td class="c n">✗</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">Adjustable text size in the panel</th><td class="c n">✗</td><td class="c y">✓</td></tr>
+          <tr><th scope="row">Free and open source</th><td class="c n">✗</td><td class="c y">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="install" class="alt" aria-labelledby="install-h">
+  <div class="wrap">
+    <p class="eyebrow">Install</p>
+    <h2 id="install-h">How to install SuperV on Ubuntu and Linux Mint</h2>
+    <p class="sub">Works on Ubuntu 22.04 or newer and Linux Mint 21 or newer, on Wayland and X11. Pick whichever way you like.</p>
+    <div class="ways">
+      <article class="way">
+        <span class="tag">Easiest · no terminal</span>
+        <h3>Double-click the .deb</h3>
+        <ol>
+          <li>Download <a href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">superv_amd64.deb</a> (28 KB).</li>
+          <li>Double-click it and choose <b>Install</b> (Ubuntu Software / Mint's Package Installer). Enter your password once.</li>
+          <li>Open <b>SuperV</b> from the app menu once. From then on, <kbd>Super</kbd>+<kbd>V</kbd> works and SuperV starts at login.</li>
+        </ol>
+        <a class="btn primary" href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">Download .deb</a>
+      </article>
+      <article class="way">
+        <span class="tag">For terminal fans</span>
+        <h3>Install from source</h3>
+        <ol>
+          <li>Clone the repo and run the installer; it sets everything up in your home folder.</li>
+          <li>Optional: pass your own shortcut with <code class="inl">--hotkey</code>.</li>
+        </ol>
+        <div class="term">
+          <div class="term-bar"><i></i><i></i><i></i><button class="copy" data-copy="git clone https://github.com/saikatnjm/superv.git&#10;cd superv&#10;./install.sh">copy</button></div>
+<pre><span class="p">$ </span>git clone https://github.com/saikatnjm/superv.git
+<span class="p">$ </span>cd superv
+<span class="p">$ </span>./install.sh
+<span class="c"># or with your own shortcut:</span>
+<span class="p">$ </span>./install.sh --hotkey "&lt;Ctrl&gt;&lt;Alt&gt;v"</pre>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="faq" aria-labelledby="faq-h">
+  <div class="wrap">
+    <p class="eyebrow">FAQ</p>
+    <h2 id="faq-h">Frequently asked questions</h2>
+    <p class="sub">Something not working? Run <code class="inl">superv --doctor</code> to check the setup on your machine.</p>
+    <details open><summary>How do I get clipboard history like Win+V on Ubuntu?</summary>
+      <p>Install SuperV by double-clicking its .deb file, then press <kbd>Super</kbd>+<kbd>V</kbd>. A panel opens with your last 25 copied items; click one to paste it into the app you are using.</p></details>
+    <details><summary>Is there a Win+V clipboard for Linux Mint?</summary>
+      <p>Yes. SuperV works on Linux Mint 21 and newer (Cinnamon, MATE and Xfce) and binds <kbd>Super</kbd>+<kbd>V</kbd> automatically on first launch.</p></details>
+    <details><summary>Does SuperV work on Wayland?</summary>
+      <p>Yes. Ubuntu's default GNOME Wayland session is fully supported, including copying from and pasting into native Wayland apps.</p></details>
+    <details><summary>Can I use a different shortcut than Super+V?</summary>
+      <p>Yes. Open the panel, click ⚙ → <b>Shortcut</b> and press any key combination. SuperV moves conflicting desktop shortcuts out of the way and puts them back if you change your mind.</p></details>
+    <details><summary>How much memory does SuperV use?</summary>
+      <p>SuperV is a 76 KB C program that uses about 7 MB of private memory. It uses no CPU until the clipboard changes.</p></details>
+    <details><summary>Where is my clipboard history stored?</summary>
+      <p>Only on your computer, in <code class="inl">~/.local/share/superv/</code>, readable by you alone. SuperV never connects to the internet: no telemetry, no analytics, no update checks. Unpinned items are removed on reboot, and passwords copied from password managers are never saved.</p></details>
+    <details><summary>How do I uninstall SuperV?</summary>
+      <p>Remove it from Ubuntu Software / Software Manager, or run <code class="inl">sudo apt remove superv</code>. Installed from source? Run <code class="inl">~/.local/lib/superv/uninstall.sh</code>. Either way, your desktop's shortcuts are restored.</p></details>
+  </div>
+</section>
+
+<section class="star alt" aria-labelledby="star-h">
+  <div class="wrap">
+    <h2 id="star-h">Like SuperV?</h2>
+    <p class="sub">If it saves you a few seconds every day, a ⭐ on GitHub helps other Linux users find it.</p>
+    <a class="btn primary" href="https://github.com/saikatnjm/superv">⭐ Star on GitHub</a>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>SuperV · free &amp; open source (MIT) · <a href="https://github.com/saikatnjm/superv">GitHub</a> · <a href="https://github.com/saikatnjm/superv/issues">Report an issue</a></span>
+    <span>Windows is a trademark of Microsoft. SuperV is not affiliated with Microsoft.</span>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var root = document.documentElement, btn = document.getElementById("theme");
+    try { var t = localStorage.getItem("superv-theme"); if (t) root.setAttribute("data-theme", t); } catch (e) {}
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+      var next = cur === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("superv-theme", next); } catch (e) {}
+    });
+    document.querySelectorAll(".copy").forEach(function (b) {
+      b.addEventListener("click", function () {
+        navigator.clipboard.writeText(b.getAttribute("data-copy")).then(function () {
+          b.textContent = "copied ✓"; setTimeout(function () { b.textContent = "copy"; }, 1500);
+        });
+      });
+    });
+  })();
+</script>
+</body>
+</html>
