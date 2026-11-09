@@ -95,6 +95,20 @@ def save_hotkey_to_config(accel):
     os.chmod(CONFIG, 0o600)
 
 
+def mark_unconfigured():
+    """After removing the shortcut, make SuperV set it up again on its next start."""
+    if not os.path.exists(CONFIG):
+        return
+    kf = GLib.KeyFile()
+    try:
+        kf.load_from_file(CONFIG, GLib.KeyFileFlags.KEEP_COMMENTS)
+    except GLib.Error:
+        return
+    kf.set_boolean("superv", "shortcut_configured", False)
+    kf.save_to_file(CONFIG)
+    os.chmod(CONFIG, 0o600)
+
+
 def read_hotkey_from_config():
     kf = GLib.KeyFile()
     try:
@@ -255,6 +269,7 @@ def remove():
             subprocess.run(["xfconf-query", "-c", "xfce4-keyboard-shortcuts", "-p", p, "-r"],
                            stderr=subprocess.DEVNULL)
     Gio.Settings.sync()
+    mark_unconfigured()
     try:
         os.remove(BACKUP)
     except OSError:

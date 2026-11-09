@@ -30,7 +30,7 @@
 #include <X11/keysym.h>
 
 #define APP_ID  "io.github.superv.SuperV"
-#define VERSION "1.1.0"
+#define VERSION "1.1.1"
 #define WIN_W   380
 #define WIN_H   500
 
@@ -951,6 +951,42 @@ static void apply_hotkey(const char *new_accel) {
     g_free(setup); g_free(quoted); g_free(cmd);
 }
 
+static gboolean strv_setting_has(const char *schema_id, const char *key, const char *value, gboolean *known) {
+    GSettingsSchemaSource *src = g_settings_schema_source_get_default();
+    GSettingsSchema *schema = src ? g_settings_schema_source_lookup(src, schema_id, TRUE) : NULL;
+    gboolean found = FALSE;
+    if (schema && g_settings_schema_has_key(schema, key)) {
+        GSettings *s = g_settings_new(schema_id);
+        char **v = g_settings_get_strv(s, key);
+        *known = TRUE;
+        for (int i = 0; v[i] && !found; i++) {
+            if (!value) {   /* Cinnamon: look for a custom binding named SuperV */
+                char *path = g_strdup_printf("/org/cinnamon/desktop/keybindings/custom-keybindings/%s/", v[i]);
+                GSettings *kb = g_settings_new_with_path("org.cinnamon.desktop.keybindings.custom-keybinding", path);
+                char *name = g_settings_get_string(kb, "name");
+                found = !g_strcmp0(name, "SuperV");
+                g_free(name); g_object_unref(kb); g_free(path);
+            } else {
+                found = !g_strcmp0(v[i], value);
+            }
+        }
+        g_strfreev(v); g_object_unref(s);
+    }
+    if (schema) g_settings_schema_unref(schema);
+    return found;
+}
+
+/* Is SuperV's shortcut actually registered with the desktop? (TRUE when we can't tell, e.g. Xfce) */
+static gboolean shortcut_bound(void) {
+    gboolean known = FALSE;
+    if (strv_setting_has("org.gnome.settings-daemon.plugins.media-keys", "custom-keybindings",
+                         "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/superv/", &known))
+        return TRUE;
+    if (strv_setting_has("org.cinnamon.desktop.keybindings", "custom-list", NULL, &known))
+        return TRUE;
+    return !known;
+}
+
 static void on_hotkey_btn(GtkButton *b, gpointer d) {
     capturing = TRUE;
     gtk_button_set_label(b, "Press keys… (Esc cancels)");
@@ -1344,7 +1380,8 @@ static void on_startup(GApplication *a, gpointer d) {
     g_unix_signal_add(SIGINT, on_signal, NULL);
     g_unix_signal_add(SIGTERM, on_signal, NULL);
     g_application_hold(a);
-    if (!cfg.setup_done) apply_hotkey(cfg.hotkey);   /* first run (e.g. installed by double-clicking the .deb) */
+    /* First run (e.g. installed from the .deb), or the shortcut was removed since: (re)create it. */
+    if (!cfg.setup_done || !shortcut_bound()) apply_hotkey(cfg.hotkey);
     logmsg("running (%s), history in %s", is_wayland ? "wayland via XWayland" : "x11", data_dir);
 }
 
