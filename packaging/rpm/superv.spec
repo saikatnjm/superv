@@ -38,6 +38,8 @@ No network access, ever.
 
 %install
 %make_install PREFIX=%{_prefix} UDEVDIR=%{_udevrulesdir} MODLOADDIR=%{_modulesloaddir} SYSCONFDIR=%{_sysconfdir}
+# the licence is shipped with %%license below
+rm -rf %{buildroot}%{_datadir}/licenses/superv
 
 %post
 modprobe uinput >/dev/null 2>&1 || :
@@ -69,7 +71,6 @@ fi
 %config(noreplace) %{_sysconfdir}/xdg/autostart/superv.desktop
 %{_udevrulesdir}/70-superv-uinput.rules
 %{_modulesloaddir}/superv-uinput.conf
-%exclude %{_datadir}/licenses/superv/LICENSE
 
 %changelog
 * Mon Nov 09 2026 SuperV <saikatnjm@users.noreply.github.com> - 1.2.0-1

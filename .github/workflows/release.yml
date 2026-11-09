@@ -36,10 +36,13 @@ jobs:
           mkdir -p dist
           tar --exclude=./dist --exclude=./.git --transform "s,^\.,superv-$V," -czf "dist/superv-$V.tar.gz" .
           rpmbuild -bb packaging/rpm/superv.spec --define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist"
-          cp dist/x86_64/superv-*.rpm dist/
-          cp dist/x86_64/superv-*.rpm dist/superv.x86_64.rpm
+          ls dist/x86_64/
+          # rpmbuild also makes -debuginfo/-debugsource packages: ship only the main one
+          mkdir -p out
+          cp dist/x86_64/superv-"$V"-*.x86_64.rpm out/
+          cp dist/x86_64/superv-"$V"-*.x86_64.rpm out/superv.x86_64.rpm
       - uses: actions/upload-artifact@v4
-        with: { name: rpm, path: dist/*.rpm }
+        with: { name: rpm, path: out/* }
 
   arch:
     name: Arch package (Arch, Manjaro, EndeavourOS)
@@ -59,10 +62,13 @@ jobs:
           sed -i "s|^source=.*|source=(\"superv-$V.tar.gz\")|" /tmp/build/PKGBUILD
           chown -R builder /tmp/build
           su builder -c "cd /tmp/build && makepkg --nodeps --noconfirm"
-          mkdir -p dist && cp /tmp/build/*.pkg.tar.zst dist/
-          cp /tmp/build/*.pkg.tar.zst dist/superv-x86_64.pkg.tar.zst
+          ls /tmp/build/*.pkg.tar.zst
+          # makepkg may also make a -debug package: ship only the main one
+          mkdir -p out
+          cp /tmp/build/superv-"$V"-*-x86_64.pkg.tar.zst out/
+          cp /tmp/build/superv-"$V"-*-x86_64.pkg.tar.zst out/superv-x86_64.pkg.tar.zst
       - uses: actions/upload-artifact@v4
-        with: { name: arch, path: dist/*.pkg.tar.zst }
+        with: { name: arch, path: out/* }
 
   release:
     name: Attach to the release
