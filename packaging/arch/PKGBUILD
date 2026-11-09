@@ -1,7 +1,7 @@
 # Arch Linux / Manjaro / EndeavourOS package (ready for the AUR).
 # Build and install from this folder:  makepkg -si
 pkgname=superv
-pkgver=1.2.0
+pkgver=1.2.1
 pkgrel=1
 pkgdesc="Win+V clipboard history for Linux: press Super+V to paste from your last 25 copies"
 arch=('x86_64' 'aarch64')

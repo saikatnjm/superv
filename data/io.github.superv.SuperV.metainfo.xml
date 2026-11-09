@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- App-store listing for Ubuntu Software, GNOME Software, KDE Discover and Mint's Software Manager. -->
+<component type="desktop-application">
+  <id>io.github.superv.SuperV</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <name>SuperV</name>
+  <summary>The Windows clipboard (Win+V) for Linux</summary>
+  <developer_name>SuperV contributors</developer_name>
+
+  <description>
+    <p>
+      SuperV brings the Windows clipboard history to Linux. Press Super+V to see the last
+      25 things you copied, text and images, and click one to paste it into the app you are using.
+    </p>
+    <ul>
+      <li>Text and image history, newest first</li>
+      <li>Click or press Enter to paste into the app you were using</li>
+      <li>Pin items so they survive restarts; everything else clears on reboot, like Windows</li>
+      <li>Choose your own shortcut, a System, Light or Dark theme, and the text size</li>
+      <li>Move and resize the panel; SuperV remembers both</li>
+      <li>Works on GNOME, Cinnamon, MATE and Xfce, on Wayland and X11 (KDE Plasma is experimental)</li>
+    </ul>
+    <p>
+      Private by default: SuperV never connects to the internet, keeps your history only on your
+      computer, and skips copies marked as passwords. It is a single C program under 100 KB.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">io.github.superv.SuperV.desktop</launchable>
+  <icon type="stock">io.github.superv.SuperV</icon>
+  <provides>
+    <binary>superv</binary>
+  </provides>
+
+  <url type="homepage">https://saikatnjm.github.io/superv/</url>
+  <url type="bugtracker">https://github.com/saikatnjm/superv/issues</url>
+  <url type="help">https://github.com/saikatnjm/superv#troubleshooting</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Your clipboard history: text, code, links and images</caption>
+      <image>https://saikatnjm.github.io/superv/screenshot-dark.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Pin, delete or clear items from the ⋯ menu</caption>
+      <image>https://saikatnjm.github.io/superv/screenshot-menu.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Light theme</caption>
+      <image>https://saikatnjm.github.io/superv/screenshot-light.png</image>
+    </screenshot>
+  </screenshots>
+
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <keywords>
+    <keyword>clipboard</keyword>
+    <keyword>clipboard history</keyword>
+    <keyword>clipboard manager</keyword>
+    <keyword>paste</keyword>
+    <keyword>win+v</keyword>
+  </keywords>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#ddd6fe</color>
+    <color type="primary" scheme_preference="dark">#4c1d95</color>
+  </branding>
+
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </supports>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="1.2.1" date="2026-11-09">
+      <description>
+        <p>Proper app-store listing: name, icon, screenshots, open-source licence, age rating and release notes in Ubuntu Software, GNOME Software and KDE Discover.</p>
+      </description>
+    </release>
+    <release version="1.2.0" date="2026-11-09">
+      <description>
+        <p>Packages for Fedora, openSUSE and Arch; SuperV restarts itself into a new version after an update; clicking outside always closes the panel; many fixes from a code review.</p>
+      </description>
+    </release>
+    <release version="1.1.2" date="2026-11-09">
+      <description>
+        <p>Browser image copies are saved as images; clearer settings menu with Reset; safer custom shortcuts.</p>
+      </description>
+    </release>
+  </releases>
+</component>

@@ -13,6 +13,10 @@ install -Dm755 "$BIN"                                       "$PKG/usr/bin/superv
 install -Dm755 "$ROOT/superv-setup"                         "$PKG/usr/lib/superv/superv-setup"
 install -Dm644 "$ROOT/data/io.github.superv.SuperV.desktop" "$PKG/usr/share/applications/io.github.superv.SuperV.desktop"
 install -Dm644 "$ROOT/data/io.github.superv.SuperV.svg"     "$PKG/usr/share/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg"
+install -Dm644 "$ROOT/data/io.github.superv.SuperV-64.png"  "$PKG/usr/share/icons/hicolor/64x64/apps/io.github.superv.SuperV.png"
+install -Dm644 "$ROOT/data/io.github.superv.SuperV-128.png" "$PKG/usr/share/icons/hicolor/128x128/apps/io.github.superv.SuperV.png"
+# app-store listing (Ubuntu Software, GNOME Software, KDE Discover, Mint Software Manager)
+install -Dm644 "$ROOT/data/io.github.superv.SuperV.metainfo.xml" "$PKG/usr/share/metainfo/io.github.superv.SuperV.metainfo.xml"
 install -Dm644 "$ROOT/data/superv-autostart.desktop"        "$PKG/etc/xdg/autostart/superv.desktop"
 # click-to-paste on Wayland: let the logged-in user use /dev/uinput
 install -Dm644 "$ROOT/data/70-superv-uinput.rules"          "$PKG/usr/lib/udev/rules.d/70-superv-uinput.rules"
@@ -51,6 +55,7 @@ if [ "$1" = configure ]; then
     fi
     command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -q /usr/share/icons/hicolor || true
     command -v update-desktop-database >/dev/null && update-desktop-database -q /usr/share/applications || true
+    command -v appstreamcli >/dev/null && appstreamcli refresh-cache >/dev/null 2>&1 || true
 fi
 exit 0
 EOF

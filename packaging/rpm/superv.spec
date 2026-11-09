@@ -2,7 +2,7 @@
 # Build: rpmbuild -bb packaging/rpm/superv.spec --define "_sourcedir $PWD/dist" (expects dist/superv-VERSION.tar.gz)
 # The GitHub release workflow does this automatically for every tagged version.
 Name:           superv
-Version:        1.2.0
+Version:        1.2.1
 Release:        1%{?dist}
 Summary:        Win+V clipboard history for Linux
 License:        MIT
@@ -68,11 +68,17 @@ fi
 %{_prefix}/lib/superv/
 %{_datadir}/applications/io.github.superv.SuperV.desktop
 %{_datadir}/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg
+%{_datadir}/icons/hicolor/64x64/apps/io.github.superv.SuperV.png
+%{_datadir}/icons/hicolor/128x128/apps/io.github.superv.SuperV.png
+%{_metainfodir}/io.github.superv.SuperV.metainfo.xml
 %config(noreplace) %{_sysconfdir}/xdg/autostart/superv.desktop
 %{_udevrulesdir}/70-superv-uinput.rules
 %{_modulesloaddir}/superv-uinput.conf
 
 %changelog
+* Mon Nov 09 2026 SuperV <saikatnjm@users.noreply.github.com> - 1.2.1-1
+- App-store listing: name, icon, screenshots, MIT licence, age rating, release notes
+
 * Mon Nov 09 2026 SuperV <saikatnjm@users.noreply.github.com> - 1.2.0-1
 - Packages for Fedora, openSUSE and Arch; restarts itself after updates; review fixes
 

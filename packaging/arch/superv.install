@@ -2,12 +2,13 @@ post_install() {
     modprobe uinput >/dev/null 2>&1 || true
     udevadm control --reload-rules >/dev/null 2>&1 || true
     udevadm trigger --action=change --sysname-match=uinput >/dev/null 2>&1 || true
+    appstreamcli refresh-cache >/dev/null 2>&1 || true
     echo ">> Open SuperV once from your app menu to set up Super+V."
 }
 
 post_upgrade() {
     post_install
-    echo ">> Restart SuperV to use the new version: superv --quit, then open it again."
+    echo ">> SuperV restarts into the new version by itself (from 1.2.0 on)."
 }
 
 pre_remove() {
