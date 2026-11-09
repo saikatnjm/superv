@@ -49,7 +49,8 @@ Linux has no clipboard history out of the box, and some desktops lose the clipbo
 
 1. Download **[superv_amd64.deb](https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb)** (28 KB).
 2. Double-click it and choose **Install** (Ubuntu Software, or Package Installer on Mint). Enter your password once.
-3. Open **SuperV** from the app menu once. From then on <kbd>Super</kbd> + <kbd>V</kbd> works and SuperV starts at login.
+3. **Open SuperV once to finish setup.** On Ubuntu, press <kbd>Super</kbd>, type **SuperV** and press <kbd>Enter</kbd>. On Linux Mint, open the **Menu** and search for **SuperV**.
+   This first launch starts SuperV and sets up the <kbd>Super</kbd> + <kbd>V</kbd> shortcut. After that, SuperV starts by itself every time you log in.
 
 The package also turns on click-to-paste for Wayland, so there's nothing else to set up.
 
