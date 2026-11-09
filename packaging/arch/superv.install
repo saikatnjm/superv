@@ -1,0 +1,25 @@
+post_install() {
+    modprobe uinput >/dev/null 2>&1 || true
+    udevadm control --reload-rules >/dev/null 2>&1 || true
+    udevadm trigger --action=change --sysname-match=uinput >/dev/null 2>&1 || true
+    echo ">> Open SuperV once from your app menu to set up Super+V."
+}
+
+post_upgrade() {
+    post_install
+    echo ">> Restart SuperV to use the new version: superv --quit, then open it again."
+}
+
+pre_remove() {
+    # Give logged-in users their desktop shortcuts back and stop SuperV.
+    for dir in /run/user/*; do
+        uid="${dir##*/}"; bus="$dir/bus"
+        [ -S "$bus" ] || continue
+        user="$(id -nu "$uid" 2>/dev/null)" || continue
+        runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
+            python3 /usr/lib/superv/superv-setup --remove-hotkeys >/dev/null 2>&1 || true
+        runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
+            gdbus call --session --dest io.github.superv.SuperV --object-path /io/github/superv/SuperV \
+            --method org.gtk.Actions.Activate quit "[]" "{}" >/dev/null 2>&1 || true
+    done
+}

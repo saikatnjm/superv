@@ -30,8 +30,11 @@
 #include <X11/keysym.h>
 
 #define APP_ID  "io.github.superv.SuperV"
-#define VERSION "1.1.2"
+#define VERSION "1.2.0"
 #define REPO_URL "https://github.com/saikatnjm/superv"
+#ifndef SETUP_DIR
+#define SETUP_DIR "/usr/lib/superv"   /* where packages put superv-setup (set by the Makefile) */
+#endif
 #define WIN_W   380
 #define WIN_H   500
 
@@ -50,7 +53,7 @@ static struct {
 
 static GPtrArray *items;             /* newest first */
 static char *data_dir, *img_dir, *hist_path, *cfg_dir, *cfg_path, *self_exe, *self_dir;
-static char *current_id, *paste_err, *image_link;
+static char *current_id, *paste_err, *image_link, *link_candidate;
 static gboolean debug_log, is_wayland, reading, had_focus, capturing, prev_is_x11, geom_dirty, enabling;
 static int thumb_w, enable_tries;
 static guint relayout_src;
@@ -67,6 +70,7 @@ static gboolean syncing;
 static GHashTable *thumbs;
 
 static void refresh(int keep);
+static void on_menu_closed(GtkPopover *p, gpointer d);
 
 static void logmsg(const char *fmt, ...) G_GNUC_PRINTF(1, 2);
 
@@ -443,12 +447,12 @@ static void on_text(GtkClipboard *c, const char *text, gpointer has_image) {
     }
     reading = FALSE;
     /* When the app that copied an image quits, the desktop may keep only its link: not a new copy. */
-    if (image_link && text && !strcmp(text, image_link)) {
+    if (link_candidate && text && !strcmp(text, link_candidate)) {
         if (debug_log) logmsg("link of the last image re-offered: ignored");
-        g_clear_pointer(&image_link, g_free);
+        g_clear_pointer(&link_candidate, g_free);
         return;
     }
-    g_clear_pointer(&image_link, g_free);
+    g_clear_pointer(&link_candidate, g_free);
     if (!text || !*text || g_str_has_prefix(text, "x-special/nautilus-clipboard")) return;
     if (strlen(text) > (size_t)cfg.max_text_bytes) { logmsg("skipped text over max_text_bytes"); return; }
     got_item(add_text(text));
@@ -460,7 +464,26 @@ static void on_image(GtkClipboard *c, GdkPixbuf *pb, gpointer d) {
     else if (debug_log) logmsg("image could not be read");
 }
 
+static gboolean plain_text_only(GdkAtom *atoms, gint n) {
+    static const char *plain[] = { "TARGETS", "TIMESTAMP", "MULTIPLE", "SAVE_TARGETS", "UTF8_STRING", "STRING",
+                                   "TEXT", "COMPOUND_TEXT", "text/plain", "text/plain;charset=utf-8" };
+    for (int i = 0; i < n; i++) {
+        char *name = gdk_atom_name(atoms[i]);
+        gboolean ok = FALSE;
+        for (guint j = 0; j < G_N_ELEMENTS(plain) && !ok; j++) ok = !strcmp(name, plain[j]);
+        g_free(name);
+        if (!ok) return FALSE;
+    }
+    return TRUE;
+}
+
 static void on_targets(GtkClipboard *c, GdkAtom *atoms, gint n, gpointer d) {
+    /* The last image's link is only a re-offer if it arrives right after, as bare text
+     * (a deliberate "Copy Image Link" comes with richer formats and is kept). */
+    g_free(link_candidate);
+    link_candidate = (atoms && n > 0 && plain_text_only(atoms, n)) ? image_link : NULL;
+    if (!link_candidate) g_free(image_link);
+    image_link = NULL;
     if (!atoms || n <= 0) {
         /* The app that owned the clipboard quit. Windows keeps the content; so do we. */
         reading = FALSE;
@@ -598,6 +621,9 @@ static gboolean theme_is_dark(void) {
         }
         g_settings_schema_unref(s);
     }
+    gboolean prefer_dark = FALSE;   /* set by KDE Plasma and others in GTK's settings.ini */
+    g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &prefer_dark, NULL);
+    dark = dark || prefer_dark;
     char *name = NULL;
     g_object_get(gtk_settings_get_default(), "gtk-theme-name", &name, NULL);
     if (name) { char *l = g_ascii_strdown(name, -1); dark = dark || strstr(l, "dark"); g_free(l); g_free(name); }
@@ -679,7 +705,25 @@ static void set_history_enabled(gboolean on) {
     refresh(0);
 }
 
-static void history_changed(void) { if (win && gtk_widget_get_visible(win)) refresh(focused_index()); }
+static int index_of(const char *id) {
+    for (guint i = 0; id && i < items->len; i++)
+        if (!strcmp(((Item *)items->pdata[i])->id, id)) return (int)i;
+    return 0;
+}
+
+static char *selected_id(void) {   /* the item the keyboard is on, read from the row itself */
+    GtkWidget *w = gtk_window_get_focus(GTK_WINDOW(win));
+    while (w && !GTK_IS_LIST_BOX_ROW(w)) w = gtk_widget_get_parent(w);
+    if (!w) w = GTK_WIDGET(gtk_list_box_get_selected_row(GTK_LIST_BOX(listbox)));
+    return w ? g_strdup(g_object_get_data(G_OBJECT(w), "id")) : NULL;
+}
+
+static void history_changed(void) {
+    if (!win || !gtk_widget_get_visible(win)) return;
+    char *id = selected_id();
+    refresh(index_of(id));
+    g_free(id);
+}
 
 enum { ACT_DELETE, ACT_PIN, ACT_CLEAR };
 typedef struct { int act; char *id; int idx; } Pending;
@@ -689,9 +733,10 @@ static gboolean run_action(gpointer data) {
     Item *it = find_item(p->id, NULL);
     if (p->act == ACT_CLEAR) clear_all();
     else if (it) {
+        int idx = index_of(p->id);   /* the row whose ⋯ was clicked */
         if (p->act == ACT_DELETE) { drop_item(it); history_save(); }
         else { it->pinned = !it->pinned; history_save(); }
-        refresh(p->idx);
+        refresh(idx);
     }
     g_free(p->id); g_free(p);
     return G_SOURCE_REMOVE;
@@ -739,7 +784,9 @@ static GtkWidget *make_row(Item *it) {
     add_class(card, "cbh-card");
     g_object_set_data_full(G_OBJECT(row), "id", g_strdup(it->id), g_free);
     if (!it->image) {
-        char *preview = g_utf8_strlen(it->text, 801) > 800 ? g_utf8_substring(it->text, 0, 800) : g_strdup(it->text);
+        const char *end = it->text;   /* first 800 characters (not bytes) */
+        for (int n = 0; *end && n < 800; n++) end = g_utf8_next_char(end);
+        char *preview = g_strndup(it->text, end - it->text);
         g_strdelimit(preview, "\t", ' ');
         content = gtk_label_new(preview);
         g_free(preview);
@@ -774,6 +821,7 @@ static GtkWidget *make_row(Item *it) {
     gtk_container_add(GTK_CONTAINER(pop), box);
     gtk_menu_button_set_popover(GTK_MENU_BUTTON(more), pop);
     g_object_set_data(G_OBJECT(row), "pop", pop);
+    g_signal_connect(pop, "closed", G_CALLBACK(on_menu_closed), NULL);
     gtk_box_pack_start(GTK_BOX(side), more, FALSE, FALSE, 0);
     if (it->pinned) {
         GtkWidget *pin = icon("view-pin-symbolic", NULL, "📌");
@@ -796,15 +844,29 @@ static void update_hotkey_labels(void) {
     g_free(label);
 }
 
+enum { BANNER_ASK, BANNER_FAILED, BANNER_RELOGIN };
+static int banner_state = BANNER_ASK;
+
 static void update_banner(void) {
     gboolean show = !paste_everywhere() && g_strcmp0(cfg.paste_keys, "none");
     gtk_widget_set_visible(banner, show);
-    if (show && !enabling) {
+    if (!show || enabling) return;
+    switch (banner_state) {
+    case BANNER_RELOGIN:
+        gtk_label_set_text(GTK_LABEL(banner_lbl), "Permission added. Log out and back in once to finish.");
+        gtk_widget_set_visible(banner_btn, FALSE);
+        return;
+    case BANNER_FAILED:
+        gtk_label_set_text(GTK_LABEL(banner_lbl), "Not enabled: the password prompt was cancelled.");
+        gtk_button_set_label(GTK_BUTTON(banner_btn), "Try again");
+        break;
+    default:
         gtk_label_set_text(GTK_LABEL(banner_lbl), "Click-to-paste needs a one-time permission. "
                            "Until then, picking an item copies it — press Ctrl+V.");
         gtk_button_set_label(GTK_BUTTON(banner_btn), "Enable");
-        gtk_widget_set_sensitive(banner_btn, TRUE);
     }
+    gtk_widget_set_visible(banner_btn, TRUE);
+    gtk_widget_set_sensitive(banner_btn, TRUE);
 }
 
 static void refresh(int keep) {
@@ -813,7 +875,11 @@ static void refresh(int keep) {
     if (tw != thumb_w) { thumb_w = tw; g_hash_table_remove_all(thumbs); }
     update_banner();
     GList *rows = gtk_container_get_children(GTK_CONTAINER(listbox));
-    for (GList *l = rows; l; l = l->next) gtk_widget_destroy(l->data);
+    for (GList *l = rows; l; l = l->next) {
+        GtkWidget *pop = g_object_get_data(l->data, "pop");
+        if (pop) gtk_widget_destroy(pop);
+        gtk_widget_destroy(l->data);
+    }
     g_list_free(rows);
     GHashTableIter hi; gpointer key;
     g_hash_table_iter_init(&hi, thumbs);
@@ -920,9 +986,11 @@ static gboolean on_header_press(GtkWidget *w, GdkEventButton *e, gpointer d) {
     edge_at(e->x_root, e->y_root, &hit);
     if (e->button != 1 || hit) return FALSE;
     if (e->type == GDK_2BUTTON_PRESS) {   /* double-click the header: back to default size + place */
+        reload_hotkey();
         cfg.pos_x = cfg.pos_y = -1; cfg.width = WIN_W + 20; cfg.height = WIN_H + 20;
         config_save();
         place_window();
+        geom_dirty = FALSE;
         return TRUE;
     }
     if (e->type != GDK_BUTTON_PRESS) return FALSE;
@@ -966,6 +1034,10 @@ static void reload_hotkey(void) {   /* superv-setup --hotkey may have changed it
     char *v = g_key_file_load_from_file(k, cfg_path, G_KEY_FILE_NONE, NULL)
               ? g_key_file_get_string(k, "superv", "hotkey", NULL) : NULL;
     if (v) { g_free(cfg.hotkey); cfg.hotkey = g_strstrip(v); }
+    GError *e = NULL;
+    gboolean done = g_key_file_get_boolean(k, "superv", "shortcut_configured", &e);
+    if (!e) cfg.setup_done = done;
+    g_clear_error(&e);
     g_key_file_unref(k);
 }
 
@@ -1005,6 +1077,8 @@ static void show_popup(void) {
     guint32 ts = GDK_IS_X11_WINDOW(gw) ? gdk_x11_get_server_time(gw) : GDK_CURRENT_TIME;
     gtk_window_present_with_time(GTK_WINDOW(win), ts);
     g_timeout_add(60, ensure_focus, GUINT_TO_POINTER(ts));
+    g_timeout_add(300, ensure_focus, GUINT_TO_POINTER(ts));
+    g_timeout_add(700, ensure_focus, GUINT_TO_POINTER(ts));
     GtkListBoxRow *row = gtk_list_box_get_row_at_index(GTK_LIST_BOX(listbox), 0);
     if (row) gtk_widget_grab_focus(GTK_WIDGET(row));
 }
@@ -1012,9 +1086,13 @@ static void show_popup(void) {
 static void toggle(void) { if (gtk_widget_get_visible(win)) gtk_widget_hide(win); else show_popup(); }
 
 static char *setup_path(void) {
-    char *p = g_build_filename(self_dir, "superv-setup", NULL);
-    if (!g_file_test(p, G_FILE_TEST_EXISTS)) { g_free(p); p = g_strdup("/usr/lib/superv/superv-setup"); }
-    return p;
+    const char *dirs[] = { self_dir, SETUP_DIR, "/usr/lib/superv", "/usr/local/lib/superv", "/usr/libexec/superv" };
+    for (guint i = 0; i < G_N_ELEMENTS(dirs); i++) {
+        char *p = g_build_filename(dirs[i], "superv-setup", NULL);
+        if (g_file_test(p, G_FILE_TEST_EXISTS)) return p;
+        g_free(p);
+    }
+    return g_build_filename(SETUP_DIR, "superv-setup", NULL);
 }
 
 static void hotkey_status(const char *text, gboolean ok) {
@@ -1032,8 +1110,20 @@ static char *accel_label(const char *accel) {
     return key ? gtk_accelerator_get_label(key, mods) : g_strdup(accel);
 }
 
+static void spawn_setup_helper(const char *accel);
+static gboolean helper_running;
+static char *queued_accel;
+
 static void on_hotkey_applied(GPid pid, gint status, gpointer accel) {
     g_spawn_close_pid(pid);
+    helper_running = FALSE;
+    if (queued_accel) {   /* a newer shortcut was chosen meanwhile: apply that one */
+        char *next = queued_accel;
+        queued_accel = NULL;
+        spawn_setup_helper(next);
+        g_free(next); g_free(accel);
+        return;
+    }
     if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
         char *label = accel_label(accel), *msg = g_strdup_printf("✓ Shortcut set to %s", label);
         hotkey_status(msg, TRUE);
@@ -1052,12 +1142,22 @@ static void apply_hotkey(const char *new_accel) {
     cfg.setup_done = TRUE;
     hotkey_applied_at = g_get_monotonic_time();
     config_save();
+    if (helper_running) {   /* finish the running one first, then apply the latest choice */
+        g_free(queued_accel);
+        queued_accel = g_strdup(accel);
+        return;
+    }
+    spawn_setup_helper(accel);
+}
+
+static void spawn_setup_helper(const char *accel) {
     char *setup = setup_path();
     char *quoted = g_shell_quote(self_exe), *cmd = g_strdup_printf("%s --toggle", quoted);
     char *argv[] = { "python3", setup, "--setup-hotkeys", cmd, "--hotkey", (char *)accel, NULL };
     GError *e = NULL;
     GPid pid;
     if (g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &e)) {
+        helper_running = TRUE;
         g_child_watch_add(pid, on_hotkey_applied, g_strdup(accel));
     } else {
         logmsg("could not run %s: %s", setup, e->message);
@@ -1140,23 +1240,41 @@ static char *cinnamon_hotkey(void) {
     return found;
 }
 
-/* The shortcut as the running desktop sees it (NULL if we can't tell, e.g. MATE/Xfce). */
+/* Which shortcut system the running desktop uses (we can only read GNOME's and Cinnamon's). */
+enum { DE_OTHER, DE_GNOME, DE_CINNAMON };
+static int desktop_kind(void) {
+    char *de = g_ascii_strup(g_getenv("XDG_CURRENT_DESKTOP") ? g_getenv("XDG_CURRENT_DESKTOP") : "", -1);
+    int kind = strstr(de, "CINNAMON") ? DE_CINNAMON
+             : (strstr(de, "GNOME") || strstr(de, "UNITY") || strstr(de, "BUDGIE") || strstr(de, "PANTHEON"))
+               ? DE_GNOME : DE_OTHER;
+    g_free(de);
+    return kind;
+}
+
+/* The shortcut as the running desktop sees it (NULL if we can't tell, e.g. KDE/MATE/Xfce). */
 static char *desktop_hotkey(void) {
-    const char *de = g_getenv("XDG_CURRENT_DESKTOP");
-    gboolean cinnamon = de && g_strrstr(de, "Cinnamon");
-    char *k = cinnamon ? cinnamon_hotkey() : gnome_hotkey();
-    return k ? k : (cinnamon ? gnome_hotkey() : cinnamon_hotkey());
+    switch (desktop_kind()) {
+    case DE_GNOME:    return gnome_hotkey();
+    case DE_CINNAMON: return cinnamon_hotkey();
+    default:          return NULL;
+    }
 }
 
 /* Is SuperV's shortcut actually registered with the desktop? (TRUE when we can't tell, e.g. Xfce) */
 static gboolean shortcut_bound(void) {
-    gboolean known = FALSE;
-    if (strv_setting_has("org.gnome.settings-daemon.plugins.media-keys", "custom-keybindings",
-                         "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/superv/", &known))
-        return TRUE;
-    if (strv_setting_has("org.cinnamon.desktop.keybindings", "custom-list", NULL, &known))
-        return TRUE;
-    return !known;
+    gboolean known = FALSE, found;
+    switch (desktop_kind()) {
+    case DE_GNOME:
+        found = strv_setting_has("org.gnome.settings-daemon.plugins.media-keys", "custom-keybindings",
+                                 GNOME_KB_PATH, &known);
+        break;
+    case DE_CINNAMON:
+        found = strv_setting_has("org.cinnamon.desktop.keybindings", "custom-list", NULL, &known);
+        break;
+    default:
+        return TRUE;   /* KDE, MATE, Xfce, tiling WMs: trust the saved setting */
+    }
+    return found || !known;
 }
 
 static void on_hotkey_btn(GtkButton *b, gpointer d) {
@@ -1222,25 +1340,77 @@ static gboolean on_key(GtkWidget *w, GdkEventKey *e, gpointer d) {
     return FALSE;
 }
 
+/* Close every open menu at once (no animation), so none is still open next time. */
+static void close_menus(void) {
+    if (settings_pop) gtk_widget_hide(settings_pop);
+    GList *rows = gtk_container_get_children(GTK_CONTAINER(listbox));
+    for (GList *l = rows; l; l = l->next) {
+        GtkWidget *p = g_object_get_data(l->data, "pop");
+        if (p) gtk_widget_hide(p);
+    }
+    g_list_free(rows);
+}
+
+/* Like Windows: a click anywhere outside closes the panel, menus included. */
 static gboolean hide_if_inactive(gpointer d) {
-    if (gtk_widget_get_visible(win) && !gtk_window_is_active(GTK_WINDOW(win)) && !any_menu_open()) {
+    if (gtk_widget_get_visible(win) && !gtk_window_is_active(GTK_WINDOW(win))) {
         if (debug_log) logmsg("panel lost focus: closing");
-        capturing = FALSE;
+        if (capturing) { capturing = FALSE; hotkey_status(NULL, TRUE); update_hotkey_labels(); }
+        close_menus();
         gtk_widget_hide(win);
     }
     return G_SOURCE_REMOVE;
 }
 
 static gboolean trim_memory(gpointer d) { malloc_trim(0); return G_SOURCE_REMOVE; }
+/* ---- updates: when a package replaces our program file, restart into the new version.
+ * Waits until the panel is closed; keeps what's on the clipboard. */
+static guint restart_src;
+static gboolean restart_pending;
+static GFileMonitor *exe_monitor;
+
+static gboolean restart_now(gpointer d) {
+    restart_src = 0;
+    if (gtk_widget_get_visible(win)) { restart_pending = TRUE; return G_SOURCE_REMOVE; }
+    restart_pending = FALSE;
+    if (!g_file_test(self_exe, G_FILE_TEST_IS_EXECUTABLE)) return G_SOURCE_REMOVE;   /* removed, not updated */
+    logmsg("SuperV was updated: restarting into the new version");
+    if (geom_dirty) { geom_dirty = FALSE; reload_hotkey(); config_save(); }
+    history_save();
+    char *restore = current_id ? g_strdup_printf("--restore=%s", current_id) : NULL;
+    char *argv[] = { self_exe, "--daemon", restore, NULL };
+    GDBusConnection *bus = g_application_get_dbus_connection(G_APPLICATION(app));
+    if (bus) g_dbus_connection_close_sync(bus, NULL, NULL);   /* free our D-Bus name for the new process */
+    g_usleep(200000);
+    execv(self_exe, argv);
+    logmsg("restart failed (%s); still running the old version", g_strerror(errno));
+    g_free(restore);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_exe_changed(GFileMonitor *m, GFile *f, GFile *other, GFileMonitorEvent ev, gpointer d) {
+    if (ev == G_FILE_MONITOR_EVENT_DELETED || ev == G_FILE_MONITOR_EVENT_MOVED_OUT) return;
+    if (restart_src) g_source_remove(restart_src);
+    restart_src = g_timeout_add_seconds(3, restart_now, NULL);   /* let the package manager finish */
+}
+
+static void watch_for_updates(void) {
+    GFile *f = g_file_new_for_path(self_exe);
+    exe_monitor = g_file_monitor_file(f, G_FILE_MONITOR_WATCH_MOVES, NULL, NULL);
+    if (exe_monitor) g_signal_connect(exe_monitor, "changed", G_CALLBACK(on_exe_changed), NULL);
+    g_object_unref(f);
+}
+
 static void on_hide(GtkWidget *w, gpointer d) {
     if (geom_dirty) { geom_dirty = FALSE; reload_hotkey(); config_save(); }
     g_timeout_add(500, trim_memory, NULL);
+    if (restart_pending && !restart_src) restart_src = g_timeout_add(1500, restart_now, NULL);   /* after any paste */
 }
 
 static gboolean on_focus_in(GtkWidget *w, GdkEvent *e, gpointer d) { had_focus = TRUE; return FALSE; }
 
 static gboolean on_focus_out(GtkWidget *w, GdkEvent *e, gpointer d) {
-    if (had_focus && !any_menu_open()) g_timeout_add(120, hide_if_inactive, NULL);
+    if (had_focus) g_timeout_add(120, hide_if_inactive, NULL);
     return FALSE;
 }
 
@@ -1347,12 +1517,15 @@ static GtkWidget *size_control(void) {
 
 static void on_reset(GtkButton *b, gpointer d) {
     reload_hotkey();
-    config_defaults();
+    g_free(cfg.theme); cfg.theme = g_strdup("auto");
+    cfg.font_scale = 100;
+    cfg.width = WIN_W + 20; cfg.height = WIN_H + 20; cfg.pos_x = cfg.pos_y = -1;
     apply_font();
     apply_theme();
     if (g_strcmp0(cfg.hotkey, DEFAULT_HOTKEY)) apply_hotkey(DEFAULT_HOTKEY);   /* also saves */
     else config_save();
     place_window();
+    geom_dirty = FALSE;   /* the resulting move/resize must not be saved as "user placed it here" */
     g_hash_table_remove_all(thumbs);
     refresh(focused_index());
 }
@@ -1398,6 +1571,19 @@ static GtkWidget *keys_help(void) {
         gtk_grid_attach(GTK_GRID(grid), what, 1, i, 1, 1);
     }
     return grid;
+}
+
+static gboolean focus_selected_row(gpointer d) {
+    if (!gtk_widget_get_visible(win) || any_menu_open()) return G_SOURCE_REMOVE;
+    GtkListBoxRow *r = gtk_list_box_get_selected_row(GTK_LIST_BOX(listbox));
+    if (!r) r = gtk_list_box_get_row_at_index(GTK_LIST_BOX(listbox), 0);
+    if (r) gtk_widget_grab_focus(GTK_WIDGET(r));
+    return G_SOURCE_REMOVE;
+}
+
+static void on_menu_closed(GtkPopover *p, gpointer d) {
+    if (capturing) { capturing = FALSE; hotkey_status(NULL, TRUE); update_hotkey_labels(); }
+    g_timeout_add(200, focus_selected_row, NULL);   /* after the close animation */
 }
 
 static void fit_settings(GtkWidget *pop, gpointer scroll) {
@@ -1494,6 +1680,7 @@ static GtkWidget *settings_button(void) {
     gtk_widget_show_all(scroll);
     gtk_container_add(GTK_CONTAINER(settings_pop), scroll);
     g_signal_connect(settings_pop, "show", G_CALLBACK(fit_settings), scroll);
+    g_signal_connect(settings_pop, "closed", G_CALLBACK(on_menu_closed), NULL);
     gtk_menu_button_set_popover(GTK_MENU_BUTTON(btn), settings_pop);
     return btn;
 }
@@ -1515,8 +1702,8 @@ static gboolean retry_uinput(gpointer d) {
     }
     if (++enable_tries < 12) return G_SOURCE_CONTINUE;
     enabling = FALSE;
-    gtk_label_set_text(GTK_LABEL(banner_lbl), "Permission added. Log out and back in once to finish.");
-    gtk_widget_set_visible(banner_btn, FALSE);
+    banner_state = BANNER_RELOGIN;
+    update_banner();
     return G_SOURCE_REMOVE;
 }
 
@@ -1527,8 +1714,8 @@ static void on_enable_done(GPid pid, gint status, gpointer d) {
         g_timeout_add(500, retry_uinput, NULL);
     } else {
         enabling = FALSE;
+        banner_state = BANNER_FAILED;
         update_banner();
-        gtk_label_set_text(GTK_LABEL(banner_lbl), "Not enabled (the password prompt was cancelled). Try again any time.");
     }
 }
 
@@ -1678,6 +1865,7 @@ static void on_startup(GApplication *a, gpointer d) {
     g_unix_signal_add(SIGINT, on_signal, NULL);
     g_unix_signal_add(SIGTERM, on_signal, NULL);
     g_application_hold(a);
+    watch_for_updates();
     /* First run (e.g. installed from the .deb), or the shortcut was removed since: (re)create it. */
     if (!cfg.setup_done || !shortcut_bound()) apply_hotkey(cfg.hotkey);
     logmsg("running (%s), history in %s", is_wayland ? "wayland via XWayland" : "x11", data_dir);
@@ -1691,6 +1879,11 @@ static int on_cmdline(GApplication *a, GApplicationCommandLine *cl, gpointer d) 
     else if (!strcmp(m, "--clear")) clear_all();
     else if (!strcmp(m, "--show")) show_popup();
     else if (strcmp(m, "--daemon")) toggle();
+    /* after restarting into a new version: keep serving what was on the clipboard */
+    if (argc > 2 && g_str_has_prefix(argv[2], "--restore=") && find_item(argv[2] + 10, NULL)) {
+        g_free(current_id);
+        current_id = g_strdup(argv[2] + 10);
+    }
     g_strfreev(argv);
     return 0;
 }
@@ -1701,6 +1894,17 @@ int main(int argc, char **argv) {
     if (!self_exe) self_exe = g_strdup(argv[0]);
     self_dir = g_path_get_dirname(self_exe);
     if (!strcmp(m, "--version")) { puts("superv " VERSION); return 0; }
+    if (!strcmp(m, "--quit")) {   /* ask a running SuperV to stop; never start one just to quit */
+        GDBusConnection *bus = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+        if (bus) {
+            GVariant *r = g_dbus_connection_call_sync(bus, APP_ID, "/io/github/superv/SuperV", "org.gtk.Actions",
+                "Activate", g_variant_new_parsed("('quit', @av [], @a{sv} {})"), NULL,
+                G_DBUS_CALL_FLAGS_NO_AUTO_START, 3000, NULL, NULL);
+            if (r) g_variant_unref(r);
+            g_object_unref(bus);
+        }
+        return 0;
+    }
     if (!strcmp(m, "--help") || !strcmp(m, "-h")) {
         puts("SuperV " VERSION " — Win+V clipboard history for Linux\n\n"
              "  superv            open / close the panel (what the shortcut runs)\n"

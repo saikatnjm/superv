@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds dist/superv_<version>_amd64.deb: the double-click installer for Ubuntu and Linux Mint.
+# Builds dist/superv_<version>_amd64.deb: the double-click installer for Ubuntu, Mint, Debian, Pop!_OS…
 # Usage: packaging/build-deb.sh   (uses bin/superv-x86_64; run `make` + copy it there first)
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -9,39 +9,16 @@ OUT="$ROOT/dist"
 PKG="$(mktemp -d)"
 trap 'rm -r "$PKG"' EXIT
 
-install -Dm755 "$BIN"                                  "$PKG/usr/bin/superv"
-install -Dm755 "$ROOT/superv-setup"                    "$PKG/usr/lib/superv/superv-setup"
-install -Dm644 "$ROOT/data/io.github.superv.SuperV.svg" "$PKG/usr/share/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg"
-install -Dm644 "$ROOT/LICENSE"                         "$PKG/usr/share/doc/superv/copyright"
-
-install -d "$PKG/usr/share/applications" "$PKG/etc/xdg/autostart" "$PKG/usr/lib/udev/rules.d" \
-           "$PKG/usr/lib/modules-load.d" "$PKG/DEBIAN"
-cat > "$PKG/usr/share/applications/io.github.superv.SuperV.desktop" <<'EOF'
-[Desktop Entry]
-Type=Application
-Name=SuperV
-GenericName=Clipboard history
-Comment=Win+V clipboard history for Linux — press Super+V
-Exec=superv --show
-Icon=io.github.superv.SuperV
-Categories=Utility;
-Keywords=clipboard;history;paste;copy;win+v;
-StartupNotify=false
-EOF
-cat > "$PKG/etc/xdg/autostart/superv.desktop" <<'EOF'
-[Desktop Entry]
-Type=Application
-Name=SuperV
-Comment=Clipboard history (Super+V)
-Exec=superv --daemon
-Icon=io.github.superv.SuperV
-NoDisplay=true
-X-GNOME-Autostart-enabled=true
-EOF
+install -Dm755 "$BIN"                                       "$PKG/usr/bin/superv"
+install -Dm755 "$ROOT/superv-setup"                         "$PKG/usr/lib/superv/superv-setup"
+install -Dm644 "$ROOT/data/io.github.superv.SuperV.desktop" "$PKG/usr/share/applications/io.github.superv.SuperV.desktop"
+install -Dm644 "$ROOT/data/io.github.superv.SuperV.svg"     "$PKG/usr/share/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg"
+install -Dm644 "$ROOT/data/superv-autostart.desktop"        "$PKG/etc/xdg/autostart/superv.desktop"
 # click-to-paste on Wayland: let the logged-in user use /dev/uinput
-echo 'KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess"' \
-  > "$PKG/usr/lib/udev/rules.d/70-superv-uinput.rules"
-echo uinput > "$PKG/usr/lib/modules-load.d/superv-uinput.conf"
+install -Dm644 "$ROOT/data/70-superv-uinput.rules"          "$PKG/usr/lib/udev/rules.d/70-superv-uinput.rules"
+install -Dm644 "$ROOT/data/superv-uinput.conf"              "$PKG/usr/lib/modules-load.d/superv-uinput.conf"
+install -Dm644 "$ROOT/LICENSE"                              "$PKG/usr/share/doc/superv/copyright"
+install -d "$PKG/DEBIAN"
 
 cat > "$PKG/DEBIAN/control" <<EOF
 Package: superv
@@ -54,10 +31,10 @@ Installed-Size: $(du -sk "$PKG/usr" | cut -f1)
 Maintainer: SuperV <saikatnjm@users.noreply.github.com>
 Homepage: https://github.com/saikatnjm/superv
 Description: Win+V clipboard history for Linux
- SuperV brings the Windows clipboard history panel to Ubuntu and Linux Mint.
+ SuperV brings the Windows clipboard history panel (Win+V) to Linux.
  Press Super+V to see the last 25 things you copied (text and images), pick
  one to paste it into the app you are using, pin favourites, and clear the
- rest. Works on GNOME (Wayland and X11), Cinnamon, MATE and Xfce.
+ rest. Works on GNOME, KDE Plasma, Cinnamon, MATE and Xfce (Wayland and X11).
  .
  A single 88 KB C program that uses about 7 MB of memory.
 EOF

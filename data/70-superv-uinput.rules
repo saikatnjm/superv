@@ -1,0 +1,2 @@
+# SuperV click-to-paste: let the logged-in user create a virtual keyboard (/dev/uinput)
+KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess"

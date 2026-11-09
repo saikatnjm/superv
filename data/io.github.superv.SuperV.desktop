@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=SuperV
+GenericName=Clipboard history
+Comment=Win+V clipboard history for Linux — press Super+V
+Exec=superv --show
+Icon=io.github.superv.SuperV
+Categories=Utility;
+Keywords=clipboard;history;paste;copy;win+v;
+StartupNotify=false

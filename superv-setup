@@ -125,6 +125,108 @@ def default_command():
     return shlex.quote(exe) + " --toggle"
 
 
+# ---------------------------------------------------------------- KDE Plasma (experimental)
+KDE_DESKTOP = "superv-toggle.desktop"
+KLIPPER_KEY = "show-on-mouse-pos"   # Klipper's "Show clipboard items at mouse position" (Meta+V)
+
+
+def kde_tools():
+    ver = os.environ.get("KDE_SESSION_VERSION", "")
+    write = shutil.which("kwriteconfig6") or shutil.which("kwriteconfig5")
+    read = shutil.which("kreadconfig6") or shutil.which("kreadconfig5")
+    return (ver or ("6" if write and write.endswith("6") else "5")), write, read
+
+
+def kde_accel(accel):
+    """'<Super>v' -> 'Meta+V' (KDE's format)."""
+    mods, key = normalize(accel)
+    names = [n for m, n in (("super", "Meta"), ("ctrl", "Ctrl"), ("alt", "Alt"), ("shift", "Shift")) if m in mods]
+    return "+".join(names + [key.upper() if len(key) == 1 else key.capitalize()])
+
+
+def desktop_exec(command):
+    """A shell-quoted command -> the quoting .desktop files understand (double quotes only)."""
+    return " ".join('"%s"' % a.replace('"', '\\"') if re.search(r"[\s\"']", a) else a for a in shlex.split(command))
+
+
+def kde_restart_shortcuts(ver):
+    if ver == "6":
+        subprocess.run(["systemctl", "--user", "try-restart", "plasma-kglobalaccel.service"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    return False   # Plasma 5: picked up at next login
+
+
+def kde_setup(command, accel, backup):
+    ver, write, read = kde_tools()
+    if not write:
+        return None
+    apps = os.path.join(GLib.get_user_data_dir(), "applications")
+    os.makedirs(apps, exist_ok=True)
+    with open(os.path.join(apps, KDE_DESKTOP), "w") as f:
+        f.write("[Desktop Entry]\nType=Application\nName=SuperV (open/close)\nExec=%s\n"
+                "Icon=io.github.superv.SuperV\nNoDisplay=true\nX-KDE-GlobalAccel-CommandShortcut=true\n"
+                % desktop_exec(command))
+    key = kde_accel(accel)
+    rc = ["--file", "kglobalshortcutsrc"]
+    if ver == "6":
+        subprocess.run([write] + rc + ["--group", "services", "--group", KDE_DESKTOP, "--key", "_launch", key])
+    else:
+        subprocess.run([write] + rc + ["--group", KDE_DESKTOP, "--key", "_k_friendly_name", "SuperV"])
+        subprocess.run([write] + rc + ["--group", KDE_DESKTOP, "--key", "_launch", "%s,none,SuperV" % key])
+    # Klipper (KDE's own clipboard tool) uses Meta+V: free it, remember the old value
+    if read and key == "Meta+V":
+        cur = subprocess.run([read] + rc + ["--group", "plasmashell", "--key", KLIPPER_KEY],
+                             capture_output=True, text=True).stdout.strip()
+        if cur.split(",")[0] == "Meta+V":
+            backup.setdefault("kde_klipper", cur)
+            subprocess.run([write] + rc + ["--group", "plasmashell", "--key", KLIPPER_KEY,
+                                           "none," + ",".join(cur.split(",")[1:])])
+    live = kde_restart_shortcuts(ver)
+    return "KDE Plasma %s: %s → SuperV%s" % (ver, key, "" if live else " (log out and back in once)")
+
+
+def kde_remove(backup):
+    ver, write, read = kde_tools()
+    if not write:
+        return
+    rc = ["--file", "kglobalshortcutsrc"]
+    group = ["--group", "services", "--group", KDE_DESKTOP] if ver == "6" else ["--group", KDE_DESKTOP]
+    for key in ("_launch", "_k_friendly_name"):
+        subprocess.run([write] + rc + group + ["--key", key, "--delete"], stderr=subprocess.DEVNULL)
+    if backup.get("kde_klipper"):
+        subprocess.run([write] + rc + ["--group", "plasmashell", "--key", KLIPPER_KEY, backup["kde_klipper"]])
+    try:
+        os.remove(os.path.join(GLib.get_user_data_dir(), "applications", KDE_DESKTOP))
+    except OSError:
+        pass
+    kde_restart_shortcuts(ver)
+
+
+def manual_instructions(command):
+    """Desktops that keep shortcuts in their own config files."""
+    toggle = " ".join(shlex.split(command))
+    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        print("  Hyprland: add to ~/.config/hypr/hyprland.conf:")
+        print("    exec-once = superv --daemon")
+        print("    bind = SUPER, V, exec, %s" % toggle)
+    elif os.environ.get("SWAYSOCK"):
+        print("  Sway: add to ~/.config/sway/config:")
+        print("    exec superv --daemon")
+        print("    bindsym $mod+v exec %s" % toggle)
+    elif os.environ.get("I3SOCK"):
+        print("  i3: add to ~/.config/i3/config:")
+        print("    exec --no-startup-id superv --daemon")
+        print("    bindsym $mod+v exec --no-startup-id %s" % toggle)
+    elif "COSMIC" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper():
+        print("  COSMIC: Settings → Keyboard → Keyboard Shortcuts → Custom shortcuts → Add,")
+        print("    command: %s   shortcut: Super+V" % toggle)
+    else:
+        print("  ! Couldn't find your desktop's shortcut settings.")
+        print("    Add a custom keyboard shortcut in your desktop's settings that runs:")
+        print("    %s" % toggle)
+
+
 def setup(command, accel):
     out = []
     backup = load_backup()
@@ -226,14 +328,19 @@ def setup(command, accel):
                                    "-s", "xfce4-screenshooter -r -c"])
         out.append("Xfce: %s → SuperV" % accel)
 
+    # KDE Plasma
+    if "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper():
+        line = kde_setup(command, accel, backup)
+        if line:
+            out.append(line)
+
     Gio.Settings.sync()
     save_backup(backup)
     save_hotkey_to_config(accel)
     for line in out:
         print("  ✓", line)
     if not any("→ SuperV" in line for line in out):
-        print("  ! Couldn't find your desktop's shortcut settings.")
-        print("    Add a custom shortcut yourself that runs:", command)
+        manual_instructions(command)
 
 
 def remove():
@@ -268,6 +375,8 @@ def remove():
         for p in filter(None, [backup.get("xfce_prop"), "/commands/custom/" + SCREENSHOT]):
             subprocess.run(["xfconf-query", "-c", "xfce4-keyboard-shortcuts", "-p", p, "-r"],
                            stderr=subprocess.DEVNULL)
+    if "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper():
+        kde_remove(backup)
     Gio.Settings.sync()
     mark_unconfigured()
     try:
@@ -280,6 +389,13 @@ def remove():
 def doctor():
     def mark(b):
         return "\033[38;5;141m✓\033[0m" if b else "\033[31m✗\033[0m"
+    distro = "?"
+    try:
+        with open("/etc/os-release") as f:
+            distro = dict(l.rstrip().split("=", 1) for l in f if "=" in l).get("PRETTY_NAME", "?").strip('"')
+    except OSError:
+        pass
+    print("System  : %s" % distro)
     print("Session : %s / %s" % (os.environ.get("XDG_SESSION_TYPE", "?"),
                                  os.environ.get("XDG_CURRENT_DESKTOP", "?")))
     bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)

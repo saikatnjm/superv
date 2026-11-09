@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SuperV – Win+V Clipboard History for Linux (Ubuntu &amp; Linux Mint)</title>
-<meta name="description" content="SuperV is a free, open-source clipboard manager that brings Windows Win+V clipboard history to Ubuntu and Linux Mint. Press Super+V to paste from your last 25 copies. 88 KB, ~7 MB RAM.">
-<meta name="keywords" content="clipboard history linux, win+v linux, clipboard manager ubuntu, clipboard manager linux mint, super+v, windows clipboard for linux, wayland clipboard manager, gnome clipboard history">
+<title>SuperV – Windows Clipboard (Win+V) for Linux: Ubuntu, Mint, Fedora, Arch</title>
+<meta name="description" content="Looking for the Windows clipboard (Win+V) on Linux? SuperV is a free, open-source clipboard history manager for Ubuntu, Linux Mint, Debian, Fedora, Arch and more. Press Super+V to paste from your last 25 copies.">
+<meta name="keywords" content="windows clipboard for linux, win+v alternative linux, clipboard history like windows, clipboard history linux, win+v linux, clipboard manager ubuntu, clipboard manager linux mint, super+v, windows clipboard for linux, wayland clipboard manager, gnome clipboard history, clipboard manager fedora, clipboard manager arch linux, kde clipboard win+v">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#7c3aed">
 <link rel="canonical" href="https://saikatnjm.github.io/superv/">
@@ -14,15 +14,15 @@
 <meta property="og:site_name" content="SuperV">
 <meta property="og:locale" content="en_US">
 <meta property="og:url" content="https://saikatnjm.github.io/superv/">
-<meta property="og:title" content="SuperV – Win+V clipboard history for Linux">
-<meta property="og:description" content="Press Super+V on Ubuntu or Linux Mint and get the clipboard history you know from Windows. Free, open source, 88 KB.">
+<meta property="og:title" content="SuperV – the Windows clipboard (Win+V) for Linux">
+<meta property="og:description" content="Press Super+V on Linux and get the clipboard history you know from Windows. Ubuntu, Mint, Debian, Fedora, Arch and more. Free, open source, under 100 KB.">
 <meta property="og:image" content="https://saikatnjm.github.io/superv/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="SuperV clipboard history panel on Linux, opened with Super+V">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="SuperV – Win+V clipboard history for Linux">
-<meta name="twitter:description" content="Clipboard history for Ubuntu & Linux Mint, the Windows way. Free and open source.">
+<meta name="twitter:title" content="SuperV – the Windows clipboard (Win+V) for Linux">
+<meta name="twitter:description" content="Clipboard history for Linux, the Windows way: Ubuntu, Mint, Fedora, Arch and more. Free and open source.">
 <meta name="twitter:image" content="https://saikatnjm.github.io/superv/og-image.png">
 
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='#a78bfa'/%3E%3Cstop offset='1' stop-color='#6d28d9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='8' y='8' width='112' height='112' rx='26' fill='url%28#g%29'/%3E%3Crect x='30' y='26' width='60' height='76' rx='9' fill='none' stroke='#fff' stroke-opacity='.35' stroke-width='5'/%3E%3Crect x='44' y='20' width='32' height='13' rx='5' fill='#fff' fill-opacity='.55'/%3E%3Cpath d='M48 52 L64 86 L80 52' fill='none' stroke='#fff' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
@@ -37,12 +37,12 @@
     {
       "@type": "SoftwareApplication",
       "name": "SuperV",
-      "alternateName": "SuperV clipboard history",
-      "description": "Windows-style Win+V clipboard history for Ubuntu and Linux Mint. Keeps your last 25 copied texts and images; press Super+V to paste any of them.",
+      "alternateName": ["SuperV clipboard history", "Windows clipboard for Linux", "Win+V for Linux"],
+      "description": "Windows-style Win+V clipboard history for Linux: Ubuntu, Linux Mint, Debian, Fedora, Arch, openSUSE and more. Keeps your last 25 copied texts and images; press Super+V to paste any of them.",
       "applicationCategory": "UtilitiesApplication",
-      "operatingSystem": "Ubuntu 22.04+, Linux Mint 21+ (GNOME, Cinnamon, MATE, Xfce; Wayland and X11)",
-      "softwareVersion": "1.1.2",
-      "fileSize": "31 KB",
+      "operatingSystem": "Linux: Ubuntu 22.04+, Linux Mint 21+, Debian 12+, Fedora, Arch, Manjaro, openSUSE (GNOME, Cinnamon, MATE, Xfce, KDE Plasma; Wayland and X11)",
+      "softwareVersion": "1.2.0",
+      "fileSize": "35 KB",
       "license": "https://opensource.org/licenses/MIT",
       "url": "https://saikatnjm.github.io/superv/",
       "downloadUrl": "https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb",
@@ -59,7 +59,9 @@
         "Custom keyboard shortcut",
         "System, light and dark theme; adjustable text size",
         "Move and resize the panel",
-        "Works on Wayland and X11"
+        "Works on Wayland and X11",
+        "Updates itself: restarts into a new version automatically",
+        "Packages for Debian/Ubuntu, Fedora/openSUSE and Arch"
       ]
     },
     {
@@ -74,11 +76,15 @@
         { "@type": "Question", "name": "Can I use a different shortcut than Super+V?",
           "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the panel, click the gear icon, choose Shortcut and press a combination with Super or Ctrl+Alt, such as Ctrl+Alt+V. A green tick confirms it is saved; combinations apps need, like Ctrl+V, are refused with the reason shown." } },
         { "@type": "Question", "name": "How much memory does SuperV use?",
-          "acceptedAnswer": { "@type": "Answer", "text": "SuperV is an 88 KB C program that uses about 7 MB of private memory and no CPU while idle." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "SuperV is a C program under 100 KB that uses about 7 MB of private memory and no CPU while idle." } },
         { "@type": "Question", "name": "Where is my clipboard history stored?",
           "acceptedAnswer": { "@type": "Answer", "text": "Only on your computer, in ~/.local/share/superv, readable by you alone. SuperV never connects to the internet. Unpinned items are removed on reboot, and passwords copied from password managers are never saved." } },
+        { "@type": "Question", "name": "Does SuperV work on Fedora, Arch or KDE Plasma?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. There are packages for Fedora and openSUSE (.rpm) and Arch, Manjaro and EndeavourOS (PKGBUILD), and an install script for any other distro. GNOME, Cinnamon, MATE and Xfce are fully supported; KDE Plasma support is experimental; on Sway, Hyprland, i3 and COSMIC you add the shortcut line SuperV prints." } },
+        { "@type": "Question", "name": "How do I update SuperV?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Install the new package the same way you installed the first one. SuperV notices it was updated and restarts itself into the new version as soon as the panel is closed, keeping what's on your clipboard." } },
         { "@type": "Question", "name": "How do I uninstall SuperV?",
-          "acceptedAnswer": { "@type": "Answer", "text": "On Ubuntu, open Ubuntu Software, go to Installed and uninstall SuperV. On Linux Mint, right-click SuperV in the Menu and choose Uninstall. Or run sudo apt remove superv. Your desktop shortcuts are restored. To also delete your clipboard history and settings, run rm -r ~/.local/share/superv ~/.config/superv." } }
+          "acceptedAnswer": { "@type": "Answer", "text": "On Ubuntu, open Ubuntu Software, go to Installed and uninstall SuperV. On Linux Mint, right-click SuperV in the Menu and choose Uninstall. Or run sudo apt remove superv (Debian family), sudo dnf remove superv (Fedora), sudo zypper remove superv (openSUSE) or sudo pacman -R superv (Arch). Your desktop shortcuts are restored. To also delete your clipboard history and settings, run rm -r ~/.local/share/superv ~/.config/superv." } }
       ]
     }
   ]
@@ -217,13 +223,22 @@
   pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-size: 14px; line-height: 1.75; color: var(--text); }
   pre .p { color: var(--accent); user-select: none; } pre .c { color: var(--dim); }
 
-  details { border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 0 20px; }
+  .faq-list { max-width: 820px; }
+  details { border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 0 22px; transition: border-color .15s; }
   details + details { margin-top: 10px; }
-  summary { cursor: pointer; padding: 17px 0; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  details[open] { border-color: var(--line-2); }
+  summary { cursor: pointer; padding: 18px 0; font-weight: 600; font-size: 16.5px; list-style: none;
+            display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  summary:hover { color: var(--accent); }
   summary::-webkit-details-marker { display: none; }
-  summary::after { content: "+"; color: var(--accent); font: 600 18px var(--mono); }
+  summary::after { content: "+"; flex: none; color: var(--accent); font: 600 20px var(--mono); line-height: 1; }
   details[open] summary::after { content: "–"; }
-  details p { margin: 0 0 18px; color: var(--muted); }
+  .answer > * { max-width: 68ch; }
+  .answer { border-top: 1px solid var(--line); padding: 14px 0 20px; color: var(--text); opacity: .86;
+            font-size: 15.5px; line-height: 1.7; }
+  .answer p { margin: 0 0 10px; } .answer p:last-child { margin-bottom: 0; }
+  .answer ul { margin: 6px 0 10px; padding-left: 20px; } .answer li + li { margin-top: 6px; }
+  .answer kbd, .sub kbd, .lead kbd, .feat kbd, .way kbd { box-shadow: none; padding: 0 6px; font-size: .82em; line-height: 1.6; vertical-align: 1px; }
   code.inl { background: var(--bg-2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 5px; font-size: .88em; }
 
   .star { text-align: center; }
@@ -271,15 +286,15 @@
 <section class="hero" aria-labelledby="title">
   <div class="wrap">
     <div>
-      <p class="kicker">Clipboard manager for Ubuntu &amp; Linux Mint</p>
+      <p class="kicker">Clipboard manager for Linux</p>
       <div class="combo" aria-hidden="true"><span class="key">Super</span><span class="plus">+</span><span class="key hot">V</span></div>
       <h1 id="title">Win+V clipboard history,<br>now on <em>Linux</em>.</h1>
-      <p class="lead">SuperV brings the Windows clipboard history to Ubuntu and Linux Mint. Press <kbd>Super</kbd>+<kbd>V</kbd> to see the last 25 things you copied, then click one to paste it. It's free, open source and tiny: 88&nbsp;KB on disk, about 7&nbsp;MB of memory.</p>
+      <p class="lead"><b>Looking for the Windows clipboard on Linux?</b> SuperV is a free Win+V alternative for Ubuntu, Linux Mint, Debian, Fedora, Arch and more. Press <kbd>Super</kbd>+<kbd>V</kbd> to see the last 25 things you copied, then click one to paste it. It's free, open source and tiny: under 100&nbsp;KB, about 7&nbsp;MB of memory.</p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">Download for Ubuntu / Mint (.deb)</a>
-        <a class="btn ghost" href="#install">Other ways to install</a>
+        <a class="btn ghost" href="#install">Fedora, Arch &amp; others</a>
       </div>
-      <p class="meta-line">Version 1.1.2 · Ubuntu 22.04+ · Linux Mint 21+ · Wayland &amp; X11 · MIT license</p>
+      <p class="meta-line">Version 1.2.0 · Ubuntu · Mint · Debian · Fedora · Arch · openSUSE · Wayland &amp; X11 · MIT license</p>
     </div>
     <div class="shots">
       <img class="shot-dark" src="screenshot-dark.png" width="382" height="622" fetchpriority="high"
@@ -292,7 +307,7 @@
 
 <div class="stats" role="region" aria-label="SuperV at a glance">
   <ul>
-    <li><b>88 KB</b><span>single C program</span></li>
+    <li><b>&lt;100 KB</b><span>single C program</span></li>
     <li><b>~7 MB</b><span>private memory</span></li>
     <li><b>0%</b><span>CPU while idle</span></li>
     <li><b>25</b><span>items, like Windows</span></li>
@@ -348,7 +363,7 @@
       <li class="feat">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
         <h3>Wayland and X11</h3>
-        <p>Works on Ubuntu's default GNOME Wayland session and on Cinnamon, MATE and Xfce under X11.</p>
+        <p>GNOME, Cinnamon, MATE and Xfce, on Wayland and X11. KDE Plasma support is experimental.</p>
       </li>
     </ul>
   </div>
@@ -405,24 +420,48 @@
 <section id="install" class="alt" aria-labelledby="install-h">
   <div class="wrap">
     <p class="eyebrow">Install</p>
-    <h2 id="install-h">How to install SuperV on Ubuntu and Linux Mint</h2>
-    <p class="sub">Works on Ubuntu 22.04 or newer and Linux Mint 21 or newer, on Wayland and X11. Pick whichever way you like.</p>
+    <h2 id="install-h">How to install SuperV on Linux</h2>
+    <p class="sub">Pick your Linux family. Every package is a few dozen KB and sets up click-to-paste for you. After installing, open SuperV once from your app menu: that sets up <kbd>Super</kbd>+<kbd>V</kbd>, and SuperV starts by itself at every login from then on.</p>
     <div class="ways">
       <article class="way">
-        <span class="tag">Easiest · no terminal</span>
-        <h3>Double-click the .deb</h3>
+        <span class="tag">No terminal</span>
+        <h3>Ubuntu, Mint, Debian, Pop!_OS, Zorin</h3>
         <ol>
-          <li>Download <a href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">superv_amd64.deb</a> (31 KB).</li>
-          <li>Double-click it and choose <b>Install</b> (Ubuntu Software / Mint's Package Installer). Enter your password once.</li>
-          <li><b>Open SuperV once to finish setup.</b> On Ubuntu, press <kbd>Super</kbd>, type <b>SuperV</b> and press <kbd>Enter</kbd>. On Mint, open the <b>Menu</b> and search for <b>SuperV</b>. This sets up <kbd>Super</kbd>+<kbd>V</kbd>; after that SuperV starts by itself at every login.</li>
+          <li>Download <a href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">superv_amd64.deb</a>.</li>
+          <li>Double-click it and choose <b>Install</b>. Enter your password once.</li>
+          <li><b>Open SuperV once.</b> Ubuntu: press <kbd>Super</kbd>, type <b>SuperV</b>, press <kbd>Enter</kbd>. Mint: open the <b>Menu</b> and search for <b>SuperV</b>.</li>
         </ol>
         <a class="btn primary" href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">Download .deb</a>
       </article>
       <article class="way">
-        <span class="tag">For terminal fans</span>
+        <span class="tag">No terminal</span>
+        <h3>Fedora, openSUSE</h3>
+        <ol>
+          <li>Download <a href="https://github.com/saikatnjm/superv/releases/latest/download/superv.x86_64.rpm">superv.x86_64.rpm</a>.</li>
+          <li>Double-click it to install it with <b>Software</b>, or run <code class="inl">sudo dnf install ./superv.x86_64.rpm</code> (openSUSE: <code class="inl">sudo zypper install ./superv.x86_64.rpm</code>).</li>
+          <li><b>Open SuperV once</b> from your app menu.</li>
+        </ol>
+        <a class="btn primary" href="https://github.com/saikatnjm/superv/releases/latest/download/superv.x86_64.rpm">Download .rpm</a>
+      </article>
+      <article class="way">
+        <span class="tag">Arch, Manjaro, EndeavourOS</span>
+        <h3>Build the package</h3>
+        <ol>
+          <li>Build and install with the included <code class="inl">PKGBUILD</code>, or download the <a href="https://github.com/saikatnjm/superv/releases/latest/download/superv-x86_64.pkg.tar.zst">ready-built package</a> and run <code class="inl">sudo pacman -U superv-x86_64.pkg.tar.zst</code>.</li>
+          <li><b>Open SuperV once</b> from your app menu.</li>
+        </ol>
+        <div class="term">
+          <div class="term-bar"><i></i><i></i><i></i><button class="copy" data-copy="git clone https://github.com/saikatnjm/superv.git&#10;cd superv/packaging/arch&#10;makepkg -si">copy</button></div>
+<pre><span class="p">$ </span>git clone https://github.com/saikatnjm/superv.git
+<span class="p">$ </span>cd superv/packaging/arch
+<span class="p">$ </span>makepkg -si</pre>
+        </div>
+      </article>
+      <article class="way">
+        <span class="tag">Any other Linux</span>
         <h3>Install from source</h3>
         <ol>
-          <li>Clone the repo and run the installer; it sets everything up in your home folder.</li>
+          <li>The installer sets everything up in your home folder and fetches build tools with apt, dnf, pacman or zypper.</li>
           <li>Optional: pass your own shortcut with <code class="inl">--hotkey</code>.</li>
         </ol>
         <div class="term">
@@ -435,6 +474,7 @@
         </div>
       </article>
     </div>
+    <p class="sub" style="margin:28px 0 0"><b>Updating</b> is the same: install the new package. SuperV notices it was updated and restarts itself into the new version as soon as the panel is closed, keeping what's on your clipboard.</p>
   </div>
 </section>
 
@@ -443,20 +483,60 @@
     <p class="eyebrow">FAQ</p>
     <h2 id="faq-h">Frequently asked questions</h2>
     <p class="sub">Something not working? Run <code class="inl">superv --doctor</code> to check the setup on your machine.</p>
+    <div class="faq-list">
     <details open><summary>How do I get clipboard history like Win+V on Ubuntu?</summary>
-      <p>Install SuperV by double-clicking its .deb file, then open it once: press <kbd>Super</kbd>, type <b>SuperV</b> and press <kbd>Enter</kbd>. From then on, press <kbd>Super</kbd>+<kbd>V</kbd> and a panel opens with your last 25 copied items; click one to paste it into the app you are using.</p></details>
+      <div class="answer">
+        <p>Install SuperV by double-clicking its .deb file, then open it once: press <kbd>Super</kbd>, type <b>SuperV</b> and press <kbd>Enter</kbd>.</p>
+        <p>From then on, press <kbd>Super+V</kbd>: a panel opens with your last 25 copied items. Click one to paste it into the app you're using.</p>
+      </div></details>
     <details><summary>Is there a Win+V clipboard for Linux Mint?</summary>
-      <p>Yes. SuperV works on Linux Mint 21 and newer (Cinnamon, MATE and Xfce). After installing, open the <b>Menu</b>, search for <b>SuperV</b> and open it once; that sets up <kbd>Super</kbd>+<kbd>V</kbd> for you.</p></details>
+      <div class="answer">
+        <p>Yes. SuperV works on Linux Mint 21 and newer: Cinnamon, MATE and Xfce.</p>
+        <p>After installing, open the <b>Menu</b>, search for <b>SuperV</b> and open it once. That sets up <kbd>Super+V</kbd> for you.</p>
+      </div></details>
+    <details><summary>Does SuperV work on Fedora, Arch or KDE Plasma?</summary>
+      <div class="answer">
+        <p>Yes:</p>
+        <ul>
+          <li><b>Fedora and openSUSE:</b> install the .rpm package.</li>
+          <li><b>Arch, Manjaro and EndeavourOS:</b> use the included PKGBUILD.</li>
+          <li><b>Any other distro:</b> run <code class="inl">install.sh</code>.</li>
+        </ul>
+        <p>GNOME, Cinnamon, MATE and Xfce are fully supported. KDE Plasma support is <b>experimental</b>: SuperV sets <kbd>Meta+V</kbd> and turns off KDE's own Meta+V clipboard popup for you. On Sway, Hyprland, i3 and COSMIC, add the shortcut line SuperV prints.</p>
+      </div></details>
     <details><summary>Does SuperV work on Wayland?</summary>
-      <p>Yes. Ubuntu's default GNOME Wayland session is fully supported, including copying from and pasting into native Wayland apps.</p></details>
+      <div class="answer">
+        <p>Yes. Ubuntu's and Fedora's default GNOME Wayland sessions are fully supported, including copying from and pasting into native Wayland apps.</p>
+      </div></details>
     <details><summary>Can I use a different shortcut than Super+V?</summary>
-      <p>Yes. Open the panel, click ⚙ → <b>Shortcut</b> and press a combination with <kbd>Super</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>, such as <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd>. A green ✓ confirms it's saved; if a combination can't be used (like <kbd>Ctrl</kbd>+<kbd>V</kbd>, which apps need for pasting), SuperV tells you why.</p></details>
+      <div class="answer">
+        <p>Yes. Open the panel, click ⚙ → <b>Shortcut</b> and press a combination with <kbd>Super</kbd> or <kbd>Ctrl+Alt</kbd>, such as <kbd>Ctrl+Alt+V</kbd>.</p>
+        <p>A green ✓ confirms it's saved. If a combination can't be used, like <kbd>Ctrl+V</kbd> which apps need for pasting, SuperV tells you why.</p>
+      </div></details>
     <details><summary>How much memory does SuperV use?</summary>
-      <p>SuperV is an 88 KB C program that uses about 7 MB of private memory. It uses no CPU until the clipboard changes.</p></details>
+      <div class="answer">
+        <p>About 7 MB. SuperV is a single C program under 100 KB, and it uses no CPU until the clipboard changes.</p>
+      </div></details>
     <details><summary>Where is my clipboard history stored?</summary>
-      <p>Only on your computer, in <code class="inl">~/.local/share/superv/</code>, readable by you alone. SuperV never connects to the internet: no telemetry, no analytics, no update checks. Unpinned items are removed on reboot, and passwords copied from password managers are never saved.</p></details>
+      <div class="answer">
+        <p>Only on your computer, in <code class="inl">~/.local/share/superv/</code>, readable by you alone.</p>
+        <p>SuperV never connects to the internet: no telemetry, no analytics, no update checks. Unpinned items are removed on reboot, and passwords copied from password managers are never saved.</p>
+      </div></details>
+    <details><summary>How do I update SuperV?</summary>
+      <div class="answer">
+        <p>Install the new package the same way you installed the first one. SuperV notices it was updated and restarts itself into the new version as soon as the panel is closed, keeping what's on your clipboard.</p>
+      </div></details>
     <details><summary>How do I uninstall SuperV?</summary>
-      <p>On Ubuntu, open Ubuntu Software → <b>Installed</b> → SuperV → <b>Uninstall</b>. On Linux Mint, right-click <b>SuperV</b> in the Menu → <b>Uninstall</b>. Or run <code class="inl">sudo apt remove superv</code>. Your desktop's shortcuts are restored. Your clipboard history and settings are kept for a reinstall; to delete them too, run <code class="inl">rm -r ~/.local/share/superv ~/.config/superv</code>. Installed from source? Run <code class="inl">~/.local/lib/superv/uninstall.sh --purge</code> instead.</p></details>
+      <div class="answer">
+        <ul>
+          <li><b>Ubuntu:</b> Ubuntu Software → Installed → SuperV → Uninstall</li>
+          <li><b>Linux Mint:</b> right-click SuperV in the Menu → Uninstall</li>
+          <li><b>Fedora:</b> Software → Installed → SuperV → Uninstall</li>
+          <li><b>Terminal:</b> <code class="inl">sudo apt remove superv</code>, <code class="inl">sudo dnf remove superv</code>, <code class="inl">sudo zypper remove superv</code> or <code class="inl">sudo pacman -R superv</code></li>
+        </ul>
+        <p>Your desktop's shortcuts are restored. Your history and settings are kept in case you reinstall; to delete them too, run <code class="inl">rm -r ~/.local/share/superv ~/.config/superv</code>.</p>
+      </div></details>
+    </div>
   </div>
 </section>
 

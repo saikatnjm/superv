@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=SuperV
+Comment=Clipboard history (Super+V)
+Exec=superv --daemon
+Icon=io.github.superv.SuperV
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

@@ -1,0 +1,24 @@
+# Arch Linux / Manjaro / EndeavourOS package (ready for the AUR).
+# Build and install from this folder:  makepkg -si
+pkgname=superv
+pkgver=1.2.0
+pkgrel=1
+pkgdesc="Win+V clipboard history for Linux: press Super+V to paste from your last 25 copies"
+arch=('x86_64' 'aarch64')
+url="https://github.com/saikatnjm/superv"
+license=('MIT')
+depends=('gtk3' 'libx11' 'libxtst' 'python' 'python-gobject')
+makedepends=('gcc' 'make' 'pkgconf')
+install=superv.install
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    make CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" PREFIX=/usr
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    make install DESTDIR="$pkgdir" PREFIX=/usr
+}

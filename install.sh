@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# SuperV installer — Win+V clipboard history for Ubuntu & Linux Mint.
+# SuperV installer — Win+V clipboard history for Linux.
+# Ubuntu, Mint, Debian, Pop!_OS, Zorin, elementary, Fedora, Arch, Manjaro, openSUSE…
 #
 #   ./install.sh                         Super+V (like Windows), asks for your password once
 #   ./install.sh --hotkey "<Ctrl><Alt>v" use your own shortcut (change it later from the ⚙ menu)
@@ -24,7 +25,30 @@ done
 
 V=$'\e[38;5;141m'; B=$'\e[1;38;5;141m'; N=$'\e[0m'; OK="${V}✓${N}"
 step() { printf '\n%s%s%s\n' "$B" "$1" "$N"; }
-apt_install() { echo "  installing: $*"; sudo apt-get install -y "$@" >/dev/null; }
+
+# Install packages with whatever package manager this distro uses.
+#   need build   -> C compiler, pkg-config, GTK 3 + X11 development files
+#   need python  -> Python GObject bindings (used by the one-time setup helper)
+need() {
+  local pkgs=""
+  if command -v apt-get >/dev/null; then
+    [[ $1 == build ]] && pkgs="build-essential pkg-config libgtk-3-dev" || pkgs="python3-gi gir1.2-glib-2.0"
+    echo "  installing: $pkgs"; sudo apt-get install -y $pkgs >/dev/null
+  elif command -v dnf >/dev/null; then
+    [[ $1 == build ]] && pkgs="gcc make pkgconf-pkg-config gtk3-devel libX11-devel" || pkgs="python3-gobject"
+    echo "  installing: $pkgs"; sudo dnf install -y $pkgs >/dev/null
+  elif command -v pacman >/dev/null; then
+    [[ $1 == build ]] && pkgs="base-devel pkgconf gtk3 libx11" || pkgs="python-gobject"
+    echo "  installing: $pkgs"; sudo pacman -S --needed --noconfirm $pkgs >/dev/null
+  elif command -v zypper >/dev/null; then
+    [[ $1 == build ]] && pkgs="gcc make pkg-config gtk3-devel libX11-devel" || pkgs="python3-gobject"
+    echo "  installing: $pkgs"; sudo zypper --non-interactive install $pkgs >/dev/null
+  else
+    echo "  Couldn't find apt, dnf, pacman or zypper. Please install:"
+    [[ $1 == build ]] && echo "    a C compiler, make, pkg-config and the GTK 3 + X11 development packages"                       || echo "    the Python GObject bindings (often called python3-gobject or python3-gi)"
+    exit 1
+  fi
+}
 
 step "1/6  Getting the SuperV binary"
 BIN=""
@@ -34,16 +58,15 @@ if [[ "$(uname -m)" == "x86_64" && -x "$SRC_DIR/bin/superv-x86_64" ]] \
   echo "  $OK prebuilt binary works on this system ($(du -h "$BIN" | cut -f1))"
 else
   echo "  building from source (prebuilt binary doesn't fit this system)…"
-  need=()
-  command -v gcc >/dev/null || need+=(build-essential)
-  command -v pkg-config >/dev/null || need+=(pkg-config)
-  pkg-config --exists gtk+-3.0 2>/dev/null || need+=(libgtk-3-dev)
-  ((${#need[@]})) && apt_install "${need[@]}"
+  if ! command -v cc >/dev/null || ! command -v make >/dev/null || ! command -v pkg-config >/dev/null \
+     || ! pkg-config --exists gtk+-3.0 x11 2>/dev/null; then
+    need build
+  fi
   make -C "$SRC_DIR" -B >/dev/null
   BIN="$SRC_DIR/superv"
   echo "  $OK built ($(du -h "$BIN" | cut -f1))"
 fi
-python3 -c 'import gi; from gi.repository import Gio' 2>/dev/null || apt_install python3-gi
+python3 -c 'from gi.repository import Gio' 2>/dev/null || need python
 
 step "2/6  Installing to $LIB_DIR"
 "$BIN_DIR/superv" --quit >/dev/null 2>&1 || true

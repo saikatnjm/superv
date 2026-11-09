@@ -2,14 +2,16 @@
 
 # SuperV
 
-**Win+V clipboard history for Linux: same panel, same keys.**
+**The Windows clipboard (Win+V) for Linux: same panel, same keys.**
 
-Press <kbd>Super</kbd> + <kbd>V</kbd> on Ubuntu or Linux Mint and get the clipboard history you know from Windows.
+Press <kbd>Super</kbd> + <kbd>V</kbd> on Linux and get the clipboard history you know from Windows.
+Ubuntu, Linux Mint, Debian, Fedora, Arch, openSUSE and more.
 
-![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%2B-7c3aed?style=flat-square)
-![Linux Mint](https://img.shields.io/badge/Linux%20Mint-21%2B-7c3aed?style=flat-square)
+![Ubuntu · Mint · Debian](https://img.shields.io/badge/Ubuntu%20·%20Mint%20·%20Debian-.deb-7c3aed?style=flat-square)
+![Fedora · openSUSE](https://img.shields.io/badge/Fedora%20·%20openSUSE-.rpm-7c3aed?style=flat-square)
+![Arch · Manjaro](https://img.shields.io/badge/Arch%20·%20Manjaro-PKGBUILD-7c3aed?style=flat-square)
 ![Wayland + X11](https://img.shields.io/badge/Wayland%20%2B%20X11-supported-a78bfa?style=flat-square)
-![Binary size](https://img.shields.io/badge/binary-88%20KB-a78bfa?style=flat-square)
+![Size](https://img.shields.io/badge/size-under%20100%20KB-a78bfa?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square)
 
 <picture>
@@ -45,16 +47,33 @@ Linux has no clipboard history out of the box, and some desktops lose the clipbo
 
 ## Install
 
-### Easiest: double-click (no terminal)
+Pick your Linux family. Every package is a few dozen KB and sets up click-to-paste for you.
 
-1. Download **[superv_amd64.deb](https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb)** (31 KB).
+### Ubuntu, Linux Mint, Debian, Pop!_OS, Zorin, elementary (no terminal)
+
+1. Download **[superv_amd64.deb](https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb)**.
 2. Double-click it and choose **Install** (Ubuntu Software, or Package Installer on Mint). Enter your password once.
-3. **Open SuperV once to finish setup.** On Ubuntu, press <kbd>Super</kbd>, type **SuperV** and press <kbd>Enter</kbd>. On Linux Mint, open the **Menu** and search for **SuperV**.
-   This first launch starts SuperV and sets up the <kbd>Super</kbd> + <kbd>V</kbd> shortcut. After that, SuperV starts by itself every time you log in.
+3. **Open SuperV once to finish setup.** Press <kbd>Super</kbd>, type **SuperV** and press <kbd>Enter</kbd> (on Mint: open the **Menu** and search for **SuperV**).
+   This first launch starts SuperV and sets up <kbd>Super</kbd> + <kbd>V</kbd>. After that, SuperV starts by itself every time you log in.
 
-The package also turns on click-to-paste for Wayland, so there's nothing else to set up.
+Needs Ubuntu 22.04 / Mint 21 / Debian 12 or newer. On older releases, use the source install below.
 
-### From source
+### Fedora, openSUSE
+
+1. Download **[superv.x86_64.rpm](https://github.com/saikatnjm/superv/releases/latest/download/superv.x86_64.rpm)**.
+2. Double-click it to open it in **Software** (or run `sudo dnf install ./superv.x86_64.rpm`, or `sudo zypper install ./superv.x86_64.rpm` on openSUSE).
+3. Open **SuperV** once from your app menu.
+
+### Arch, Manjaro, EndeavourOS
+
+```bash
+git clone https://github.com/saikatnjm/superv.git
+cd superv/packaging/arch && makepkg -si
+```
+
+Or download the ready-built **[superv-x86_64.pkg.tar.zst](https://github.com/saikatnjm/superv/releases/latest/download/superv-x86_64.pkg.tar.zst)** and run `sudo pacman -U superv-x86_64.pkg.tar.zst`. Then open **SuperV** once from your app menu.
+
+### Any other Linux: from source
 
 ```bash
 git clone https://github.com/saikatnjm/superv.git
@@ -62,7 +81,11 @@ cd superv
 ./install.sh                          # or: ./install.sh --hotkey "<Ctrl><Alt>v"
 ```
 
-The installer asks for your password **once** to turn on click-to-paste. Skip that with `./install.sh --no-sudo`; the panel then shows an **Enable** button that asks for your password through the normal desktop dialog when you want it.
+`install.sh` installs into your home folder, fetches any missing build tools with apt, dnf, pacman or zypper, and asks for your password **once** to turn on click-to-paste. Skip that with `./install.sh --no-sudo`; the panel then shows an **Enable** button that asks through the normal desktop password dialog when you want it.
+
+### Updating
+
+Install the new package the same way. **SuperV notices it was updated and restarts itself into the new version** as soon as the panel is closed, keeping what's on your clipboard. (Coming from 1.1.2 or older? Run `superv --quit` and open SuperV once; from 1.2.0 on, this is automatic.)
 
 ### Your own shortcut, theme and text size
 
@@ -89,11 +112,11 @@ Drag the panel's header to move it and drag any edge to resize it; SuperV rememb
 
 ## Lightweight by design
 
-SuperV is a single **88 KB** C program built on GTK 3, which Ubuntu and Mint already have loaded in memory. It uses no interpreter, no Electron and no runtime.
+SuperV is a single C program **under 100 KB** built on GTK 3, which Ubuntu and Mint already have loaded in memory. It uses no interpreter, no Electron and no runtime.
 
 | | |
 |---|---|
-| Binary | 88 KB (31 KB .deb) |
+| Size | under 100 KB (packages around 35 KB) |
 | Memory | ~7 MB private (~27 MB RSS, most of it GTK pages shared with your desktop) |
 | CPU when idle | 0%: it wakes only when the clipboard changes |
 | Popup | ~0.1 s from shortcut to panel |
@@ -102,14 +125,18 @@ The setup helper (`superv-setup`, Python) only runs during install or when you c
 
 ## Works on
 
-| Desktop | Session | Status |
-|---|---|---|
-| Ubuntu 22.04 / 24.04 (GNOME) | Wayland & X11 | ✓ |
-| Linux Mint 21 / 22 Cinnamon | X11 | ✓ |
-| Linux Mint MATE / Xfce | X11 | ✓ |
-| Other GNOME/Cinnamon distros | Wayland & X11 | should work |
+| Desktop | Distros | Session | Status |
+|---|---|---|---|
+| GNOME | Ubuntu, Fedora Workstation, Debian, Pop!_OS 22.04, Zorin, Arch/Manjaro GNOME | Wayland & X11 | ✓ fully supported |
+| Cinnamon | Linux Mint, Fedora Cinnamon, Arch | X11 | ✓ fully supported |
+| MATE, Xfce | Mint MATE/Xfce, Xubuntu, Ubuntu MATE, Fedora spins | X11 | ✓ supported |
+| Budgie, Pantheon (elementary) | Ubuntu Budgie, elementary OS | X11 / Wayland | should work (GNOME-style shortcuts) |
+| KDE Plasma 5 & 6 | Kubuntu, KDE neon, Fedora KDE, openSUSE, Manjaro KDE | Wayland & X11 | **experimental**: SuperV sets Meta+V and turns off Klipper's Meta+V for you |
+| Sway, Hyprland, i3, COSMIC | various | Wayland / X11 | works; add the shortcut yourself (SuperV prints the exact line) |
 
-The prebuilt binary needs glibc 2.34+ (Ubuntu 22.04 / Mint 21 or newer). On older systems or non-x86_64 machines, `install.sh` compiles from source automatically.
+What every setup needs: an X11 session or XWayland (on by default on GNOME, KDE and most Wayland desktops), GTK 3 and Python 3 with GObject (installed automatically by the packages). Click-to-paste uses `/dev/uinput` via systemd's `uaccess`; on distros without systemd, picking an item still copies it and X11 apps still get pasted.
+
+The prebuilt `.deb` needs glibc 2.34+ (Ubuntu 22.04, Mint 21, Debian 12 or newer); everything else is built for your system.
 
 ## How it works
 
@@ -126,6 +153,7 @@ SuperV only touches your clipboard and never leaves your machine.
 - **Local, owner-only storage.** Folders are `0700` and files `0600`, enforced every time SuperV starts. Only your user can read your history.
 - **Short-lived by default.** Unpinned items are wiped on reboot. **Clear all** and turning history off delete them immediately.
 - **Secrets are skipped.** Copies marked by password managers (`x-kde-passwordManagerHint`, used by KeePassXC and others) are never recorded, and neither are file copies from your file manager.
+- **Password managers:** copies marked as secret (KeePassXC and others that set `x-kde-passwordManagerHint`) are skipped. Apps that don't mark their copies, such as some browser and Electron password managers, *are* recorded like any other text; pin nothing sensitive, and use **Delete** or **Clear history** if a password ends up in the list.
 - **Nothing sensitive in logs.** Log lines report status only, never clipboard content.
 - **What the click-to-paste permission means.** A udev rule lets the logged-in user create a virtual keyboard (`/dev/uinput`), which SuperV uses to press <kbd>Shift</kbd>+<kbd>Insert</kbd> after you pick an item. On X11, every app already has this ability. Uninstalling removes the rule.
 - **The website** sets no cookies, has no analytics and makes no third-party requests; the theme toggle is stored in your browser only.
@@ -172,7 +200,8 @@ superv-setup --hotkey "<Ctrl><Alt>v"   change the shortcut
 
 Run `superv --doctor` first.
 
-- **Super+V does nothing.** Open SuperV once from the app menu (or log out and back in), then check `superv --doctor`.
+- **Super+V does nothing.** Open SuperV once from the app menu (or log out and back in), then check `superv --doctor`. On KDE Plasma 5, log out and back in once after setup. On Sway, Hyprland, i3 or COSMIC, add the shortcut line that `superv-setup --hotkey "<Super>v"` prints.
+- **The panel still shows the old version after an update.** Run `superv --quit` and open SuperV again (only needed when updating *from* 1.1.2 or older).
 - **A copied image doesn't show up, or shows as text.** Run `superv --quit`, then `SUPERV_DEBUG=1 superv --daemon` in a terminal, and copy the image again. The log lists the clipboard *formats* the app offered (never the content), which is exactly what a bug report needs.
 - **The item is copied but not pasted.** Click-to-paste isn't enabled yet: open the panel and click **Enable**, or install the `.deb`. (Apps running under X11, such as Chrome, VS Code and Electron apps, paste even without it.)
 - **An app doesn't paste with Shift+Insert.** Set `paste_keys=ctrl+v` in the config.
@@ -181,11 +210,12 @@ Run `superv --doctor` first.
 
 Either way, SuperV stops, and your desktop's shortcuts go back to how they were (Super+V opens the notification list again on Ubuntu).
 
-**Installed the `.deb`** (pick one):
+**Installed a package** (pick one):
 
 - **Ubuntu:** Ubuntu Software → **Installed** → SuperV → **Uninstall**
 - **Linux Mint:** open the **Menu**, right-click **SuperV** → **Uninstall** (or use Software Manager)
-- **Terminal:** `sudo apt remove superv`
+- **Fedora:** Software → **Installed** → SuperV → **Uninstall**
+- **Terminal:** `sudo apt remove superv` (Debian family) · `sudo dnf remove superv` (Fedora) · `sudo zypper remove superv` (openSUSE) · `sudo pacman -R superv` (Arch)
 
 Your clipboard history and settings are kept in case you reinstall. To delete them as well:
 
@@ -203,11 +233,11 @@ rm -r ~/.local/share/superv ~/.config/superv
 ## Build from source
 
 ```bash
-sudo apt install build-essential libgtk-3-dev
-make                          # builds ./superv
-cp superv bin/superv-x86_64
-packaging/build-deb.sh        # builds dist/superv_<version>_amd64.deb
+make                          # builds ./superv (build dependencies for each distro are listed in the Makefile)
+sudo make install             # installs to /usr/local (PREFIX=/usr DESTDIR=… for packaging)
 ```
+
+Packages: `packaging/build-deb.sh` (.deb), `packaging/rpm/superv.spec` (.rpm) and `packaging/arch/PKGBUILD` (Arch). Pushing a tag like `v1.2.0` makes GitHub build all three and attach them to the release (`.github/workflows/release.yml`).
 
 The GitHub Pages site lives in [`docs/`](docs/). In the repository settings, set Pages to **Deploy from branch → `main` → `/docs`**.
 
