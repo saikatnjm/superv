@@ -1,6 +1,6 @@
 pkgbase = superv
 	pkgdesc = Clipboard for Linux: press Super+V to paste from your last 25 copies, like Win+V on Windows
-	pkgver = 1.2.2
+	pkgver = 1.2.3
 	pkgrel = 1
 	url = https://github.com/saikatnjm/superv
 	install = superv.install
@@ -12,7 +12,7 @@ pkgbase = superv
 	depends = libxtst
 	depends = python
 	depends = python-gobject
-	source = superv-1.2.2.tar.gz::https://github.com/saikatnjm/superv/archive/refs/tags/v1.2.2.tar.gz
-	sha256sums = 3f7b78f514b1f1256333f579e572361fe6e083e2ad4d57fbda50c27e8277de47
+	source = superv-1.2.3.tar.gz::https://github.com/saikatnjm/superv/archive/refs/tags/v1.2.3.tar.gz
+	sha256sums = a9c85757e932eaf8ae1a36f1b600b976467dcdde9e296fce35a31aa82b435a09
 
 pkgname = superv
