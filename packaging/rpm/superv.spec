@@ -1,13 +1,14 @@
-# RPM package for Fedora and openSUSE.
-# Build: rpmbuild -bb packaging/rpm/superv.spec --define "_sourcedir $PWD/dist" (expects dist/superv-VERSION.tar.gz)
-# The GitHub release workflow does this automatically for every tagged version.
+# RPM package for Fedora and openSUSE. Published on Fedora COPR (saikatnjm/superv),
+# which downloads Source0 from the GitHub release tag.
+# Local build: spectool -g -R packaging/rpm/superv.spec && rpmbuild -bb packaging/rpm/superv.spec
+# The GitHub release workflow builds it too, from a local tarball of the same name.
 Name:           superv
-Version:        1.2.2
+Version:        1.2.3
 Release:        1%{?dist}
-Summary:        Win+V clipboard history for Linux
+Summary:        Clipboard for Linux
 License:        MIT
 URL:            https://github.com/saikatnjm/superv
-Source0:        %{name}-%{version}.tar.gz
+Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:  gcc
 BuildRequires:  make
@@ -76,6 +77,9 @@ fi
 %{_modulesloaddir}/superv-uinput.conf
 
 %changelog
+* Tue Nov 10 2026 SuperV <saikatnjm@users.noreply.github.com> - 1.2.3-1
+- New tagline: Clipboard for Linux; packaging for COPR, the AUR and a Launchpad PPA
+
 * Mon Nov 09 2026 SuperV <saikatnjm@users.noreply.github.com> - 1.2.2-1
 - App-store screenshots: 1280x720 landscape images with declared sizes
 

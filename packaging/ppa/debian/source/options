@@ -1,0 +1,6 @@
+# keep prebuilt binaries, build output and the website out of the source package
+tar-ignore = .git
+tar-ignore = bin
+tar-ignore = dist
+tar-ignore = docs
+tar-ignore = superv

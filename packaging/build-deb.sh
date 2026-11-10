@@ -34,7 +34,7 @@ Depends: libc6 (>= 2.34), libgtk-3-0 (>= 3.22), python3, python3-gi, gir1.2-glib
 Installed-Size: $(du -sk "$PKG/usr" | cut -f1)
 Maintainer: SuperV <saikatnjm@users.noreply.github.com>
 Homepage: https://github.com/saikatnjm/superv
-Description: Win+V clipboard history for Linux
+Description: Clipboard for Linux
  SuperV brings the Windows clipboard history panel (Win+V) to Linux.
  Press Super+V to see the last 25 things you copied (text and images), pick
  one to paste it into the app you are using, pin favourites, and clear the

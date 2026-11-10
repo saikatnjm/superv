@@ -1,0 +1,19 @@
+Source: superv
+Section: utils
+Priority: optional
+Maintainer: SuperV <saikatnjm@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), pkg-config, libgtk-3-dev, libx11-dev
+Standards-Version: 4.6.0
+Homepage: https://github.com/saikatnjm/superv
+Rules-Requires-Root: no
+
+Package: superv
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3, python3-gi, gir1.2-glib-2.0
+Recommends: libxtst6
+Description: Clipboard for Linux
+ SuperV brings the Windows clipboard history panel (Win+V) to Linux.
+ Press Super+V to see the last 25 things you copied (text and images),
+ pick one to paste it into the app you are using, pin favourites, and
+ clear the rest. Works on GNOME, Cinnamon, MATE and Xfce, on Wayland and
+ X11. Never connects to the internet.

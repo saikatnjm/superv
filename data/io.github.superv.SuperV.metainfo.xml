@@ -6,7 +6,7 @@
   <project_license>MIT</project_license>
 
   <name>SuperV</name>
-  <summary>The Windows clipboard (Win+V) for Linux</summary>
+  <summary>Clipboard for Linux</summary>
   <developer_name>SuperV contributors</developer_name>
 
   <description>
@@ -80,6 +80,11 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="1.2.3" date="2026-11-10">
+      <description>
+        <p>New tagline, "Clipboard for Linux", and packaging for the AUR, Fedora COPR and an Ubuntu/Mint PPA.</p>
+      </description>
+    </release>
     <release version="1.2.2" date="2026-11-09">
       <description>
         <p>Screenshots in the app store: larger, landscape images that Ubuntu Software and GNOME Software can display.</p>

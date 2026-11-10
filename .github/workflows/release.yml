@@ -60,6 +60,7 @@ jobs:
           # build from this checkout instead of downloading the tag
           tar --exclude=./.git --transform "s,^\.,superv-$V," -czf "/tmp/build/superv-$V.tar.gz" .
           sed -i "s|^source=.*|source=(\"superv-$V.tar.gz\")|" /tmp/build/PKGBUILD
+          sed -i "s|^sha256sums=.*|sha256sums=('SKIP')|" /tmp/build/PKGBUILD
           chown -R builder /tmp/build
           su builder -c "cd /tmp/build && makepkg --nodeps --noconfirm"
           ls /tmp/build/*.pkg.tar.zst

@@ -85,7 +85,7 @@ cat > "$AUTOSTART_DIR/superv.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=SuperV
-Comment=Clipboard history (Win+V for Linux)
+Comment=Clipboard for Linux (Super+V)
 Exec="$LIB_DIR/superv" --daemon
 Icon=io.github.superv.SuperV
 NoDisplay=true
@@ -96,7 +96,7 @@ cat > "$APPS_DIR/io.github.superv.SuperV.desktop" <<EOF
 Type=Application
 Name=SuperV
 GenericName=Clipboard history
-Comment=Win+V clipboard history for Linux
+Comment=Clipboard for Linux: press Super+V for your clipboard history
 Exec="$LIB_DIR/superv" --show
 Icon=io.github.superv.SuperV
 Categories=Utility;

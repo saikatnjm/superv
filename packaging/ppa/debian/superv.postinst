@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+if [ "$1" = configure ]; then
+    modprobe uinput 2>/dev/null || true
+    if command -v udevadm >/dev/null; then
+        udevadm control --reload-rules || true
+        udevadm trigger --action=change --sysname-match=uinput || true
+    fi
+    command -v appstreamcli >/dev/null && appstreamcli refresh-cache >/dev/null 2>&1 || true
+fi
+#DEBHELPER#
+exit 0

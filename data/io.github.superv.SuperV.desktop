@@ -2,7 +2,7 @@
 Type=Application
 Name=SuperV
 GenericName=Clipboard history
-Comment=Win+V clipboard history for Linux — press Super+V
+Comment=Clipboard for Linux: press Super+V for your clipboard history
 Exec=superv --show
 Icon=io.github.superv.SuperV
 Categories=Utility;

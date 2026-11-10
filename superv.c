@@ -30,7 +30,7 @@
 #include <X11/keysym.h>
 
 #define APP_ID  "io.github.superv.SuperV"
-#define VERSION "1.2.2"
+#define VERSION "1.2.3"
 #define REPO_URL "https://github.com/saikatnjm/superv"
 #ifndef SETUP_DIR
 #define SETUP_DIR "/usr/lib/superv"   /* where packages put superv-setup (set by the Makefile) */

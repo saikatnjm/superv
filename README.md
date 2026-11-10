@@ -2,7 +2,7 @@
 
 # SuperV
 
-**The Windows clipboard (Win+V) for Linux: same panel, same keys.**
+**Clipboard for Linux.** The Windows Win+V clipboard history: same panel, same keys.
 
 Press <kbd>Super</kbd> + <kbd>V</kbd> on Linux and get the clipboard history you know from Windows.
 Ubuntu, Linux Mint, Debian, Fedora, Arch, openSUSE and more.
