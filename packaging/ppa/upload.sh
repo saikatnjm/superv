@@ -3,7 +3,7 @@
 # Launchpad then compiles them for Ubuntu (and Linux Mint, which uses the same packages).
 #
 #   packaging/ppa/upload.sh <launchpad-username> [series...]
-#     series default: jammy noble   (Ubuntu 22.04 = Mint 21, Ubuntu 24.04 = Mint 22)
+#     series default: jammy noble resolute stonking   (Ubuntu 22.04 = Mint 21, 24.04 = Mint 22, 26.04, 26.10)
 #     add newer Ubuntu series by name, e.g.: upload.sh myname jammy noble <newer-series>
 #
 # One-time setup (see PUBLISHING.md):
@@ -14,7 +14,7 @@
 set -euo pipefail
 
 LP_USER="${1:?usage: packaging/ppa/upload.sh <launchpad-username> [series...]}"; shift
-SERIES=("$@"); ((${#SERIES[@]})) || SERIES=(jammy noble)
+SERIES=("$@"); ((${#SERIES[@]})) || SERIES=(jammy noble resolute stonking)
 : "${DEBFULLNAME:?set DEBFULLNAME to the name on your GPG key}"
 : "${DEBEMAIL:?set DEBEMAIL to the email on your GPG key}"
 for tool in debuild dput git; do command -v $tool >/dev/null || { echo "missing $tool: sudo apt install devscripts dput git"; exit 1; }; done

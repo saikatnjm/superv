@@ -80,7 +80,7 @@ COPR builds straight from this GitHub repo using `packaging/rpm/superv.spec`. No
 ## 3. Launchpad PPA (Ubuntu and Linux Mint)
 
 The Debian source packaging is in `packaging/ppa/debian/`, and `packaging/ppa/upload.sh` builds,
-signs and uploads it. Default targets: `jammy` (Ubuntu 22.04, Mint 21) and `noble` (Ubuntu 24.04, Mint 22).
+signs and uploads it. Default targets: `jammy` (Ubuntu 22.04, Mint 21), `noble` (Ubuntu 24.04, Mint 22), `resolute` (26.04) and `stonking` (26.10).
 
 1. **Create a Launchpad account** at <https://launchpad.net/> (pick your username, e.g. `saikatnjm`).
 2. **Install the tools:**

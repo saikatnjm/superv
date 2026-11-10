@@ -58,7 +58,7 @@ sudo apt install superv
 
 Then **open SuperV once**: press <kbd>Super</kbd>, type **SuperV** and press <kbd>Enter</kbd> (on Mint: open the **Menu** and search for **SuperV**).
 New versions then come through **Software Updater** (Ubuntu), **Update Manager** (Mint) or `sudo apt upgrade`.
-The PPA covers Ubuntu 22.04 and 24.04, Linux Mint 21 and 22, and other systems based on them (Pop!_OS, Zorin, elementary).
+The PPA covers Ubuntu 22.04, 24.04, 26.04 and 26.10, Linux Mint 21 and 22, and other systems based on them (Pop!_OS, Zorin, elementary).
 
 ### Ubuntu, Linux Mint, Debian, Pop!_OS, Zorin, elementary (no terminal)
 
