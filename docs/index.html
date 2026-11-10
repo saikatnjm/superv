@@ -82,7 +82,7 @@
         { "@type": "Question", "name": "Does SuperV work on Fedora, Arch or KDE Plasma?",
           "acceptedAnswer": { "@type": "Answer", "text": "Yes. There are packages for Fedora and openSUSE (.rpm) and Arch, Manjaro and EndeavourOS (PKGBUILD), and an install script for any other distro. GNOME, Cinnamon, MATE and Xfce are fully supported; KDE Plasma support is experimental; on Sway, Hyprland, i3 and COSMIC you add the shortcut line SuperV prints." } },
         { "@type": "Question", "name": "How do I update SuperV?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Install the new package the same way you installed the first one. SuperV notices it was updated and restarts itself into the new version as soon as the panel is closed, keeping what's on your clipboard." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "If you installed from the PPA (ppa:saikatnjm/superv), updates arrive with your normal system updates. Otherwise, install the new package the same way you installed the first one. SuperV notices it was updated and restarts itself into the new version as soon as the panel is closed, keeping what's on your clipboard." } },
         { "@type": "Question", "name": "How do I uninstall SuperV?",
           "acceptedAnswer": { "@type": "Answer", "text": "On Ubuntu, open Ubuntu Software, go to Installed and uninstall SuperV. On Linux Mint, right-click SuperV in the Menu and choose Uninstall. Or run sudo apt remove superv (Debian family), sudo dnf remove superv (Fedora), sudo zypper remove superv (openSUSE) or sudo pacman -R superv (Arch). Your desktop shortcuts are restored. To also delete your clipboard history and settings, run rm -r ~/.local/share/superv ~/.config/superv." } }
       ]
@@ -424,6 +424,20 @@
     <p class="sub">Pick your Linux family. Every package is a few dozen KB and sets up click-to-paste for you. After installing, open SuperV once from your app menu: that sets up <kbd>Super</kbd>+<kbd>V</kbd>, and SuperV starts by itself at every login from then on.</p>
     <div class="ways">
       <article class="way">
+        <span class="tag">Recommended · gets updates</span>
+        <h3>Ubuntu and Linux Mint (PPA)</h3>
+        <ol>
+          <li>Add the SuperV PPA and install. Works on Ubuntu 22.04 and 24.04, Mint 21 and 22.</li>
+          <li><b>Open SuperV once</b> from your app menu.</li>
+          <li>New versions arrive with your normal system updates (Software Updater, Update Manager).</li>
+        </ol>
+        <div class="term">
+          <div class="term-bar"><i></i><i></i><i></i><button class="copy" data-copy="sudo add-apt-repository ppa:saikatnjm/superv&#10;sudo apt install superv">copy</button></div>
+<pre><span class="p">$ </span>sudo add-apt-repository ppa:saikatnjm/superv
+<span class="p">$ </span>sudo apt install superv</pre>
+        </div>
+      </article>
+      <article class="way">
         <span class="tag">No terminal</span>
         <h3>Ubuntu, Mint, Debian, Pop!_OS, Zorin</h3>
         <ol>
@@ -474,7 +488,7 @@
         </div>
       </article>
     </div>
-    <p class="sub" style="margin:28px 0 0"><b>Updating</b> is the same: install the new package. SuperV notices it was updated and restarts itself into the new version as soon as the panel is closed, keeping what's on your clipboard.</p>
+    <p class="sub" style="margin:28px 0 0"><b>Updating:</b> with the PPA, updates come with your normal system updates. Otherwise, install the new package. SuperV notices it was updated and restarts itself into the new version as soon as the panel is closed, keeping what's on your clipboard.</p>
   </div>
 </section>
 
@@ -524,7 +538,7 @@
       </div></details>
     <details><summary>How do I update SuperV?</summary>
       <div class="answer">
-        <p>Install the new package the same way you installed the first one. SuperV notices it was updated and restarts itself into the new version as soon as the panel is closed, keeping what's on your clipboard.</p>
+        <p>If you installed from the PPA (<code class="inl">ppa:saikatnjm/superv</code>), updates arrive with your normal system updates. Otherwise, install the new package the same way you installed the first one. SuperV notices it was updated and restarts itself into the new version as soon as the panel is closed, keeping what's on your clipboard.</p>
       </div></details>
     <details><summary>How do I uninstall SuperV?</summary>
       <div class="answer">

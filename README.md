@@ -49,6 +49,17 @@ Linux has no clipboard history out of the box, and some desktops lose the clipbo
 
 Pick your Linux family. Every package is a few dozen KB and sets up click-to-paste for you.
 
+### Ubuntu and Linux Mint: PPA (recommended, updates arrive with your system updates)
+
+```bash
+sudo add-apt-repository ppa:saikatnjm/superv
+sudo apt install superv
+```
+
+Then **open SuperV once**: press <kbd>Super</kbd>, type **SuperV** and press <kbd>Enter</kbd> (on Mint: open the **Menu** and search for **SuperV**).
+New versions then come through **Software Updater** (Ubuntu), **Update Manager** (Mint) or `sudo apt upgrade`.
+The PPA covers Ubuntu 22.04 and 24.04, Linux Mint 21 and 22, and other systems based on them (Pop!_OS, Zorin, elementary).
+
 ### Ubuntu, Linux Mint, Debian, Pop!_OS, Zorin, elementary (no terminal)
 
 1. Download **[superv_amd64.deb](https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb)**.
@@ -85,7 +96,7 @@ cd superv
 
 ### Updating
 
-Install the new package the same way. **SuperV notices it was updated and restarts itself into the new version** as soon as the panel is closed, keeping what's on your clipboard. (Coming from 1.1.2 or older? Run `superv --quit` and open SuperV once; from 1.2.0 on, this is automatic.)
+Installed from the PPA? Updates arrive with your normal system updates (`sudo apt update && sudo apt upgrade`). Otherwise, install the new package the same way. **SuperV notices it was updated and restarts itself into the new version** as soon as the panel is closed, keeping what's on your clipboard. (Coming from 1.1.2 or older? Run `superv --quit` and open SuperV once; from 1.2.0 on, this is automatic.)
 
 ### Your own shortcut, theme and text size
 
