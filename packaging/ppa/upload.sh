@@ -20,7 +20,7 @@ SERIES=("$@"); ((${#SERIES[@]})) || SERIES=(jammy noble resolute stonking)
 for tool in debuild dput git; do command -v $tool >/dev/null || { echo "missing $tool: sudo apt install devscripts dput git"; exit 1; }; done
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-V="$(sed -n 's/^#define VERSION "\(.*\)"/\1/p' "$ROOT/superv.c")"
+V="$(sed -n 's/^#define SV_VERSION *"\(.*\)"/\1/p' "$ROOT/superv.h")"
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 
 for s in "${SERIES[@]}"; do

@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Name=SuperV
-GenericName=Clipboard history
-Comment=Clipboard for Linux: press Super+V for your clipboard history
+GenericName=Clipboard history and emoji
+Comment=Clipboard, emoji and more Windows shortcuts for Linux: Super+V clipboard history, Super+. emoji
 Exec=superv --show
 Icon=io.github.superv.SuperV
 Categories=Utility;
-Keywords=clipboard;history;paste;copy;win+v;
+Keywords=clipboard;history;paste;copy;win+v;emoji;emoticon;kaomoji;symbol;win+.;color;colour;picker;ocr;text;
 StartupNotify=false

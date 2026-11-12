@@ -1,5 +1,5 @@
 pkgbase = superv
-	pkgdesc = Clipboard for Linux: press Super+V to paste from your last 25 copies, like Win+V on Windows
+	pkgdesc = Clipboard, emoji and more Windows shortcuts for Linux: Super+V clipboard history, Super+. emoji panel, plain-text paste, colour picker, text from screen
 	pkgver = 1.2.3
 	pkgrel = 1
 	url = https://github.com/saikatnjm/superv
@@ -7,11 +7,18 @@ pkgbase = superv
 	arch = x86_64
 	arch = aarch64
 	license = MIT
+	license = Unicode-3.0
 	depends = gtk3
 	depends = libx11
 	depends = libxtst
 	depends = python
 	depends = python-gobject
+	optdepends = noto-fonts-emoji: colour emoji in the emoji panel
+	optdepends = tesseract: copy text from the screen (Super+Shift+T)
+	optdepends = tesseract-data-eng: English text recognition
+	provides = superdot
+	conflicts = superdot
+	replaces = superdot
 	source = superv-1.2.3.tar.gz::https://github.com/saikatnjm/superv/archive/refs/tags/v1.2.3.tar.gz
 	sha256sums = a9c85757e932eaf8ae1a36f1b600b976467dcdde9e296fce35a31aa82b435a09
 

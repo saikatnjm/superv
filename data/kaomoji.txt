@@ -1,0 +1,157 @@
+# SuperDot kaomoji. "## Title<TAB>icon" starts a category; then one kaomoji per line,
+# optionally followed by a TAB and extra search words. Run `make data` after editing.
+## Classic	:-)
+:-)	smile
+;-)	wink
+:-D	grin laugh
+:-(	sad
+:-P	tongue
+:-O	surprised
+:-|	neutral
+:-/	unsure
+:'(	cry
+<3	heart love
+^_^	happy
+^^;	sweat nervous
+-_-	annoyed
+o_O	confused
+T_T	cry
+xD	laugh
+## Happy	(◕‿◕)
+(◕‿◕)	smile
+(｡◕‿◕｡)	smile cute
+(＾▽＾)	smile
+(≧▽≦)	excited
+(✿◠‿◠)	flower smile
+ヽ(•‿•)ノ	cheer
+＼(^o^)／	cheer yay
+(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧	sparkle magic excited
+(*^▽^*)	smile
+(´｡• ᵕ •｡`)	cute
+٩(◕‿◕｡)۶	cheer
+(o^▽^o)	smile
+(⌒‿⌒)	smile
+(＾ｖ＾)	smile
+ʘ‿ʘ	wide eyes
+(ᵔᴥᵔ)	bear cute
+☆*:.｡.o(≧▽≦)o.｡.:*☆	excited sparkle
+## Greeting	(・ω・)ノ
+(・ω・)ノ	hi hello wave
+ヾ(・ω・*)	wave bye
+(^-^)/	hi wave
+(*・ω・)ﾉ	hello wave
+(￣▽￣)ノ	hi wave
+(´• ω •`)ﾉ	hello wave
+＼(⌒▽⌒)	hi
+(｡･∀･)ﾉﾞ	hi hello
+## Love	(♡˙︶˙♡)
+(♡˙︶˙♡)	heart love
+(｡♥‿♥｡)	heart eyes love
+(´∀｀)♡	love
+♡( ◡‿◡ )	love
+(っ˘з(˘⌣˘ )	kiss
+(˘³˘)♥	kiss love
+(づ｡◕‿‿◕｡)づ	hug
+(っ´▽`)っ	hug
+(つ≧▽≦)つ	hug
+╰(*´︶`*)╯♡	love
+(*˘︶˘*).｡*♡	love
+## Embarrassed	(⁄ ⁄•⁄ω⁄•⁄ ⁄)
+(⁄ ⁄•⁄ω⁄•⁄ ⁄)	blush shy
+(〃▽〃)	blush
+(*/ω＼)	hide shy
+(/▽＼)	hide
+(＃＞＜)	embarrassed
+(｡•́︿•̀｡)	pout
+(⌒_⌒;)	nervous sweat
+(^_^;)	nervous sweat
+## Sympathy	(´･ω･`)
+(´･ω･`)	sad
+(ノ_<。)	cry
+(｡•́︿•̀｡)	sad
+(っ´ω`)ﾉ(╥ω╥)	comfort pat
+(ﾉ´ з `)ノ	comfort
+(╥﹏╥)	cry
+(ಥ﹏ಥ)	cry
+(T_T)	cry
+(;_;)	cry
+## Dissatisfied	(￣ヘ￣)
+(￣ヘ￣)	annoyed
+(－‸ლ)	facepalm
+(￢_￢)	side eye
+(¬_¬ )	side eye suspicious
+(-_-;)	annoyed sweat
+(￣～￣;)	unimpressed
+(눈_눈)	stare
+ಠ_ಠ	disapproval look
+## Angry	(╬ಠ益ಠ)
+(╬ಠ益ಠ)	rage
+(｀Д´)	angry
+(ノಠ益ಠ)ノ	rage
+(#`Д´)	angry
+ヽ(`⌒´メ)ノ	angry
+(҂` ﾛ ´)凸	angry finger
+凸(￣ヘ￣)	finger
+## Apologizing	m(_ _)m
+m(_ _)m	bow sorry
+<(_ _)>	bow sorry
+(シ_ _)シ	bow
+(・人・)	please
+(*_ _)人	sorry please
+m(｡≧ｴ≦｡)m	sorry
+## Confused	(・・?)
+(・・?)	question
+(￣ω￣;)	confused
+╮(￣～￣)╭	confused
+(・_・;)	confused
+(⊙_☉)	what
+(°ロ°) !	shock
+(・ัω・ั)?	question
+## Surprised	(⊙_⊙)
+(⊙_⊙)	surprised
+(°o°)	surprised
+(O_O)	shock
+(゜-゜)	surprised
+(ﾟДﾟ;)	shock
+Σ(°△°|||)	shock
+w(°ｏ°)w	wow
+## Shrug	¯\_(ツ)_/¯
+¯\_(ツ)_/¯	shrug whatever dunno
+┐(￣ヘ￣)┌	shrug
+╮(︶▽︶)╭	shrug
+┐(´д`)┌	shrug
+ヽ(ー_ー )ノ	shrug
+## Table flip	(╯°□°)╯︵ ┻━┻
+(╯°□°)╯︵ ┻━┻	tableflip rage
+┬─┬ノ( º _ ºノ)	put back calm
+(ノಠ益ಠ)ノ彡┻━┻	tableflip rage
+┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻	double tableflip
+(┛◉Д◉)┛彡┻━┻	tableflip
+## Animals	ʕ•ᴥ•ʔ
+ʕ•ᴥ•ʔ	bear
+ʕっ•ᴥ•ʔっ	bear hug
+(=^･ω･^=)	cat
+(=①ω①=)	cat
+(^・ω・^ )	cat
+U・ᴥ・U	dog
+∪･ω･∪	dog
+(・⊝・)	bird penguin
+くコ:彡	squid
+>°))))彡	fish
+(V●ᴥ●V)	dog
+## Actions	ᕦ(ò_óˇ)ᕤ
+ᕦ(ò_óˇ)ᕤ	strong flex muscle
+(ง •̀_•́)ง	fight
+(｀・ω・´)ゞ	salute
+(￣^￣)ゞ	salute
+(ノ°∀°)ノ⌒･*:.｡. .｡.:*･゜ﾟ･*☆	magic throw
+(∩｀-´)⊃━☆ﾟ.*･｡ﾟ	magic wand
+(ﾉ´ヮ`)ﾉ*: ･ﾟ	sparkle
+(っ˘ڡ˘ς)	eat yum
+(￣o￣) zzZZzzZZ	sleep
+(－_－) zzZ	sleep
+ε=ε=┌( >_<)┘	run
+┌(・。・)┘♪	dance
+♪┏(・o･)┛♪	dance
+( •_•)>⌐■-■	sunglasses deal with it
+(⌐■_■)	cool sunglasses

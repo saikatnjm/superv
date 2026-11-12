@@ -117,8 +117,11 @@ signs and uploads it. Default targets: `jammy` (Ubuntu 22.04, Mint 21), `noble` 
 
 ## Release checklist
 
-1. Bump the version in `superv.c` (`#define VERSION`), `packaging/rpm/superv.spec` (+ `%changelog`),
+1. Bump the version in `superv.h` (`#define SV_VERSION`), `packaging/rpm/superv.spec` (+ `%changelog`),
    `data/io.github.superv.SuperV.metainfo.xml` (`<releases>`) and `docs/index.html`.
+   Add the version to `CHANGELOG.md`. `docs/versions.html` shows only the stable version of each major line:
+   update the current line's row and download links (file names as the release workflow attaches them);
+   a new major version gets its own row and a column in the comparison table.
 2. Commit, then `git tag vX.Y.Z && git push origin main vX.Y.Z`: GitHub builds the .deb/.rpm/Arch packages.
 3. AUR: `packaging/arch/bump.sh X.Y.Z`, copy, push.
 4. COPR: set Committish to `vX.Y.Z`, Rebuild.

@@ -10,10 +10,19 @@ Rules-Requires-Root: no
 Package: superv
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python3, python3-gi, gir1.2-glib-2.0
-Recommends: libxtst6
-Description: Clipboard for Linux
- SuperV brings the Windows clipboard history panel (Win+V) to Linux.
- Press Super+V to see the last 25 things you copied (text and images),
- pick one to paste it into the app you are using, pin favourites, and
- clear the rest. Works on GNOME, Cinnamon, MATE and Xfce, on Wayland and
- X11. Never connects to the internet.
+Recommends: fonts-noto-color-emoji, libxtst6
+Suggests: tesseract-ocr
+Provides: superdot
+Conflicts: superdot
+Replaces: superdot
+Description: Clipboard, emoji and more Windows shortcuts for Linux: Win+V, Win+. and more
+ SuperV brings Windows shortcuts to Linux. Super+V shows the last 25
+ things you copied (text and images): pick one to paste it into the app
+ you are using, pin favourites, clear the rest. The others are off until
+ you turn them on in its settings: Super+. emoji panel, Super+Shift+S
+ screenshots with drawing tools, Ctrl+Super+Alt+V paste as plain text,
+ Super+Shift+C colour picker, Super+Shift+T copy text from the screen
+ (with tesseract-ocr). Works on GNOME, KDE Plasma, Cinnamon, MATE and
+ Xfce, on Wayland and X11. Never connects to the internet.
+ .
+ Replaces SuperDot, which is now part of SuperV.

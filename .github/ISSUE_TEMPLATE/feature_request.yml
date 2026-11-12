@@ -1,0 +1,14 @@
+name: Feature request
+description: Suggest an idea, for example another Windows shortcut Linux is missing
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like SuperV to do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why? How does Windows handle it (which shortcut), if at all?

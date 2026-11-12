@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=SuperV
-Comment=Clipboard for Linux (Super+V)
+Comment=Clipboard and emoji for Linux (Super+V, Super+.)
 Exec=superv --daemon
 Icon=io.github.superv.SuperV
 NoDisplay=true

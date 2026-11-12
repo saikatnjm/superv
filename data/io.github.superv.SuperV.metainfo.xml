@@ -6,27 +6,40 @@
   <project_license>MIT</project_license>
 
   <name>SuperV</name>
-  <summary>Clipboard for Linux</summary>
+  <summary>Clipboard, emoji and more Windows shortcuts</summary>
   <developer_name>SuperV contributors</developer_name>
 
   <description>
     <p>
-      SuperV brings the Windows clipboard history to Linux. Press Super+V to see the last
-      25 things you copied, text and images, and click one to paste it into the app you are using.
+      SuperV brings Windows shortcuts to Linux. Press Super+V to see the last 25 things you
+      copied, text and images, and click one to paste it into the app you are using. The emoji
+      panel (Super+.), screenshots (Super+Shift+S) and the other shortcuts are off until you turn
+      them on in its settings, so SuperV starts as small as it can be.
     </p>
     <ul>
       <li>Text and image history, newest first</li>
       <li>Click or press Enter to paste into the app you were using</li>
       <li>Pin items so they survive restarts; everything else clears on reboot, like Windows</li>
-      <li>Choose your own shortcut, a System, Light or Dark theme, and the text size</li>
+      <li>Shows what you already pasted: a tick on each pasted item, "Last pasted" on the latest, and the panel opens on the next one</li>
+      <li>Emoji panel: search by name, recently used first, skin tones, kaomoji ¯\_(ツ)_/¯ and symbols; your clipboard is put back afterwards</li>
+      <li>Screenshots on Super+Shift+S, Flameshot-style: select an area, draw arrows, boxes, text, highlights, numbers or blur on it, then copy, save or pin it on top of everything</li>
+      <li>Paste as plain text (Ctrl+Super+Alt+V), a colour picker (Super+Shift+C) and copying text from the screen (Super+Shift+T)</li>
+      <li>One colour palette for every SuperV window, violet by default</li>
+      <li>Only the clipboard is on at first; turn each other feature on or off in the settings. A feature that is off uses no memory and leaves its shortcut to your desktop</li>
+      <li>Choose your own shortcuts, a System, Light or Dark theme, and the text size</li>
       <li>Move and resize the panel; SuperV remembers both</li>
-      <li>Works on GNOME, Cinnamon, MATE and Xfce, on Wayland and X11 (KDE Plasma is experimental)</li>
+      <li>Works on GNOME, KDE Plasma, Cinnamon, MATE and Xfce, on Wayland and X11</li>
     </ul>
     <p>
       Private by default: SuperV never connects to the internet, keeps your history only on your
-      computer, and skips copies marked as passwords. It is a single C program under 100 KB.
+      computer, and skips copies marked as passwords. It is one small C program (about 360 KB, emoji included).
+      SuperV replaces SuperDot, the emoji panel that is now part of it.
     </p>
   </description>
+
+  <replaces>
+    <id>io.github.superdot.SuperDot</id>
+  </replaces>
 
   <launchable type="desktop-id">io.github.superv.SuperV.desktop</launchable>
   <icon type="stock">io.github.superv.SuperV</icon>
@@ -62,6 +75,16 @@
     <keyword>clipboard manager</keyword>
     <keyword>paste</keyword>
     <keyword>win+v</keyword>
+    <keyword>emoji</keyword>
+    <keyword>emoji picker</keyword>
+    <keyword>kaomoji</keyword>
+    <keyword>win+.</keyword>
+    <keyword>color picker</keyword>
+    <keyword>ocr</keyword>
+    <keyword>text extractor</keyword>
+    <keyword>paste as plain text</keyword>
+    <keyword>screenshot</keyword>
+    <keyword>annotate</keyword>
   </keywords>
 
   <branding>
@@ -80,6 +103,17 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="2.1.0" date="2026-11-12">
+      <description>
+        <p>Screenshots on Super+Shift+S, Flameshot-style, plus paste as plain text (Ctrl+Super+Alt+V), a colour picker (Super+Shift+C) and copying text from the screen (Super+Shift+T), each with its own switch, and one colour palette for every SuperV window.</p>
+        <p>The clipboard now shows what you already pasted: a tick on each pasted item, "Last pasted" on the latest, and the panel opens on the next one. Only the clipboard is on at first; the other features are off until you turn them on. The panel opens faster and SuperV uses less memory.</p>
+      </description>
+    </release>
+    <release version="2.0.0" date="2026-11-12">
+      <description>
+        <p>The emoji panel joins SuperV: press Super+. for emoji, kaomoji and symbols, typed where you are writing. It replaces SuperDot and brings its settings along. Turn it off in the settings if you don't want it.</p>
+      </description>
+    </release>
     <release version="1.2.3" date="2026-11-10">
       <description>
         <p>New tagline, "Clipboard for Linux", and packaging for the AUR, Fedora COPR and an Ubuntu/Mint PPA.</p>
