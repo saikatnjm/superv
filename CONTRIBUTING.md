@@ -33,18 +33,20 @@ make
 |---|---|
 | `superv.c` | The program: clipboard history, settings, startup, updates, the shared virtual keyboard |
 | `emoji.c` | The emoji panel, started only while it is turned on |
-| `extras.c` | Plain-text paste, colour picker, copy text from the screen: nothing runs until you press one |
-| `superv.h` | What the two share |
+| `extras.c` | Plain-text paste, colour picker, copy text from the screen, toasts, screen capture: nothing runs until you press one |
+| `shot.c` | The screenshot tool: alive only while you take a screenshot (and for pins) |
+| `superv.h` | What they share: the virtual keyboard, shortcuts, theme and colour, panel placing |
 | `emoji-data.h` | Built-in emoji, kaomoji and symbols (generated, see below) |
-| `superv-setup`, `superv-feature-setup` | Register Super+V and every feature's shortcut with the desktop, and `--doctor` |
+| `superv-setup` | Registers Super+V and every feature's shortcut with the desktop (`--feature NAME`), and `--doctor` |
 
 ## Guidelines
 
 - **Keep it light.** SuperV is one small C program with GTK 3 and no runtime dependencies beyond it. Please don't add libraries, runtimes or network access.
-- **Every feature can be turned off** in the settings, and a feature that is off must not load anything or hold a shortcut.
+- **Only the clipboard is on by default.** Every other feature has a switch in the settings, starts off, and while it is off must not load anything or hold a shortcut.
+- **No lag.** Nothing slow on the path from a shortcut to its window: no file reads, no full-screen repaints on mouse moves, no work that can wait until the window is up.
 - **Behave like Windows** unless there is a good Linux reason not to.
 - Keep the code style of the file you're editing (4-space indent, C11 + GNU extensions, GLib types).
-- Build with no warnings: `make CFLAGS="-Os -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Werror"`.
+- Build with no warnings: `make CFLAGS="-Os -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Werror"` (CI adds the size flags from the Makefile).
 - Test on Wayland and on X11 if you change anything about pasting or the clipboard.
 - One topic per pull request, with a short description of what changed and how you tested it.
 

@@ -11,7 +11,10 @@
 #   openSUSE:           sudo zypper install gcc make pkg-config gtk3-devel libX11-devel
 
 CC         ?= gcc
-CFLAGS     ?= -Os -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
+# small on disk: no unwind tables (plain C, nothing unwinds), direct calls instead of PLT stubs, unused code dropped
+CFLAGS     ?= -Os -fno-asynchronous-unwind-tables -fno-plt -ffunction-sections -fdata-sections \
+              -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
+LDFLAGS    ?= -Wl,--gc-sections
 PKGS        = gtk+-3.0 x11
 PREFIX     ?= /usr/local
 BINDIR     ?= $(PREFIX)/bin
@@ -23,8 +26,8 @@ MODLOADDIR ?= $(PREFIX)/lib/modules-load.d
 UNICODE     = https://unicode.org/Public/emoji/latest/emoji-test.txt
 CLDR        = https://raw.githubusercontent.com/unicode-org/cldr/main/common
 
-superv: superv.c emoji.c extras.c superv.h emoji-data.h
-	$(CC) -std=gnu11 $(CFLAGS) -DSETUP_DIR='"$(LIBDIR)"' -o $@ superv.c emoji.c extras.c \
+superv: superv.c emoji.c extras.c shot.c superv.h emoji-data.h
+	$(CC) -std=gnu11 $(CFLAGS) -DSETUP_DIR='"$(LIBDIR)"' -o $@ superv.c emoji.c extras.c shot.c \
 		$$(pkg-config --cflags --libs $(PKGS)) -ldl -lm -Wl,--as-needed $(LDFLAGS)
 
 data: tools/gen-data.py data/kaomoji.txt data/symbols.txt
@@ -37,7 +40,6 @@ data: tools/gen-data.py data/kaomoji.txt data/symbols.txt
 install: superv
 	install -Dm755 superv                              $(DESTDIR)$(BINDIR)/superv
 	install -Dm755 superv-setup                        $(DESTDIR)$(LIBDIR)/superv-setup
-	install -Dm755 superv-feature-setup                $(DESTDIR)$(LIBDIR)/superv-feature-setup
 	install -Dm644 data/io.github.superv.SuperV.desktop $(DESTDIR)$(DATADIR)/applications/io.github.superv.SuperV.desktop
 	install -Dm644 data/io.github.superv.SuperV.svg    $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg
 	install -Dm644 data/io.github.superv.SuperV-64.png $(DESTDIR)$(DATADIR)/icons/hicolor/64x64/apps/io.github.superv.SuperV.png
@@ -50,7 +52,7 @@ install: superv
 	install -Dm644 LICENSES/Unicode-3.0.txt            $(DESTDIR)$(DATADIR)/licenses/superv/Unicode-3.0.txt
 
 uninstall:
-	rm -f $(DESTDIR)$(BINDIR)/superv $(DESTDIR)$(LIBDIR)/superv-setup $(DESTDIR)$(LIBDIR)/superv-feature-setup \
+	rm -f $(DESTDIR)$(BINDIR)/superv $(DESTDIR)$(LIBDIR)/superv-setup \
 	      $(DESTDIR)$(DATADIR)/applications/io.github.superv.SuperV.desktop \
 	      $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg \
 	      $(DESTDIR)$(DATADIR)/icons/hicolor/64x64/apps/io.github.superv.SuperV.png \

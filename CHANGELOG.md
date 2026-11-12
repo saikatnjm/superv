@@ -5,19 +5,46 @@ Every release can be downloaded from [GitHub Releases](https://github.com/saikat
 
 ## [2.1.0] - 2026-11-12
 
-Three more Windows shortcuts. Each has its own switch in the settings (Super+V, then the gear, **Features**); one that is off loads nothing and leaves its keys to your desktop.
+Four more Windows shortcuts, a clipboard that shows what you already pasted, and a lighter, faster program. **Only the clipboard history is on at first**: every other feature has its own switch in the settings (Super+V, then the gear, **Features**), and one that is off loads nothing and leaves its keys to your desktop.
 
 ### Added
+- **See what you already pasted.** Paste several items one after another and each one gets a ✓ and fades; the latest is marked **Last pasted**, and the panel opens with the next one selected, so Enter pastes it. The list keeps its order while you paste from it (pasting no longer moves an item to the top; copying it again still does). The ticks clear when you start copying a new batch.
+- **Features are off until you turn them on.** A new install sets up Super+V only. The first time the panel opens, a tip says what else there is; clicking ☺ asks before turning on the emoji panel; pressing a feature's shortcut while it is off shows a card saying where its switch is. Coming from 2.0 or SuperDot? What you had on stays on.
 - **Paste as plain text** on <kbd>Ctrl</kbd>+<kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd> (Ctrl+Win+Alt+V, PowerToys Advanced Paste): what you copied is pasted without fonts, colours, links or images.
 - **Colour picker** on <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> (Win+Shift+C, PowerToys Color Picker): click anywhere on screen; the colour is copied as HEX and a small card offers RGB and HSL. On X11 the screen freezes with a magnifier; on Wayland the desktop's own picker is used.
 - **Copy text from the screen** on <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> (Win+Shift+T, PowerToys Text Extractor): select an area and its text is copied. Uses Tesseract when it is installed (`tesseract-ocr`), in English plus your own language when its data is installed. Nothing leaves your computer.
-- A **Features** section in the settings with the switches for the emoji panel and the three new shortcuts.
-- `superv --plain-paste`, `--pick-color`, `--extract-text`.
+- **Screenshots** on <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> (Win+Shift+S), Flameshot-style: the screen freezes, you select an area (resize it with its handles, move it, see its size), draw on it with pen, line, arrow, rectangle, circle, marker, text, pixelate and numbers in eight colours and any thickness (mouse wheel), undo and redo, then copy it, save it to Pictures/Screenshots, pin it on top of everything (drag, zoom, right-click to copy or save) or copy its text. Keyboard shortcuts like Flameshot's; `--delay N`. No dialog on GNOME: SuperV presses GNOME's own instant screenshot (Shift+Print), takes the picture, deletes GNOME's file and puts your clipboard back; other Wayland desktops are asked through the portal. Everything is freed when you're done.
+- **One colour for every SuperV window**: a Colour row in the settings (violet, SuperV's, by default; azure, graphite, emerald, amber, rose) colours the clipboard panel, emoji panel, colour card, toasts, screenshot tool and overlays alike.
+- A **Features** section in the settings with the switches for the emoji panel and the four new shortcuts.
+- `superv --plain-paste`, `--pick-color`, `--extract-text`, `--screenshot`.
+- Pressing Super+Shift+T without Tesseract opens a card with an **Install Tesseract** button (your password once, through the desktop's dialog), then starts the capture.
+- Results ("Text copied", "No text found"…) show as a small toast at the bottom of the screen, which also appears with Do Not Disturb on.
+- The colour card opens next to where you clicked, on that monitor, and can be dragged.
 
 ### Changed
-- `superv-emoji-setup` is now `superv-feature-setup --feature NAME` for every feature (`--all` for all of them).
+- **Faster.** The clipboard panel opens in about 0.03 s, and 0.05 s the first time after login. With ten pictures in the history the first opening took 0.56 s; it now takes about 0.1 s: pictures get a small copy for the list, are saved in the background, and the list is rebuilt only when the history changed. The panel is prepared in the background after login. The screenshot tool, colour picker and text selection redraw only what the pointer changed instead of the whole screen on every mouse move.
+- **Lighter.** About 5.5 MB of private memory as installed (clipboard only). The program is 25 KB smaller than the first 2.1 builds (363 KB) although it does more: code the clipboard and emoji panels each had (placing, resizing, shortcuts, the typing permission, theme) exists once now. History is written at most once every 0.4 s instead of on every change.
+- **Copy text from the screen** uses the screenshot tool's frozen screen on every desktop: press Super+Shift+T, drag over the text, let go. On GNOME (Wayland) it used to open GNOME's own screenshot dialog, which took several clicks, could capture the whole screen and left files in Pictures.
+- One setup helper: `superv-setup --feature NAME` registers any feature's shortcut (`--all --remove-hotkeys` gives every one back). `superv-emoji-setup` and `superv-feature-setup` are gone.
+- The emoji panel takes its theme and colour from SuperV's settings; its own Theme and Colour rows are gone. The one-time typing permission (Enable) is shared by both panels.
+- `install.sh` sets up Super+V only (`--no-emoji` is still accepted and does nothing), refuses to run as root, and uses the system's Python even when another one is first in your PATH.
 - Desktop shortcut changes run one at a time, so two of them can no longer overwrite each other in GNOME's shortcut list.
 - Tesseract is a suggested package (`Suggests`/`optdepends`), not a requirement.
+- Switching between the clipboard and emoji panels (☺, 📋, Super+V, Super+.) opens the other one in the same spot.
+- The emoji panel uses SuperV's violet unless you picked another colour (SuperDot's old default, azure, becomes violet).
+- The emoji panel is solid by default, like the clipboard panel. Its **Glass effect** switch (in the emoji panel's ⚙) turns the see-through look on.
+
+### Fixed
+- Text copied from LibreOffice and other office apps was sometimes stored as a picture of the text.
+- After a copy that isn't recorded (a password manager's), SuperV could put the previous item back on the clipboard.
+- A pinned screenshot's right-click menu (Copy, Save, Close) did nothing.
+- On GNOME, the instant screenshot only takes a picture GNOME itself made after the key press (never a PNG you saved in Pictures at that moment), finds GNOME's Screenshots folder in your language, no longer creates folders, and removes a second picture if both key presses arrived.
+- The screenshot tool: the selection can't be dragged off the screen; text marks accept your input method, dead keys and non-Latin layouts; Ctrl+C, Ctrl+S and the tool keys work on non-Latin layouts; a pin keeps its size when a later screenshot is taken on a monitor with another scale; redo no longer brings back marks from an earlier selection.
+- The colour picker and text selection keep trying for 1.5 s to take the keyboard and mouse instead of giving up at once, and never show SuperV's own toast or colour card in the picture.
+- A click on a toast could make the next toast disappear early. A Tesseract that fails is reported instead of "No text found". A desktop portal that never answers no longer blocks the next capture.
+- Shortcut setup: MATE's free slot was not recognised; Xfce reported success when the shortcut wasn't saved and lost a custom command it replaced; removing shortcuts on KDE from a package's removal script did nothing; restoring a desktop shortcut list put back only what SuperV changed, in its original order.
+- An update while a shortcut was being registered could restart SuperV in the middle of it; unsaved history is written before restarting.
+- Removing the package also removes the typing permission the Enable button added.
 
 ## [2.0.0] - 2026-11-12
 

@@ -16,14 +16,13 @@ Provides: superdot
 Conflicts: superdot
 Replaces: superdot
 Description: Clipboard, emoji and more Windows shortcuts for Linux: Win+V, Win+. and more
- SuperV brings two Windows panels to Linux. Super+V shows the last 25
+ SuperV brings Windows shortcuts to Linux. Super+V shows the last 25
  things you copied (text and images): pick one to paste it into the app
- you are using, pin favourites, clear the rest. Super+. opens the emoji
- panel: type to search emoji, kaomoji and symbols, and the one you pick is
- typed where you were writing. Ctrl+Super+Alt+V pastes as plain text,
- Super+Shift+C picks a colour on screen, Super+Shift+T copies text from the
- screen (with tesseract-ocr). Each can be turned off. Works on GNOME, KDE
- Plasma, Cinnamon, MATE and Xfce, on Wayland and X11. Never connects to the
- internet.
+ you are using, pin favourites, clear the rest. The others are off until
+ you turn them on in its settings: Super+. emoji panel, Super+Shift+S
+ screenshots with drawing tools, Ctrl+Super+Alt+V paste as plain text,
+ Super+Shift+C colour picker, Super+Shift+T copy text from the screen
+ (with tesseract-ocr). Works on GNOME, KDE Plasma, Cinnamon, MATE and
+ Xfce, on Wayland and X11. Never connects to the internet.
  .
  Replaces SuperDot, which is now part of SuperV.

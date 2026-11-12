@@ -7,9 +7,8 @@ LIB_DIR="$HOME/.local/lib/superv"
 
 if [[ -x "$LIB_DIR/superv" ]]; then
   "$LIB_DIR/superv" --quit >/dev/null 2>&1
-  python3 "$LIB_DIR/superv-setup" --remove-hotkeys
-  [[ -f "$LIB_DIR/superv-feature-setup" ]] && python3 "$LIB_DIR/superv-feature-setup" --all --remove-hotkeys
-  [[ -f "$LIB_DIR/superv-emoji-setup" ]] && python3 "$LIB_DIR/superv-emoji-setup" --remove-hotkeys   # 2.0
+  PY=python3; [[ -x /usr/bin/python3 ]] && PY=/usr/bin/python3
+  "$PY" "$LIB_DIR/superv-setup" --all --remove-hotkeys   # every feature's shortcut, then Super+V
 fi
 rm -f "$HOME/.config/autostart/superv.desktop" \
       "$HOME/.local/share/applications/io.github.superv.SuperV.desktop" \
@@ -29,7 +28,7 @@ if [[ "${1:-}" == "--purge" ]]; then
   rm -f "$HOME/.local/share/superv/history.ini" "$HOME/.local/share/superv/images/"*.png \
         "$HOME/.config/superv/config.ini" "$HOME/.config/superv/hotkey-backup.json" \
         "$HOME/.config/superv/emoji.ini" "$HOME/.config/superv/emoji-hotkey-backup.json" \
-        "$HOME/.config/superv/shortcuts.ini" "$HOME/.config/superv/"{plain_paste,color_picker,text_extractor}-hotkey-backup.json \
+        "$HOME/.config/superv/shortcuts.ini" "$HOME/.config/superv/"{plain_paste,color_picker,text_extractor,screenshot}-hotkey-backup.json \
         "$HOME/.local/share/superv/emoji-recent.txt"
   rmdir "$HOME/.local/share/superv/images" "$HOME/.local/share/superv" "$HOME/.config/superv" 2>/dev/null
   echo "History and settings deleted."

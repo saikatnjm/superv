@@ -43,7 +43,7 @@
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "Linux: Ubuntu 22.04+, Linux Mint 21+, Debian 12+, Fedora, Arch, Manjaro, openSUSE (GNOME, Cinnamon, MATE, Xfce, KDE Plasma; Wayland and X11)",
       "softwareVersion": "2.1.0",
-      "fileSize": "100 KB",
+      "fileSize": "130 KB",
       "license": "https://opensource.org/licenses/MIT",
       "url": "https://saikatnjm.github.io/superv/",
       "downloadUrl": "https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb",
@@ -82,9 +82,9 @@
         { "@type": "Question", "name": "Can I use a different shortcut than Super+V?",
           "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the panel, click the gear icon, choose Shortcut and press a combination with Super or Ctrl+Alt, such as Ctrl+Alt+V. A green tick confirms it is saved; combinations apps need, like Ctrl+V, are refused with the reason shown." } },
         { "@type": "Question", "name": "How much memory does SuperV use?",
-          "acceptedAnswer": { "@type": "Answer", "text": "SuperV is one small C program (about 300 KB with every emoji built in). It uses about 5 MB of private memory for the clipboard panel and about 11 MB with the emoji panel turned on, and no CPU while idle." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "SuperV is one small C program (about 360 KB with every emoji built in). As installed it uses about 5.5 MB of private memory, because only the clipboard is on; about 7 MB with the emoji panel turned on (11 MB once you have opened it). It uses no CPU while idle." } },
         { "@type": "Question", "name": "Is there a Win+. emoji panel for Linux?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. SuperV 2 includes it: press Super+. in any app, type to search emoji, kaomoji and symbols, and the one you pick is typed where you were writing. Turn it off in SuperV's settings if you don't want it." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. SuperV 2 includes it: press Super+. in any app, type to search emoji, kaomoji and symbols, and the one you pick is typed where you were writing. It is off at first: turn it on in SuperV's settings, or click the smiley in the clipboard panel." } },
         { "@type": "Question", "name": "Where is my clipboard history stored?",
           "acceptedAnswer": { "@type": "Answer", "text": "Only on your computer, in ~/.local/share/superv, readable by you alone. SuperV never connects to the internet. Unpinned items are removed on reboot, and passwords copied from password managers are never saved." } },
         { "@type": "Question", "name": "Does SuperV work on Fedora, Arch or KDE Plasma?",
@@ -298,7 +298,7 @@
       <p class="kicker">Clipboard and emoji for Linux</p>
       <div class="combo" aria-hidden="true"><span class="key">Super</span><span class="plus">+</span><span class="key hot">V</span><span class="plus">·</span><span class="key">Super</span><span class="plus">+</span><span class="key hot">.</span></div>
       <h1 id="title">Win+V and Win+.,<br>now on <em>Linux</em>.</h1>
-      <p class="lead"><b>Looking for the Windows clipboard on Linux?</b> SuperV is a free Win+V alternative for Ubuntu, Linux Mint, Debian, Fedora, Arch and more. Press <kbd>Super</kbd>+<kbd>V</kbd> to see the last 25 things you copied, then click one to paste it. Press <kbd>Super</kbd>+<kbd>.</kbd> for emoji, kaomoji and symbols, and more Windows shortcuts besides. It's free, open source and tiny: one C program, about 5&nbsp;MB of memory, and you can turn off what you don't use.</p>
+      <p class="lead"><b>Looking for the Windows clipboard on Linux?</b> SuperV is a free Win+V alternative for Ubuntu, Linux Mint, Debian, Fedora, Arch and more. Press <kbd>Super</kbd>+<kbd>V</kbd> to see the last 25 things you copied, then click one to paste it. The Win+. emoji panel, Win+Shift+S screenshots and more Windows shortcuts are one switch away when you want them. It's free, open source and tiny: one C program, under 6&nbsp;MB of memory, and nothing you haven't turned on is loaded.</p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">Download for Ubuntu / Mint (.deb)</a>
         <a class="btn ghost" href="#install">Fedora, Arch &amp; others</a>
@@ -316,8 +316,8 @@
 
 <div class="stats" role="region" aria-label="SuperV at a glance">
   <ul>
-    <li><b>1</b><span>small C program, two panels</span></li>
-    <li><b>~5 MB</b><span>private memory (clipboard)</span></li>
+    <li><b>1</b><span>small C program, six Windows shortcuts</span></li>
+    <li><b>&lt;6 MB</b><span>private memory as installed</span></li>
     <li><b>0%</b><span>CPU while idle</span></li>
     <li><b>2,800</b><span>emoji, kaomoji &amp; symbols</span></li>
   </ul>
@@ -338,6 +338,11 @@
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
         <h3>Click to paste</h3>
         <p>Pick an item and it's pasted into the document, browser or terminal you were using.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 2 2 4-4"/><path d="m3 17 2 2 4-4"/><path d="M13 7h8M13 17h8"/></svg></div>
+        <h3>Shows what you already pasted</h3>
+        <p>Pasting ten things in a row? Each one you've pasted gets a ✓, the latest says <em>Last pasted</em>, and the panel opens on the next. The list keeps its order.</p>
       </li>
       <li class="feat">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76V6h6v4.76a2 2 0 0 0 1.11 1.79l1.78.9A2 2 0 0 1 19 15.24V17H5v-1.76a2 2 0 0 1 1.11-1.79l1.78-.9A2 2 0 0 0 9 10.76Z"/></svg></div>
@@ -392,7 +397,7 @@
         <div class="krow"><dt><kbd>Tab</kbd></dt><dd>Emoji → Kaomoji → Symbols</dd></div>
         <div class="krow"><dt><kbd>Super</kbd> + <kbd>V</kbd></dt><dd>Switch to the clipboard history</dd></div>
       </dl>
-      <p class="sub" style="margin:22px 0 0">Don't want it? Super+V → ⚙ → turn off <b>Emoji panel</b>. It then isn't loaded at all, and Super+. goes back to your desktop.</p>
+      <p class="sub" style="margin:22px 0 0">It's off until you want it: click ☺ in the clipboard panel, or Super+V → ⚙ → turn on <b>Emoji panel</b>. Nothing is downloaded; every emoji is already inside. While it's off it isn't loaded at all, and Super+. stays with your desktop.</p>
     </div>
     <div class="shots">
       <img class="shot-dark" src="emoji-dark.png" width="400" height="480" loading="lazy"
@@ -406,9 +411,14 @@
 <section id="more" aria-labelledby="more-h">
   <div class="wrap">
     <p class="eyebrow">New in 2.1 · More Windows shortcuts</p>
-    <h2 id="more-h">Plain-text paste, colour picker, text from the screen</h2>
-    <p class="sub">The PowerToys shortcuts people miss most, built in. Each one has a switch in the settings, and nothing runs until you press it.</p>
+    <h2 id="more-h">Screenshots, plain-text paste, colour picker, text from the screen</h2>
+    <p class="sub">The PowerToys shortcuts people miss most, built in. Each one is off until you turn on its switch in the settings (Super+V, then ⚙), and nothing runs until you press it.</p>
     <ul class="grid">
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12a3 3 0 0 0 3 3h12"/><path d="M3 6h12a3 3 0 0 1 3 3v12"/></svg></div>
+        <h3>Screenshots you can draw on</h3>
+        <p><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>: select an area, add arrows, boxes, text, highlights, numbers or blur, then copy, save or pin it on top of everything. Flameshot-style, without the extra app.</p>
+      </li>
       <li class="feat">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></div>
         <h3>Paste as plain text</h3>
@@ -480,7 +490,7 @@
   <div class="wrap">
     <p class="eyebrow">Install</p>
     <h2 id="install-h">How to install SuperV on Linux</h2>
-    <p class="sub">Pick your Linux family. Every package is about 100 KB and sets up click-to-paste for you. Need an older version? They're all on the <a href="versions.html">versions page</a>. After installing, open SuperV once from your app menu: that sets up <kbd>Super</kbd>+<kbd>V</kbd> and <kbd>Super</kbd>+<kbd>.</kbd>, and SuperV starts by itself at every login from then on.</p>
+    <p class="sub">Pick your Linux family. Every package is about 130 KB and sets up click-to-paste for you. Need an older version? They're all on the <a href="versions.html">versions page</a>. After installing, open SuperV once from your app menu: that sets up <kbd>Super</kbd>+<kbd>V</kbd>, and SuperV starts by itself at every login from then on. Emoji, screenshots and the other shortcuts are switches in its settings.</p>
     <div class="ways">
       <article class="way">
         <span class="tag">Recommended · gets updates</span>
@@ -588,19 +598,19 @@
       </div></details>
     <details><summary>How much memory does SuperV use?</summary>
       <div class="answer">
-        <p>About 5 MB with the clipboard panel, about 11 MB with the emoji panel on too. SuperV is one small C program, and it uses no CPU until the clipboard changes or you press a shortcut. Turn off the emoji panel and it isn't loaded at all.</p>
+        <p>About 5.5 MB as installed, because only the clipboard is on. With the emoji panel on it's about 7 MB, and 11 MB once you've opened it. SuperV is one small C program, and it uses no CPU until the clipboard changes or you press a shortcut. A feature that is off isn't loaded at all.</p>
       </div></details>
     <details><summary>How do I copy text from an image or the screen on Linux?</summary>
       <div class="answer">
-        <p>Press <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> and drag over the text: SuperV reads it and copies it, like Win+Shift+T on Windows. It needs Tesseract once: <code class="inl">sudo apt install tesseract-ocr</code> (Fedora: <code class="inl">sudo dnf install tesseract</code>). The text never leaves your computer.</p>
+        <p>Turn on <b>Copy text from screen</b> in SuperV's settings, then press <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> and drag over the text: SuperV reads it and copies it, like Win+Shift+T on Windows. It needs Tesseract once: <code class="inl">sudo apt install tesseract-ocr</code> (Fedora: <code class="inl">sudo dnf install tesseract</code>). The text never leaves your computer.</p>
       </div></details>
     <details><summary>Is there a colour picker shortcut on Linux?</summary>
       <div class="answer">
-        <p>Yes: <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>, then click anywhere on screen. The colour is copied as HEX, and a small card offers RGB and HSL.</p>
+        <p>Yes. Turn on <b>Colour picker</b> in SuperV's settings, then press <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> and click anywhere on screen. The colour is copied as HEX, and a small card offers RGB and HSL.</p>
       </div></details>
     <details><summary>Is there a Win+. emoji panel for Linux?</summary>
       <div class="answer">
-        <p>Yes, since SuperV 2.0. Press <kbd>Super</kbd>+<kbd>.</kbd> in any app, type to search emoji, kaomoji and symbols, and the one you pick is typed where you were writing. Your clipboard is put back afterwards, and the emoji isn't added to your clipboard history.</p>
+        <p>Yes, since SuperV 2.0. Turn it on once (click ☺ in the clipboard panel, or the <b>Emoji panel</b> switch in ⚙), then press <kbd>Super</kbd>+<kbd>.</kbd> in any app, type to search emoji, kaomoji and symbols, and the one you pick is typed where you were writing. Your clipboard is put back afterwards, and the emoji isn't added to your clipboard history.</p>
         <p>Used SuperDot? It's now part of SuperV: installing SuperV 2 replaces it and keeps your settings.</p>
       </div></details>
     <details><summary>Where is my clipboard history stored?</summary>

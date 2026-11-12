@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
-"""SuperV one-time setup helper: keyboard shortcuts + diagnostics.
+"""SuperV setup helper: registers each feature's keyboard shortcut with your desktop, and diagnostics.
 
-Only runs during install, or when you change the shortcut. The SuperV daemon itself is C.
+Runs during install, when a feature is turned on or off, or when you change a shortcut. SuperV itself is C.
 
-  superv-setup --setup-hotkeys "<command>" [--hotkey "<Super>v"]
-  superv-setup --hotkey "<Ctrl><Alt>v"       change the shortcut (any combo you like)
-  superv-setup --remove-hotkeys               put the desktop's shortcuts back
-  superv-setup --doctor                       check that everything is set up
+Features:  clipboard (Super+V, the default), emoji (Super+.), plain_paste (Ctrl+Super+Alt+V),
+           color_picker (Super+Shift+C), text_extractor (Super+Shift+T), screenshot (Super+Shift+S)
+
+  superv-setup --hotkey "<Ctrl><Alt>v"                        change the clipboard shortcut
+  superv-setup --feature emoji --hotkey "<Ctrl><Alt>e"        change a feature's shortcut
+  superv-setup [--feature NAME] --setup-hotkeys "<command>" [--hotkey ACCEL]
+  superv-setup [--feature NAME | --all] --remove-hotkeys      put the desktop's shortcuts back
+  superv-setup --doctor                                       check that everything is set up
+
+Exit status: 0 done, 2 bad shortcut, 3 this desktop needs the shortcut added by hand (it says how).
 """
 import json
 import os
@@ -18,29 +24,69 @@ import sys
 
 from gi.repository import Gio, GLib
 
-APP_NAME = "SuperV"
 APP_ID = "io.github.superv.SuperV"
 CONFIG_DIR = os.path.join(GLib.get_user_config_dir(), "superv")
-BACKUP = os.path.join(CONFIG_DIR, "hotkey-backup.json")
-CONFIG = os.path.join(CONFIG_DIR, "config.ini")
-GNOME_PATH = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/superv/"
+MAIN_CONFIG = os.path.join(CONFIG_DIR, "config.ini")
+# id: (name in the desktop's shortcut list, superv argument, default shortcut, settings file, its group, slug)
+FEATURES = {
+    "clipboard":      ("SuperV", "--toggle", "<Super>v", "config.ini", "superv", ""),
+    "emoji":          ("SuperV Emoji", "--emoji", "<Super>period", "emoji.ini", "emoji", "emoji"),
+    "plain_paste":    ("SuperV Plain Paste", "--plain-paste", "<Primary><Super><Alt>v", "shortcuts.ini", "plain_paste", "plain-paste"),
+    "color_picker":   ("SuperV Colour Picker", "--pick-color", "<Shift><Super>c", "shortcuts.ini", "color_picker", "color-picker"),
+    "text_extractor": ("SuperV Text Extractor", "--extract-text", "<Shift><Super>t", "shortcuts.ini", "text_extractor", "text-extractor"),
+    "screenshot":     ("SuperV Screenshot", "--screenshot", "<Shift><Super>s", "shortcuts.ini", "screenshot", "screenshot"),
+}
+SWITCH = {"emoji": "emoji_panel"}   # the feature's on/off key in config.ini, when it isn't the feature's id
 CIN_PATH = "/org/cinnamon/desktop/keybindings/custom-keybindings/%s/"
-SCREENSHOT = "<Shift><Super>s"
+SCREENSHOT = "<Shift><Super>s"      # goes to the desktop's own screenshot tool while SuperV's is off (as in SuperV 1.x)
+# desktop shortcuts that may already use the key we want: taken (and given back on removal)
 CONFLICT_SCHEMAS = [
     "org.gnome.shell.keybindings", "org.gnome.desktop.wm.keybindings",
     "org.gnome.mutter.keybindings", "org.gnome.mutter.wayland.keybindings",
     "org.gnome.settings-daemon.plugins.media-keys",
     "org.cinnamon.desktop.keybindings.wm", "org.cinnamon.desktop.keybindings.media-keys",
     "org.cinnamon.desktop.keybindings",
+    "org.freedesktop.ibus.panel.emoji",   # IBus's own emoji typing shortcut
 ]
 MOD_ALIASES = {"control": "ctrl", "primary": "ctrl", "ctl": "ctrl", "mod4": "super",
                "mod1": "alt", "meta": "alt", "win": "super"}
+# GTK key names -> how KDE, Sway/i3 and Hyprland write them
+KEY_SYMBOLS = {"period": ".", "comma": ",", "semicolon": ";", "colon": ":", "slash": "/", "backslash": "\\",
+               "minus": "-", "equal": "=", "grave": "`", "apostrophe": "'", "bracketleft": "[",
+               "bracketright": "]", "space": "Space", "page_up": "PgUp", "page_down": "PgDown",
+               "prior": "PgUp", "next": "PgDown", "escape": "Esc", "delete": "Del", "insert": "Ins",
+               "return": "Return", "backspace": "Backspace", "tab": "Tab", "home": "Home", "end": "End",
+               "greater": ">", "less": "<", "question": "?", "exclam": "!", "at": "@", "numbersign": "#",
+               "dollar": "$", "percent": "%", "asciicircum": "^", "ampersand": "&", "asterisk": "*",
+               "parenleft": "(", "parenright": ")", "underscore": "_", "plus": "+", "braceleft": "{",
+               "braceright": "}", "bar": "|", "quotedbl": '"', "asciitilde": "~"}
+
+
+def backup_path(feature):
+    """Where a feature keeps what it changed on the desktop (names as in SuperV 1.x / 2.0, so old installs undo cleanly)."""
+    return os.path.join(CONFIG_DIR, "hotkey-backup.json" if feature == "clipboard" else "%s-hotkey-backup.json" % feature)
+
+
+def select(feature):
+    """Point the module-level settings below at one feature."""
+    global FEATURE, APP_NAME, ARG, DEFAULT, CONFIG, GROUP, BACKUP, GNOME_PATH, KDE_DESKTOP
+    FEATURE = feature
+    APP_NAME, ARG, DEFAULT, conf, GROUP, slug = FEATURES[feature]
+    CONFIG = os.path.join(CONFIG_DIR, conf)
+    BACKUP = backup_path(feature)
+    GNOME_PATH = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/superv%s/" % ("-" + slug if slug else "")
+    KDE_DESKTOP = "superv-%s.desktop" % (slug or "toggle")
+
+
+select("clipboard")
 
 
 def settings(schema_id, path=None):
     src = Gio.SettingsSchemaSource.get_default()
     schema = src.lookup(schema_id, True) if src else None
-    return Gio.Settings.new_full(schema, None, path) if schema else None
+    if not schema or (path is None and schema.get_path() is None):
+        return None
+    return Gio.Settings.new_full(schema, None, path)
 
 
 def has_key(s, key):
@@ -57,77 +103,181 @@ def to_mate(accel):
     return accel.replace("<Super>", "<Mod4>")
 
 
-def load_backup():
+def load_backup(path=None):
     try:
-        with open(BACKUP) as f:
+        with open(path or BACKUP) as f:
             data = json.load(f)
     except Exception:
         data = {}
-    data.setdefault("freed", {})
-    data.setdefault("added", {})
+    data.setdefault("took", {})   # bindings we removed from the desktop's own shortcuts: {schema: {key: [bindings]}}
+    data.setdefault("was", {})    # ...and the whole list as it was, to put them back in the same place
+    data.setdefault("gave", {})   # bindings we added to them
     return data
 
 
-def save_backup(data):
+def save_backup(data, path=None):
     os.makedirs(CONFIG_DIR, mode=0o700, exist_ok=True)
-    fd = os.open(BACKUP, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    fd = os.open(path or BACKUP, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, "w") as f:
         json.dump(data, f, indent=2)
 
 
-def restore(entries):
-    for schema_id, keys in entries.items():
-        s = settings(schema_id)
+def strv(schema_id, key):
+    s = settings(schema_id)
+    if has_key(s, key) and s.get_value(key).get_type_string() == "as":
+        return s, s.get_strv(key)
+    return None, None
+
+
+def give_back(backup):
+    """Undo "took": add the bindings we removed, unless they're there again. Only our own change is undone,
+    so anything you changed on that key since stays."""
+    for schema_id, keys in backup.pop("freed", {}).items():   # SuperV 2.0 and older kept whole lists
         for key, value in keys.items():
-            if has_key(s, key):
+            s, _ = strv(schema_id, key)
+            if s:
                 s.set_strv(key, value)
+    for schema_id, keys in backup["took"].items():
+        for key, bindings in keys.items():
+            s, cur = strv(schema_id, key)
+            if s:
+                was = backup["was"].get(schema_id, {}).get(key)
+                have = [normalize(b) for b in cur]
+                add = [b for b in bindings if normalize(b) not in have]
+                if was and [b for b in was if b not in bindings] == cur:
+                    s.set_strv(key, was)          # untouched since: exactly as it was, same order
+                elif add:
+                    s.set_strv(key, cur + add)
+    backup["took"], backup["was"] = {}, {}
 
 
-def save_hotkey_to_config(accel):
+def take_away(backup):
+    """Undo "gave": remove the bindings we added."""
+    for schema_id, keys in backup.pop("added", {}).items():   # SuperV 2.0 and older kept the list as it was before
+        for key, value in keys.items():
+            s, _ = strv(schema_id, key)
+            if s:
+                s.set_strv(key, value)
+    for schema_id, keys in backup["gave"].items():
+        for key, bindings in keys.items():
+            s, cur = strv(schema_id, key)
+            if s:
+                ours = [normalize(b) for b in bindings]
+                s.set_strv(key, [b for b in cur if normalize(b) not in ours])
+    backup["gave"] = {}
+
+
+def keyfile(path=None):
     kf = GLib.KeyFile()
     try:
-        kf.load_from_file(CONFIG, GLib.KeyFileFlags.KEEP_COMMENTS)
+        kf.load_from_file(path or CONFIG, GLib.KeyFileFlags.KEEP_COMMENTS)
     except GLib.Error:
         pass
-    kf.set_string("superv", "hotkey", accel)
+    return kf
+
+
+def save_config(kf):
     os.makedirs(CONFIG_DIR, mode=0o700, exist_ok=True)
     kf.save_to_file(CONFIG)
     os.chmod(CONFIG, 0o600)
 
 
+def save_hotkey_to_config(accel):
+    kf = keyfile()
+    kf.set_string(GROUP, "hotkey", accel)
+    kf.set_boolean(GROUP, "shortcut_configured", True)
+    save_config(kf)
+
+
 def mark_unconfigured():
-    """After removing the shortcut, make SuperV set it up again on its next start."""
-    if not os.path.exists(CONFIG):
-        return
-    kf = GLib.KeyFile()
-    try:
-        kf.load_from_file(CONFIG, GLib.KeyFileFlags.KEEP_COMMENTS)
-    except GLib.Error:
-        return
-    kf.set_boolean("superv", "shortcut_configured", False)
-    kf.save_to_file(CONFIG)
-    os.chmod(CONFIG, 0o600)
+    """After removing the shortcut, make SuperV set it up again when the feature is on."""
+    if os.path.exists(CONFIG):
+        kf = keyfile()
+        kf.set_boolean(GROUP, "shortcut_configured", False)
+        save_config(kf)
 
 
 def read_hotkey_from_config():
-    kf = GLib.KeyFile()
     try:
-        kf.load_from_file(CONFIG, GLib.KeyFileFlags.NONE)
-        return kf.get_string("superv", "hotkey").strip()
+        return keyfile().get_string(GROUP, "hotkey").strip() or DEFAULT
     except GLib.Error:
-        return "<Super>v"
+        return DEFAULT
+
+
+def feature_on(feature):
+    """Is the feature turned on in SuperV's settings? (the clipboard panel always is; the others are off by default)"""
+    if feature == "clipboard":
+        return True
+    try:
+        return keyfile(MAIN_CONFIG).get_boolean("superv", SWITCH.get(feature, feature))
+    except GLib.Error:
+        return False
 
 
 def default_command():
     exe = os.path.join(os.path.dirname(os.path.realpath(__file__)), "superv")
     if not os.path.exists(exe):
         exe = shutil.which("superv") or "/usr/bin/superv"
-    return shlex.quote(exe) + " --toggle"
+    return shlex.quote(exe) + " " + ARG
 
 
-# ---------------------------------------------------------------- KDE Plasma (experimental)
-KDE_DESKTOP = "superv-toggle.desktop"
-KLIPPER_KEY = "show-on-mouse-pos"   # Klipper's "Show clipboard items at mouse position" (Meta+V)
+def key_symbol(key):
+    return KEY_SYMBOLS.get(key.lower(), key.upper() if len(key) == 1 else key[:1].upper() + key[1:])
+
+
+# ---------------------------------------------------------------- Xfce
+XFCE = ["xfconf-query", "-c", "xfce4-keyboard-shortcuts"]
+
+
+def xfce_get(prop):
+    r = subprocess.run(XFCE + ["-p", prop], capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def xfce_set(prop, command):
+    return subprocess.run(XFCE + ["-p", prop, "-n", "-t", "string", "-s", command],
+                          stderr=subprocess.DEVNULL).returncode == 0
+
+
+def xfce_reset(prop):
+    subprocess.run(XFCE + ["-p", prop, "-r"], stderr=subprocess.DEVNULL)
+
+
+# ---------------------------------------------------------------- Super+Shift+S for the desktop's own screenshot tool
+def share_screenshot_key():
+    """While SuperV's screenshot tool is off, Super+Shift+S opens the desktop's own (and the picture lands in your
+    clipboard history), as in SuperV 1.x. Remembered in the clipboard feature's backup, undone on removal."""
+    if feature_on("screenshot"):
+        return []
+    path = backup_path("clipboard")
+    backup = load_backup(path)
+    out = []
+    for schema_id, key, label in (
+            ("org.gnome.shell.keybindings", "show-screenshot-ui", "GNOME: Super+Shift+S → screenshot (lands in your clipboard history)"),
+            ("org.cinnamon.desktop.keybindings.media-keys", "area-screenshot-clip", "Cinnamon: Super+Shift+S → area screenshot to clipboard")):
+        s, cur = strv(schema_id, key)
+        if not s:
+            continue
+        if normalize(SCREENSHOT) not in [normalize(b) for b in cur]:
+            given = backup["gave"].setdefault(schema_id, {}).setdefault(key, [])
+            if SCREENSHOT not in given:
+                given.append(SCREENSHOT)
+            s.set_strv(key, cur + [SCREENSHOT])
+        out.append(label)
+    if "XFCE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper() and shutil.which("xfconf-query") \
+            and shutil.which("xfce4-screenshooter"):
+        prop = "/commands/custom/" + SCREENSHOT
+        if xfce_get(prop) is None and xfce_set(prop, "xfce4-screenshooter -r -c"):   # never over your own binding
+            backup["xfce_shot"] = prop
+            out.append("Xfce: Super+Shift+S → area screenshot to clipboard")
+    Gio.Settings.sync()
+    save_backup(backup, path)
+    return out
+
+
+# ---------------------------------------------------------------- KDE Plasma
+KLIPPER = ("plasmashell", "show-on-mouse-pos")            # Klipper's "Show clipboard items at mouse position" (Meta+V)
+EMOJIER = "org.kde.plasma.emojier.desktop"                # Plasma's own emoji picker, on Meta+. by default
 
 
 def kde_tools():
@@ -138,10 +288,10 @@ def kde_tools():
 
 
 def kde_accel(accel):
-    """'<Super>v' -> 'Meta+V' (KDE's format)."""
+    """'<Super>period' -> 'Meta+.' (KDE's format)."""
     mods, key = normalize(accel)
     names = [n for m, n in (("super", "Meta"), ("ctrl", "Ctrl"), ("alt", "Alt"), ("shift", "Shift")) if m in mods]
-    return "+".join(names + [key.upper() if len(key) == 1 else key.capitalize()])
+    return "+".join(names + [key_symbol(key)])
 
 
 def desktop_exec(command):
@@ -157,6 +307,10 @@ def kde_restart_shortcuts(ver):
     return False   # Plasma 5: picked up at next login
 
 
+def kde_group(ver, name):
+    return ["--group", "services", "--group", name] if ver == "6" else ["--group", name]
+
+
 def kde_setup(command, accel, backup):
     ver, write, read = kde_tools()
     if not write:
@@ -164,26 +318,35 @@ def kde_setup(command, accel, backup):
     apps = os.path.join(GLib.get_user_data_dir(), "applications")
     os.makedirs(apps, exist_ok=True)
     with open(os.path.join(apps, KDE_DESKTOP), "w") as f:
-        f.write("[Desktop Entry]\nType=Application\nName=SuperV (open/close)\nExec=%s\n"
-                "Icon=io.github.superv.SuperV\nNoDisplay=true\nX-KDE-GlobalAccel-CommandShortcut=true\n"
-                % desktop_exec(command))
+        f.write("[Desktop Entry]\nType=Application\nName=%s\nExec=%s\n"
+                "Icon=%s\nNoDisplay=true\nX-KDE-GlobalAccel-CommandShortcut=true\n"
+                % (APP_NAME if FEATURE != "clipboard" else "SuperV (open/close)", desktop_exec(command), APP_ID))
     key = kde_accel(accel)
     rc = ["--file", "kglobalshortcutsrc"]
     if ver == "6":
-        subprocess.run([write] + rc + ["--group", "services", "--group", KDE_DESKTOP, "--key", "_launch", key])
+        subprocess.run([write] + rc + kde_group(ver, KDE_DESKTOP) + ["--key", "_launch", key])
     else:
-        subprocess.run([write] + rc + ["--group", KDE_DESKTOP, "--key", "_k_friendly_name", "SuperV"])
-        subprocess.run([write] + rc + ["--group", KDE_DESKTOP, "--key", "_launch", "%s,none,SuperV" % key])
-    # Klipper (KDE's own clipboard tool) uses Meta+V: free it, remember the old value
-    if read and key == "Meta+V":
-        cur = subprocess.run([read] + rc + ["--group", "plasmashell", "--key", KLIPPER_KEY],
+        subprocess.run([write] + rc + kde_group(ver, KDE_DESKTOP) + ["--key", "_k_friendly_name", APP_NAME])
+        subprocess.run([write] + rc + kde_group(ver, KDE_DESKTOP) + ["--key", "_launch", "%s,none,%s" % (key, APP_NAME)])
+    if read and FEATURE == "clipboard" and key == "Meta+V":
+        # Klipper (KDE's own clipboard tool) uses Meta+V: free it, remember the old value
+        cur = subprocess.run([read] + rc + ["--group", KLIPPER[0], "--key", KLIPPER[1]],
                              capture_output=True, text=True).stdout.strip()
         if cur.split(",")[0] == "Meta+V":
             backup.setdefault("kde_klipper", cur)
-            subprocess.run([write] + rc + ["--group", "plasmashell", "--key", KLIPPER_KEY,
+            subprocess.run([write] + rc + ["--group", KLIPPER[0], "--key", KLIPPER[1],
                                            "none," + ",".join(cur.split(",")[1:])])
+    if read and FEATURE == "emoji":
+        # Plasma's emoji picker uses Meta+. : free it, remember the old value
+        cur = subprocess.run([read] + rc + kde_group(ver, EMOJIER) + ["--key", "_launch"],
+                             capture_output=True, text=True).stdout.strip()
+        if cur.split(",")[0] == key or (not cur and key == "Meta+."):   # no entry = still on its default, Meta+.
+            backup.setdefault("kde_emojier", cur or "<default>")
+            off = ",".join(["none"] + cur.split(",")[1:]) if cur else (
+                "none" if ver == "6" else "none,Meta+.,Emoji Selector")
+            subprocess.run([write] + rc + kde_group(ver, EMOJIER) + ["--key", "_launch", off])
     live = kde_restart_shortcuts(ver)
-    return "KDE Plasma %s: %s → SuperV%s" % (ver, key, "" if live else " (log out and back in once)")
+    return "KDE Plasma %s: %s → %s%s" % (ver, key, APP_NAME, "" if live else " (log out and back in once)")
 
 
 def kde_remove(backup):
@@ -191,11 +354,17 @@ def kde_remove(backup):
     if not write:
         return
     rc = ["--file", "kglobalshortcutsrc"]
-    group = ["--group", "services", "--group", KDE_DESKTOP] if ver == "6" else ["--group", KDE_DESKTOP]
     for key in ("_launch", "_k_friendly_name"):
-        subprocess.run([write] + rc + group + ["--key", key, "--delete"], stderr=subprocess.DEVNULL)
+        subprocess.run([write] + rc + kde_group(ver, KDE_DESKTOP) + ["--key", key, "--delete"],
+                       stderr=subprocess.DEVNULL)
     if backup.get("kde_klipper"):
-        subprocess.run([write] + rc + ["--group", "plasmashell", "--key", KLIPPER_KEY, backup["kde_klipper"]])
+        subprocess.run([write] + rc + ["--group", KLIPPER[0], "--key", KLIPPER[1], backup["kde_klipper"]])
+    old = backup.get("kde_emojier")
+    if old == "<default>":   # it had no entry: drop ours so its default applies again
+        subprocess.run([write] + rc + kde_group(ver, EMOJIER) + ["--key", "_launch", "--delete"],
+                       stderr=subprocess.DEVNULL)
+    elif old:
+        subprocess.run([write] + rc + kde_group(ver, EMOJIER) + ["--key", "_launch", old])
     try:
         os.remove(os.path.join(GLib.get_user_data_dir(), "applications", KDE_DESKTOP))
     except OSError:
@@ -203,36 +372,37 @@ def kde_remove(backup):
     kde_restart_shortcuts(ver)
 
 
-def manual_instructions(command):
+def manual_instructions(command, accel):
     """Desktops that keep shortcuts in their own config files."""
-    toggle = " ".join(shlex.split(command))
+    run = " ".join(shlex.split(command))
+    mods, key = normalize(accel)
     if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        hmods = " ".join(m.upper() for m in ("super", "ctrl", "alt", "shift") if m in mods)
         print("  Hyprland: add to ~/.config/hypr/hyprland.conf:")
         print("    exec-once = superv --daemon")
-        print("    bind = SUPER, V, exec, %s" % toggle)
-    elif os.environ.get("SWAYSOCK"):
-        print("  Sway: add to ~/.config/sway/config:")
-        print("    exec superv --daemon")
-        print("    bindsym $mod+v exec %s" % toggle)
-    elif os.environ.get("I3SOCK"):
-        print("  i3: add to ~/.config/i3/config:")
-        print("    exec --no-startup-id superv --daemon")
-        print("    bindsym $mod+v exec --no-startup-id %s" % toggle)
+        print("    bind = %s, %s, exec, %s" % (hmods, key, run))
+    elif os.environ.get("SWAYSOCK") or os.environ.get("I3SOCK"):
+        wm = "sway" if os.environ.get("SWAYSOCK") else "i3"
+        smods = "+".join({"super": "$mod", "ctrl": "Ctrl", "alt": "Mod1", "shift": "Shift"}[m]
+                         for m in ("super", "ctrl", "alt", "shift") if m in mods)
+        print("  %s: add to ~/.config/%s/config:" % (wm, wm))
+        print("    exec %ssuperv --daemon" % ("" if wm == "sway" else "--no-startup-id "))
+        print("    bindsym %s+%s exec %s%s" % (smods, key, "" if wm == "sway" else "--no-startup-id ", run))
     elif "COSMIC" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper():
         print("  COSMIC: Settings → Keyboard → Keyboard Shortcuts → Custom shortcuts → Add,")
-        print("    command: %s   shortcut: Super+V" % toggle)
+        print("    command: %s   shortcut: %s" % (run, kde_accel(accel).replace("Meta", "Super")))
     else:
         print("  ! Couldn't find your desktop's shortcut settings.")
         print("    Add a custom keyboard shortcut in your desktop's settings that runs:")
-        print("    %s" % toggle)
+        print("    %s" % run)
 
 
 def setup(command, accel):
+    """Returns True when a desktop took the shortcut, False when you have to add it by hand."""
     out = []
     backup = load_backup()
-    # put back whatever we freed for a previous shortcut, then free the new one
-    restore(backup["freed"])
-    backup["freed"] = {}
+    # put back whatever we took for a previous shortcut, then take the new one
+    give_back(backup)
     want = normalize(accel)
     for schema_id in CONFLICT_SCHEMAS:
         s = settings(schema_id)
@@ -244,23 +414,14 @@ def setup(command, accel):
                                                 and key == "custom-list"):
                 continue
             cur = list(v.unpack())
-            new = [b for b in cur if normalize(b) != want]
-            if new != cur:
-                backup["freed"].setdefault(schema_id, {})[key] = cur
-                s.set_strv(key, new)
+            gone = [b for b in cur if normalize(b) == want]
+            if gone:
+                backup["took"].setdefault(schema_id, {})[key] = gone
+                backup["was"].setdefault(schema_id, {})[key] = cur
+                s.set_strv(key, [b for b in cur if normalize(b) != want])
                 out.append("freed %s from %s → %s" % (accel, schema_id.split(".")[-1], key))
 
-    def add_screenshot(schema_id, key):
-        s = settings(schema_id)
-        if not has_key(s, key) or s.get_value(key).get_type_string() != "as":
-            return False
-        cur = s.get_strv(key)
-        if normalize(SCREENSHOT) not in [normalize(b) for b in cur] and normalize(SCREENSHOT) != want:
-            backup["added"].setdefault(schema_id, {}).setdefault(key, cur)
-            s.set_strv(key, cur + [SCREENSHOT])
-        return True
-
-    # GNOME / Ubuntu
+    # GNOME / Ubuntu / Budgie / Pantheon
     mk = settings("org.gnome.settings-daemon.plugins.media-keys")
     if has_key(mk, "custom-keybindings"):
         paths = mk.get_strv("custom-keybindings")
@@ -270,9 +431,7 @@ def setup(command, accel):
         kb.set_string("name", APP_NAME)
         kb.set_string("command", command)
         kb.set_string("binding", accel)
-        out.append("GNOME: %s → SuperV" % accel)
-        if add_screenshot("org.gnome.shell.keybindings", "show-screenshot-ui"):
-            out.append("GNOME: Super+Shift+S → screenshot (lands in your clipboard history)")
+        out.append("GNOME: %s → %s" % (accel, APP_NAME))
 
     # Cinnamon (Linux Mint)
     cin = settings("org.cinnamon.desktop.keybindings")
@@ -293,40 +452,39 @@ def setup(command, accel):
             kb.set_strv("binding", [accel])
         else:
             kb.set_string("binding", accel)
-        out.append("Cinnamon: %s → SuperV" % accel)
-        if add_screenshot("org.cinnamon.desktop.keybindings.media-keys", "area-screenshot-clip"):
-            out.append("Cinnamon: Super+Shift+S → area screenshot to clipboard")
+        out.append("Cinnamon: %s → %s" % (accel, APP_NAME))
 
-    # MATE
+    # MATE: twelve command slots; an unused one holds "" or " " (MATE's default)
     cmds = settings("org.mate.Marco.keybinding-commands")
     gkb = settings("org.mate.Marco.global-keybindings")
     if cmds and gkb:
         slot = None
         for n in range(1, 13):
             c = cmds.get_string("command-%d" % n)
-            if "superv" in c and "--toggle" in c:   # not a feature's superv --emoji etc.
+            if "superv" in c and ARG in c:
                 slot = n
                 break
-            if slot is None and not c:
+            if slot is None and not c.strip():
                 slot = n
         if slot:
             cmds.set_string("command-%d" % slot, command)
             gkb.set_string("run-command-%d" % slot, to_mate(accel))
-            out.append("MATE: %s → SuperV" % accel)
+            out.append("MATE: %s → %s" % (accel, APP_NAME))
 
     # Xfce
     if "XFCE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper() and shutil.which("xfconf-query"):
-        base = ["xfconf-query", "-c", "xfce4-keyboard-shortcuts"]
         old = backup.get("xfce_prop")
         if old:
-            subprocess.run(base + ["-p", old, "-r"], stderr=subprocess.DEVNULL)
+            xfce_reset(old)
+            if backup.pop("xfce_prev", None):
+                xfce_set(old, backup.pop("xfce_prev_cmd", ""))
         prop = "/commands/custom/" + accel
-        subprocess.run(base + ["-p", prop, "-n", "-t", "string", "-s", command])
-        backup["xfce_prop"] = prop
-        if shutil.which("xfce4-screenshooter"):
-            subprocess.run(base + ["-p", "/commands/custom/" + SCREENSHOT, "-n", "-t", "string",
-                                   "-s", "xfce4-screenshooter -r -c"])
-        out.append("Xfce: %s → SuperV" % accel)
+        prev = xfce_get(prop)
+        if prev is not None and "superv" not in prev and prev != "xfce4-screenshooter -r -c":
+            backup["xfce_prev"], backup["xfce_prev_cmd"] = True, prev   # your own binding on that key: put back on removal
+        if xfce_set(prop, command):
+            backup["xfce_prop"] = prop
+            out.append("Xfce: %s → %s" % (accel, APP_NAME))
 
     # KDE Plasma
     if "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper():
@@ -337,16 +495,20 @@ def setup(command, accel):
     Gio.Settings.sync()
     save_backup(backup)
     save_hotkey_to_config(accel)
+    done = any(("→ " + APP_NAME) in line for line in out)
+    if FEATURE == "clipboard":
+        out += share_screenshot_key()
     for line in out:
         print("  ✓", line)
-    if not any("→ SuperV" in line for line in out):
-        manual_instructions(command)
+    if not done:
+        manual_instructions(command, accel)
+    return done
 
 
 def remove():
     backup = load_backup()
-    restore(backup["freed"])
-    restore(backup["added"])
+    give_back(backup)
+    take_away(backup)
     mk = settings("org.gnome.settings-daemon.plugins.media-keys")
     if has_key(mk, "custom-keybindings"):
         mk.set_strv("custom-keybindings", [p for p in mk.get_strv("custom-keybindings") if p != GNOME_PATH])
@@ -368,14 +530,21 @@ def remove():
     gkb = settings("org.mate.Marco.global-keybindings")
     if cmds and gkb:
         for n in range(1, 13):
-            if "superv" in cmds.get_string("command-%d" % n) and "--toggle" in cmds.get_string("command-%d" % n):
+            c = cmds.get_string("command-%d" % n)
+            if "superv" in c and ARG in c:
                 cmds.reset("command-%d" % n)
                 gkb.reset("run-command-%d" % n)
     if shutil.which("xfconf-query"):
-        for p in filter(None, [backup.get("xfce_prop"), "/commands/custom/" + SCREENSHOT]):
-            subprocess.run(["xfconf-query", "-c", "xfce4-keyboard-shortcuts", "-p", p, "-r"],
-                           stderr=subprocess.DEVNULL)
-    if "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper():
+        if backup.get("xfce_prop"):
+            xfce_reset(backup["xfce_prop"])
+            if backup.get("xfce_prev"):
+                xfce_set(backup["xfce_prop"], backup.get("xfce_prev_cmd", ""))
+        if backup.get("xfce_shot"):
+            if xfce_get(backup["xfce_shot"]) == "xfce4-screenshooter -r -c":   # still ours
+                xfce_reset(backup["xfce_shot"])
+    if ("KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper() or backup.get("kde_klipper")
+            or backup.get("kde_emojier")
+            or os.path.exists(os.path.join(GLib.get_user_data_dir(), "applications", KDE_DESKTOP))):
         kde_remove(backup)
     Gio.Settings.sync()
     mark_unconfigured()
@@ -383,12 +552,40 @@ def remove():
         os.remove(BACKUP)
     except OSError:
         pass
-    print("  ✓ desktop shortcuts restored")
+    if FEATURE == "screenshot":   # SuperV's screenshot tool is off again: the desktop's own gets Super+Shift+S
+        share_screenshot_key()
+    print("  ✓ %s: desktop shortcuts restored" % APP_NAME)
+
+
+def mark(state):
+    return {True: "\033[38;5;141m✓\033[0m", False: "\033[31m✗\033[0m", None: "·"}[state]
+
+
+def doctor_shortcut():
+    accel = read_hotkey_from_config()
+    print("   shortcut (config):", accel)
+    kb = settings("org.gnome.settings-daemon.plugins.media-keys.custom-keybinding", GNOME_PATH)
+    mk = settings("org.gnome.settings-daemon.plugins.media-keys")
+    if kb and has_key(mk, "custom-keybindings") and GNOME_PATH in mk.get_strv("custom-keybindings"):
+        print(mark(True), "GNOME shortcut:", kb.get_string("binding"), "→", kb.get_string("command"))
+    cin = settings("org.cinnamon.desktop.keybindings")
+    if has_key(cin, "custom-list"):
+        for cid in cin.get_strv("custom-list"):
+            kb = settings("org.cinnamon.desktop.keybindings.custom-keybinding", CIN_PATH % cid)
+            if kb.get_string("name") == APP_NAME:
+                print(mark(True), "Cinnamon shortcut:", kb.get_value("binding").unpack(), "→",
+                      kb.get_string("command"))
+    cmds = settings("org.mate.Marco.keybinding-commands")
+    gkb = settings("org.mate.Marco.global-keybindings")
+    if cmds and gkb:
+        for n in range(1, 13):
+            c = cmds.get_string("command-%d" % n)
+            if "superv" in c and ARG in c:
+                print(mark(True), "MATE shortcut:", gkb.get_string("run-command-%d" % n), "→", c)
+    return accel
 
 
 def doctor():
-    def mark(b):
-        return "\033[38;5;141m✓\033[0m" if b else "\033[31m✗\033[0m"
     distro = "?"
     try:
         with open("/etc/os-release") as f:
@@ -410,36 +607,62 @@ def doctor():
         try:
             with open("/proc/%d/status" % pid) as f:
                 st = dict(line.split(":", 1) for line in f if ":" in line)
-            print("   memory: %s RSS, %s private" % (st["VmRSS"].strip(), st["RssAnon"].strip()))
+            print("   memory: %s private (%s incl. shared libraries and fonts)"
+                  % (st["RssAnon"].strip(), st["VmRSS"].strip()))
         except OSError:
             pass
     up = os.access("/dev/uinput", os.W_OK)
     x11 = os.environ.get("XDG_SESSION_TYPE") == "x11"
-    print(mark(up or x11), "auto-paste:", "uinput" if up else ("XTest (X11)" if x11 else
-          "not available — run install.sh again (needs your password once), then log out/in"))
-    accel = read_hotkey_from_config()
-    print("   shortcut (config):", accel)
-    kb = settings("org.gnome.settings-daemon.plugins.media-keys.custom-keybinding", GNOME_PATH)
-    if kb and kb.get_string("binding"):
-        print(mark(True), "GNOME shortcut:", kb.get_string("binding"), "→", kb.get_string("command"))
-    cin = settings("org.cinnamon.desktop.keybindings")
-    if has_key(cin, "custom-list"):
-        for cid in cin.get_strv("custom-list"):
-            kb = settings("org.cinnamon.desktop.keybindings.custom-keybinding", CIN_PATH % cid)
-            if kb.get_string("name") == APP_NAME:
-                print(mark(True), "Cinnamon shortcut:", kb.get_value("binding").unpack(), "→",
-                      kb.get_string("command"))
-    shell = settings("org.gnome.shell.keybindings")
-    if has_key(shell, "toggle-message-tray"):
-        tray = shell.get_strv("toggle-message-tray")
-        clash = normalize(accel) in [normalize(b) for b in tray]
-        print(mark(not clash), "notification list doesn't use %s %s" % (accel, tray))
+    print(mark(up or x11), "pastes and types into apps:", "yes (uinput)" if up else ("yes (XTest, X11)" if x11 else
+          "not yet — open SuperV and click Enable (needs your password once), then log out/in"))
+    for feature in FEATURES:
+        select(feature)
+        print()
+        if feature == "clipboard":
+            print("Clipboard history")
+            accel = doctor_shortcut()
+            shell = settings("org.gnome.shell.keybindings")
+            if has_key(shell, "toggle-message-tray"):
+                tray = shell.get_strv("toggle-message-tray")
+                clash = normalize(accel) in [normalize(b) for b in tray]
+                print(mark(not clash), "notification list doesn't use %s %s" % (accel, tray))
+            continue
+        on = feature_on(feature)
+        print(mark(True if on else None), "%s:" % APP_NAME.replace("SuperV ", ""),
+              "on" if on else "off (turn it on in SuperV's settings: Super+V, then the gear)")
+        if not on:
+            continue
+        if feature == "emoji":
+            # a colour emoji font (fontconfig 2.13.1+ knows "color"; older ones: any font with 😀)
+            fonts = subprocess.run(["fc-list", ":charset=1f600:color=true", "family"], capture_output=True, text=True).stdout.strip() \
+                or subprocess.run(["fc-list", ":charset=1f600", "family"], capture_output=True, text=True).stdout.strip()
+            print(mark(bool(fonts)), "emoji font:", fonts.splitlines()[0] if fonts else
+                  "none — install Noto Color Emoji (fonts-noto-color-emoji / google-noto-emoji-color-fonts / noto-fonts-emoji)")
+        if feature == "text_extractor":
+            tess = shutil.which("tesseract")
+            print(mark(bool(tess)), "text recognition:", tess or
+                  "not installed — press the shortcut once and SuperV offers to install Tesseract")
+        doctor_shortcut()
 
 
 def main(argv):
     if "--doctor" in argv:
         doctor()
-    elif "--remove-hotkeys" in argv:
+        return 0
+    if "--all" in argv:
+        if "--remove-hotkeys" not in argv:
+            print("--all goes with --remove-hotkeys or --doctor", file=sys.stderr)
+            return 2
+        for f in reversed(list(FEATURES)):   # the features first, the clipboard last: undo in reverse order
+            main(["--feature", f, "--remove-hotkeys"])
+        return 0
+    if "--feature" in argv:
+        f = argv[argv.index("--feature") + 1] if argv.index("--feature") + 1 < len(argv) else ""
+        if f not in FEATURES:
+            print("Unknown feature %r; one of: %s" % (f, ", ".join(FEATURES)), file=sys.stderr)
+            return 2
+        select(f)
+    if "--remove-hotkeys" in argv:
         remove()
     elif "--setup-hotkeys" in argv or "--hotkey" in argv:
         cmd = argv[argv.index("--setup-hotkeys") + 1] if "--setup-hotkeys" in argv else default_command()
@@ -449,10 +672,10 @@ def main(argv):
             return 2
         mods = normalize(accel)[0]
         if not ("super" in mods or {"ctrl", "alt"} <= mods):
-            # Ctrl+V, Ctrl+Shift+V, Alt+V... are needed by apps (paste, menus)
+            # Ctrl+…, Alt+… are needed by apps (copy, paste, menus)
             print("Use Super or Ctrl+Alt in the shortcut, e.g. <Super>v or <Ctrl><Alt>v", file=sys.stderr)
             return 2
-        setup(cmd, accel)
+        return 0 if setup(cmd, accel) else 3
     else:
         print(__doc__)
     return 0

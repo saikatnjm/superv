@@ -32,15 +32,14 @@ Suggests:       tesseract
 Provides:       superdot = %{version}-%{release}
 
 %description
-SuperV brings two Windows panels to Linux. Super+V shows the last 25 things
+SuperV brings Windows shortcuts to Linux. Super+V shows the last 25 things
 you copied, text and images: pick one to paste it into the app you are using,
-pin favourites, clear the rest. Super+. opens the emoji panel: type to search
-emoji, kaomoji and symbols, and the one you pick is typed where you were
-writing. Works on GNOME, KDE Plasma, Cinnamon, MATE and Xfce, on Wayland and
-X11. Ctrl+Super+Alt+V pastes as plain text, Super+Shift+C picks a colour on
-screen, Super+Shift+T copies text from the screen (with tesseract). Each can
-be turned off. No network access, ever. Replaces SuperDot, which is now part
-of SuperV.
+pin favourites, clear the rest. The others are off until you turn them on in
+its settings: Super+. emoji panel, Super+Shift+S screenshots with drawing
+tools, Ctrl+Super+Alt+V paste as plain text, Super+Shift+C colour picker,
+Super+Shift+T copy text from the screen (with tesseract). Works on GNOME, KDE
+Plasma, Cinnamon, MATE and Xfce, on Wayland and X11. No network access, ever.
+Replaces SuperDot, which is now part of SuperV.
 
 %prep
 %autosetup
@@ -66,13 +65,17 @@ if [ "$1" -eq 0 ]; then
         [ -S "$bus" ] || continue
         user="$(id -nu "$uid" 2>/dev/null)" || continue
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
-            python3 %{_prefix}/lib/superv/superv-setup --remove-hotkeys >/dev/null 2>&1 || :
-        runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
-            python3 %{_prefix}/lib/superv/superv-feature-setup --all --remove-hotkeys >/dev/null 2>&1 || :
+            python3 %{_prefix}/lib/superv/superv-setup --all --remove-hotkeys >/dev/null 2>&1 || :
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
             gdbus call --session --dest io.github.superv.SuperV --object-path /io/github/superv/SuperV \
             --method org.gtk.Actions.Activate quit "[]" "{}" >/dev/null 2>&1 || :
     done
+fi
+
+%postun
+# On removal: the typing permission SuperV's "Enable" button added.
+if [ "$1" -eq 0 ]; then
+    rm -f /etc/udev/rules.d/70-superv-uinput.rules /etc/modules-load.d/superv-uinput.conf
 fi
 
 %files

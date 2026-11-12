@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libgtk-3-dev
       - name: Build (no warnings allowed)
-        run: make CFLAGS="-Os -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Werror"
+        run: make CFLAGS="-Os -fno-asynchronous-unwind-tables -fno-plt -ffunction-sections -fdata-sections -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Werror"
       - run: ./superv --version && ./superv --help
       - name: Staged install contains everything
         run: |
@@ -28,7 +28,7 @@ jobs:
       - name: Shell scripts
         run: shellcheck -S warning install.sh uninstall.sh packaging/build-deb.sh packaging/arch/bump.sh
       - name: Python helpers
-        run: python3 -m py_compile superv-setup superv-feature-setup tools/gen-data.py
+        run: python3 -m py_compile superv-setup tools/gen-data.py
       - name: Desktop files and app-store listing
         run: |
           desktop-file-validate data/io.github.superv.SuperV.desktop data/superv-autostart.desktop

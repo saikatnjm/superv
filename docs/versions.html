@@ -226,6 +226,7 @@
           <tr class="group"><th colspan="3" scope="rowgroup">Clipboard history · Super+V</th></tr>
           <tr><th scope="row">Last 25 texts and images, click to paste</th><td class="c y">✓</td><td class="c y now">✓</td></tr>
           <tr><th scope="row">Pin, delete, clear; clears on reboot</th><td class="c y">✓</td><td class="c y now">✓</td></tr>
+          <tr><th scope="row">Shows what you already pasted (✓, "Last pasted", opens on the next item)</th><td class="c n">–</td><td class="c y now">✓</td></tr>
           <tr><th scope="row">Own shortcut, theme, text size</th><td class="c y">✓</td><td class="c y now">✓</td></tr>
           <tr><th scope="row">Restarts itself after an update</th><td class="c y">✓</td><td class="c y now">✓</td></tr>
           <tr class="group"><th colspan="3" scope="rowgroup">Emoji panel · Super+.</th></tr>
@@ -235,8 +236,9 @@
           <tr><th scope="row">Paste as plain text · Ctrl+Super+Alt+V</th><td class="c n">–</td><td class="c y now">✓</td></tr>
           <tr><th scope="row">Colour picker · Super+Shift+C</th><td class="c n">–</td><td class="c y now">✓</td></tr>
           <tr><th scope="row">Copy text from the screen · Super+Shift+T</th><td class="c n">–</td><td class="c y now">✓</td></tr>
+          <tr><th scope="row">Screenshots with drawing tools · Super+Shift+S</th><td class="c n">–</td><td class="c y now">✓</td></tr>
           <tr class="group"><th colspan="3" scope="rowgroup">Settings and installing</th></tr>
-          <tr><th scope="row">Turn each feature on or off</th><td class="c n">–</td><td class="c y now">✓</td></tr>
+          <tr><th scope="row">Turn each feature on or off (all off at first, except the clipboard)</th><td class="c n">–</td><td class="c y now">✓</td></tr>
           <tr><th scope="row">.deb, .rpm and Arch packages; PPA with updates</th><td class="c y">✓</td><td class="c y now">✓</td></tr>
         </tbody>
       </table>
@@ -255,20 +257,24 @@
     <ol class="timeline">
       <li class="rel major" id="v2">
         <details class="card" open>
-          <summary><span class="card-head"><h3>2.1.0</h3><span class="badge latest">Latest</span><span class="badge">2.x</span></span><span class="summary"><b>Clipboard, emoji and more Windows shortcuts.</b> One small program: Win+V, Win+., plain-text paste, a colour picker and copying text from the screen, each one switchable.</span></summary>
+          <summary><span class="card-head"><h3>2.1.0</h3><span class="badge latest">Latest</span><span class="badge">2.x</span></span><span class="summary"><b>Clipboard, emoji, screenshots and more Windows shortcuts.</b> One small program: Win+V, Win+., Win+Shift+S, plain-text paste, a colour picker and copying text from the screen. Only the clipboard is on at first; you turn on the rest as you want it.</span></summary>
           <div class="card-body">
           <div class="cols">
             <div class="got"><h4>Has</h4><ul>
               <li>Clipboard history on <kbd>Super</kbd>+<kbd>V</kbd>, with everything from 1.x</li>
+              <li>Shows what you already pasted: a ✓ on each pasted item, "Last pasted" on the latest, and the panel opens on the next one</li>
               <li>Emoji panel on <kbd>Super</kbd>+<kbd>.</kbd>: emoji, kaomoji and symbols, typed where you were writing (replaces SuperDot)</li>
               <li>Paste as plain text on <kbd>Ctrl</kbd>+<kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd></li>
               <li>Colour picker on <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>: HEX, RGB or HSL</li>
               <li>Copy text from the screen on <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> (with Tesseract installed)</li>
-              <li>A switch for each feature: off, it uses no memory and leaves its keys to your desktop</li>
+              <li>Screenshots on <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>, Flameshot-style: draw, blur, number, then copy, save or pin</li>
+              <li>One colour palette for every SuperV window</li>
+              <li>A switch for each feature, all off at first: off, it uses no memory and leaves its keys to your desktop</li>
+              <li>Fast and light: about 5.5 MB of memory as installed, panel on screen in about 0.03 s</li>
             </ul></div>
             <div class="lack"><h4>Still missing</h4><ul>
               <li>Voice typing (<kbd>Win</kbd>+<kbd>H</kbd>) will be a separate app: its speech model is far bigger than SuperV</li>
-              <li>The three newest shortcuts can't be changed from the settings yet (they can from the terminal)</li>
+              <li>The four newest shortcuts can't be changed from the settings yet (they can from the terminal)</li>
               <li>KDE Plasma clipboard shortcut is still experimental</li>
             </ul></div>
           </div>

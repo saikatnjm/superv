@@ -1,0 +1,8 @@
+#!/bin/sh
+# The typing permission SuperV's "Enable" button added (when the package's own rule wasn't active yet).
+set -e
+if [ "$1" = remove ] || [ "$1" = purge ]; then
+    rm -f /etc/udev/rules.d/70-superv-uinput.rules /etc/modules-load.d/superv-uinput.conf
+fi
+#DEBHELPER#
+exit 0

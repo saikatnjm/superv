@@ -18,21 +18,11 @@
  * MIT License.
  */
 #define _GNU_SOURCE
-#include <dlfcn.h>
-#include <errno.h>
-#include <fcntl.h>
 #include <malloc.h>
 #include <string.h>
-#include <sys/wait.h>
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <linux/uinput.h>
-#include <glib-unix.h>
 #include <glib/gstdio.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
-#include <X11/keysym.h>
 #include <X11/Xatom.h>
 #include "emoji-data.h"
 #include "superv.h"
@@ -120,18 +110,16 @@ static gboolean same_emoji(const char *a, const char *b) {
 /* ------------------------------------------------------------------ config */
 
 static struct {
-    char *hotkey, *theme, *paste_keys, *color;
+    char *hotkey, *paste_keys;
     int skin_tone, paste_delay_ms, tab, pos_x, pos_y, width, height;
-    gboolean keep_open, restore_clipboard, setup_done, glass;
-} cfg;
+    gboolean keep_open, restore_clipboard, setup_done, glass, glass_chosen;
+} cfg;   /* (the theme and the colour are SuperV's: one for every window) */
 
 static char *cfg_dir, *cfg_path, *data_dir, *recent_path;
 
 static void config_save(void) {
     GKeyFile *k = g_key_file_new();
     g_key_file_set_string(k, "emoji", "hotkey", cfg.hotkey);
-    g_key_file_set_string(k, "emoji", "theme", cfg.theme);
-    g_key_file_set_string(k, "emoji", "color", cfg.color);
     g_key_file_set_integer(k, "emoji", "skin_tone", cfg.skin_tone);
     g_key_file_set_string(k, "emoji", "paste_keys", cfg.paste_keys);
     g_key_file_set_integer(k, "emoji", "paste_delay_ms", cfg.paste_delay_ms);
@@ -140,6 +128,7 @@ static void config_save(void) {
     g_key_file_set_integer(k, "emoji", "height", cfg.height);
     g_key_file_set_boolean(k, "emoji", "restore_clipboard", cfg.restore_clipboard);
     g_key_file_set_boolean(k, "emoji", "glass", cfg.glass);
+    g_key_file_set_boolean(k, "emoji", "glass_chosen", cfg.glass_chosen);
     g_key_file_set_integer(k, "emoji", "tab", cfg.tab);
     g_key_file_set_integer(k, "emoji", "pos_x", cfg.pos_x);
     g_key_file_set_integer(k, "emoji", "pos_y", cfg.pos_y);
@@ -147,10 +136,10 @@ static void config_save(void) {
     g_key_file_set_comment(k, "emoji", NULL,
         " SuperV emoji panel settings. After editing run: superv --quit && superv --daemon &\n"
         " paste_keys: shift+insert (default; works in terminals too), ctrl+v, ctrl+shift+v, none (copy only)\n"
-        " theme: auto (follow the desktop), light, dark     skin_tone: 0 (default yellow) to 5 (dark)\n"
+        " skin_tone: 0 (default yellow) to 5 (dark)\n"
         " stay_open: stay open after picking, to pick several     restore_clipboard: put back what you had copied\n"
-        " glass: see-through panel (KDE Plasma also blurs what is behind it)\n"
-        " color: azure, graphite, emerald, amber, rose, violet\n"
+        " glass: see-through panel, off unless you turn it on (KDE Plasma also blurs what is behind it)\n"
+        " (theme and colour: SuperV's settings, in config.ini: one for every SuperV window)\n"
         " width/height/pos_x/pos_y: panel size and place (drag its edges or top row; double-click the top row to reset)\n"
         " hotkey: change it from the gear menu in the emoji panel\n"
         " turn the whole panel off: SuperV's settings (Super+V, then the gear), or emoji_panel=false in config.ini",
@@ -162,11 +151,9 @@ static void config_save(void) {
 }
 
 static void config_defaults(void) {   /* everything except the shortcut */
-    g_free(cfg.theme); cfg.theme = g_strdup("auto");
-    g_free(cfg.color); cfg.color = g_strdup("violet");   /* SuperV's colour */
     g_free(cfg.paste_keys); cfg.paste_keys = g_strdup("shift+insert");
     cfg.skin_tone = 0; cfg.paste_delay_ms = 160; cfg.tab = TAB_EMOJI;
-    cfg.keep_open = TRUE; cfg.restore_clipboard = TRUE; cfg.glass = TRUE;
+    cfg.keep_open = TRUE; cfg.restore_clipboard = TRUE; cfg.glass = cfg.glass_chosen = FALSE;
     cfg.pos_x = cfg.pos_y = -1;
     cfg.width = WIN_W; cfg.height = WIN_H;
 }
@@ -181,8 +168,6 @@ static void config_load(void) {
 #define KI(n, f) do { int v = g_key_file_get_integer(k, "emoji", n, &e); if (!e) f = v; g_clear_error(&e); } while (0)
 #define KS(n, f) do { char *v = g_key_file_get_string(k, "emoji", n, NULL); if (v) { g_strstrip(v); g_free(f); f = v; } } while (0)
         KS("hotkey", cfg.hotkey);
-        KS("theme", cfg.theme);
-        KS("color", cfg.color);
         KI("skin_tone", cfg.skin_tone);
         KS("paste_keys", cfg.paste_keys);
         KI("paste_delay_ms", cfg.paste_delay_ms);
@@ -190,7 +175,9 @@ static void config_load(void) {
         KI("width", cfg.width);
         KI("height", cfg.height);
         KB("restore_clipboard", cfg.restore_clipboard);
-        KB("glass", cfg.glass);
+        /* glass used to be on by default: a saved "true" only counts if you switched it on yourself */
+        KB("glass_chosen", cfg.glass_chosen);
+        if (cfg.glass_chosen) KB("glass", cfg.glass);
         KI("tab", cfg.tab);
         KI("pos_x", cfg.pos_x);
         KI("pos_y", cfg.pos_y);
@@ -205,7 +192,7 @@ static void config_load(void) {
     config_save();
 }
 
-static void reload_hotkey(void) {   /* superv-feature-setup --hotkey may have changed it */
+static void reload_hotkey(void) {   /* superv-setup may have changed it */
     GKeyFile *k = g_key_file_new();
     char *v = g_key_file_load_from_file(k, cfg_path, G_KEY_FILE_NONE, NULL)
               ? g_key_file_get_string(k, "emoji", "hotkey", NULL) : NULL;
@@ -218,6 +205,9 @@ static void reload_hotkey(void) {   /* superv-feature-setup --hotkey may have ch
 }
 
 static void save_settings(void) { reload_hotkey(); config_save(); }
+
+static gboolean cfg_dirty;   /* the tab you are on: written when the panel closes, not on every Tab press */
+static gboolean grid_stale = TRUE;   /* "Recently used" changed since the grid was built */
 
 /* ------------------------------------------------------------------ recently used */
 
@@ -247,6 +237,7 @@ static void recent_add(const char *s) {
         if (!strcmp(recent->pdata[i], s)) { g_ptr_array_remove_index(recent, i); break; }
     g_ptr_array_insert(recent, 0, g_strdup(s));
     while (recent->len > MAX_RECENT) g_ptr_array_remove_index(recent, recent->len - 1);
+    grid_stale = TRUE;
     recent_save();
 }
 
@@ -267,7 +258,10 @@ static gboolean prev_is_x11;   /* the app we type into is an X11 one */
 static GtkClipboard *clip, *prim;
 
 typedef struct { GdkAtom target, type; int format; GBytes *data; } SnapEntry;
-typedef struct { GtkClipboard *cb; GPtrArray *entries; int pending; guint gen; gsize total; gboolean done, empty, failed; } Snap;
+typedef struct {
+    GtkClipboard *cb; GPtrArray *entries; int pending; guint gen; gsize total; gboolean done, empty, failed;
+    char *ours;   /* it held a history item of SuperV's: nothing is copied aside, SuperV offers that item again */
+} Snap;
 typedef struct { Snap *s; guint gen; } SnapReq;
 static Snap snaps[2];            /* what was on CLIPBOARD and PRIMARY before we put the emoji there */
 static char *emoji_text;         /* what we are serving right now */
@@ -275,6 +269,8 @@ static GdkAtom hint_atom;
 static gint64 keys_sent_at;
 static gboolean served;
 static guint restore_src;
+static gboolean reopen_after;
+static void reopen_soon(guint ms);
 
 static void snap_entry_free(gpointer p) { SnapEntry *e = p; g_bytes_unref(e->data); g_free(e); }
 
@@ -283,6 +279,7 @@ static void snap_reset(Snap *s) {
     g_ptr_array_set_size(s->entries, 0);
     s->pending = 0; s->total = 0; s->gen++;
     s->done = s->empty = s->failed = FALSE;
+    g_clear_pointer(&s->ours, g_free);
 }
 
 static void on_snap_contents(GtkClipboard *c, GtkSelectionData *sd, gpointer d) {
@@ -348,6 +345,11 @@ static void on_snap_targets(GtkClipboard *c, GdkAtom *atoms, gint n, gpointer d)
 static void take_snapshot(Snap *s) {
     if (gtk_clipboard_get_owner(s->cb) == G_OBJECT(sv_app)) return;   /* still ours: the last snapshot is current */
     snap_reset(s);
+    if (!cfg.restore_clipboard || !g_strcmp0(cfg.paste_keys, "none")) {   /* nothing will be put back */
+        s->failed = s->done = TRUE;
+        return;
+    }
+    if ((s->ours = sv_selection_item(s->cb == prim))) { s->done = TRUE; return; }
     SnapReq *r = g_new(SnapReq, 1);
     r->s = s; r->gen = s->gen;
     gtk_clipboard_request_targets(s->cb, on_snap_targets, r);
@@ -359,7 +361,9 @@ static GtkWidget *win;   /* the panel (defined again with the rest of the UI bel
 static void on_owner_change(GtkClipboard *c, GdkEvent *e, gpointer d) {
     GObject *o = gtk_clipboard_get_owner(c);
     if (o == G_OBJECT(sv_app) || GTK_IS_WIDGET(o)) return;   /* our own emoji, or text selected in our search box */
-    if (gtk_widget_get_visible(win) || insert_src) take_snapshot(c == clip ? &snaps[0] : &snaps[1]);
+    Snap *s = c == clip ? &snaps[0] : &snaps[1];
+    if (gtk_widget_get_visible(win) || insert_src) take_snapshot(s);
+    else if (!paste_src && !restore_src) snap_reset(s);   /* someone else holds it now: our copy isn't needed */
 }
 
 static void snap_get(GtkClipboard *c, GtkSelectionData *sd, guint info, gpointer owner) {
@@ -380,6 +384,7 @@ static void snap_clear(GtkClipboard *c, gpointer owner) {   /* someone else copi
 static void restore_one(Snap *s) {
     if (gtk_clipboard_get_owner(s->cb) != G_OBJECT(sv_app)) return;   /* you copied something new meanwhile */
     if (!s->done || s->failed) return;
+    if (s->ours) { sv_reoffer_item(s->ours, s->cb == prim); return; }
     if (s->empty || !s->entries->len) { gtk_clipboard_clear(s->cb); return; }
     int n = s->entries->len;
     GtkTargetEntry *t = g_new0(GtkTargetEntry, n);
@@ -406,11 +411,15 @@ static void emoji_get(GtkClipboard *c, GtkSelectionData *sd, guint info, gpointe
         return;
     }
     gtk_selection_data_set_text(sd, emoji_text ? emoji_text : "", -1);
-    /* the app asked for it after we pressed paste: put the old clipboard back shortly */
-    if (keys_sent_at && g_get_monotonic_time() >= keys_sent_at && !served && cfg.restore_clipboard) {
+    /* the app asked for it after we pressed paste: it has the emoji. Put the old clipboard back shortly, and
+     * take the keyboard again for the next pick. */
+    if (keys_sent_at && g_get_monotonic_time() >= keys_sent_at && !served) {
         served = TRUE;
-        if (restore_src) g_source_remove(restore_src);
-        restore_src = g_timeout_add(600, restore_clipboard, NULL);
+        if (cfg.restore_clipboard) {
+            if (restore_src) g_source_remove(restore_src);
+            restore_src = g_timeout_add(600, restore_clipboard, NULL);
+        }
+        if (reopen_after) reopen_soon(90);   /* the app is reading it now: let it finish */
     }
 }
 
@@ -438,7 +447,7 @@ typedef struct { int first, count, y, w, h, tab; } Row;   /* w, h: cell size (ka
 
 static GtkWidget *win, *area, *scroll, *search, *status_lbl, *cat_box, *cat_scroll, *tone_btn, *tone_lbl;
 static GtkWidget *tab_btns[N_TABS], *settings_pop, *tone_pop, *hotkey_btn, *hk_status, *hint_lbl;
-static GtkWidget *banner, *banner_lbl, *banner_btn, *theme_btns[3], *paste_btns[2], *keep_sw, *restore_sw;
+static GtkWidget *banner, *banner_lbl, *banner_btn, *paste_btns[2], *keep_sw, *restore_sw;
 static GtkWidget *keys_revealer, *keys_win, *glass_sw;
 static int panel_x, panel_y;
 static gboolean dropping;   /* we gave the keyboard back to your app to type the emoji; the panel stays */
@@ -446,7 +455,7 @@ static GArray *cells, *sections, *rows;
 static GPtrArray *cat_btns;
 static PangoLayout *lay, *chk_lay;
 static int cur_tab, sel, hover = -1, content_h, laid_w, active_cat = -99;
-static gboolean dark, had_focus, capturing, syncing, geom_dirty, enabling, reopen_after;
+static gboolean dark, had_focus, capturing, syncing, geom_dirty;
 static guint check_src, hide_src;
 
 #define PAD      4
@@ -457,18 +466,8 @@ static const struct { double text[3], sub[3]; } PAL[2] = {
     { { 0.902, 0.922, 0.961 }, { 0.576, 0.627, 0.722 } },     /* dark */
 };
 
-/* Colour palettes: one accent each (for dark and light), which also tints the panel and the glass. */
-static const struct { const char *id, *name, *dark, *light; } PALS[] = {
-    { "azure",    "Azure · calm and technical (developers, engineers)",       "#7cb4ff", "#2563eb" },
-    { "graphite", "Graphite · neutral and formal (office, finance, law)",      "#b9c2d0", "#475569" },
-    { "emerald",  "Emerald · fresh and steady (health, science, education)",   "#62d6a8", "#0f8a5f" },
-    { "amber",    "Amber · warm and friendly (writing, teaching, support)",    "#f3c26d", "#b45309" },
-    { "rose",     "Rose · soft and expressive (design, marketing, social)",    "#f4a3b8", "#c2416b" },
-    { "violet",   "Violet · bold and playful (art, music, gaming)",            "#b9a4ff", "#6d3fd4" },
-};
 static double acc[3];   /* the accent, for the grid we draw ourselves */
 static GtkCssProvider *pal_css;
-static GtkWidget *pal_btns[G_N_ELEMENTS(PALS)];
 
 static Cell *cell_at(int i) { return &g_array_index(cells, Cell, i); }
 
@@ -645,6 +644,7 @@ static void build_cells(void) {
         g_array_free(hits, TRUE);
         g_strfreev(words);
     }
+    grid_stale = *q != 0;   /* search results are replaced the next time the panel opens */
     g_free(query);
     sel = 0;
     hover = -1;
@@ -868,11 +868,19 @@ static void on_cat(GtkButton *b, gpointer d) {
 }
 
 static void build_cats(void) {   /* one button per section on screen */
+    static guint last_sig;
+    guint sig = 17;
+    for (guint s = 0; s < sections->len; s++) {
+        Section *sec = &g_array_index(sections, Section, s);
+        sig = sig * 31 + (guint)(sec->tab * 64 + sec->group + 3);
+    }
+    active_cat = -99;
+    if (sig == last_sig && cat_btns->len) return;   /* the same sections as before: keep the buttons */
+    last_sig = sig;
     GList *old = gtk_container_get_children(GTK_CONTAINER(cat_box));
     for (GList *l = old; l; l = l->next) gtk_widget_destroy(l->data);
     g_list_free(old);
     g_ptr_array_set_size(cat_btns, 0);
-    active_cat = -99;
     for (guint s = 0; s < sections->len; s++) {
         Section *sec = &g_array_index(sections, Section, s);
         int g = sec->group;
@@ -892,7 +900,7 @@ static void build_cats(void) {   /* one button per section on screen */
 
 static void set_tab(int t) {
     cur_tab = t;
-    if (cfg.tab != t) { cfg.tab = t; save_settings(); }
+    if (cfg.tab != t) { cfg.tab = t; cfg_dirty = TRUE; }
     syncing = TRUE;
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(tab_btns[t]), TRUE);
     syncing = FALSE;
@@ -912,20 +920,20 @@ static void on_tab_toggled(GtkToggleButton *b, gpointer t) {
 
 /* ------------------------------------------------------------------ inserting */
 
-static void notify(const char *title, const char *body) {
-    GNotification *n = g_notification_new(title);
-    g_notification_set_body(n, body);
-    g_application_send_notification(G_APPLICATION(sv_app), "emoji", n);
-    g_object_unref(n);
-}
-
 static void show_popup(void);
 
 static void grab_keys(void);
+static guint reopen_src;
 
 static gboolean reopen(gpointer d) {   /* the emoji is typed: take the keyboard again for the next one */
-    if (gtk_widget_get_visible(win)) grab_keys();
+    reopen_src = 0;
+    if (gtk_widget_get_visible(win) && !insert_src && !paste_src) grab_keys();   /* not in the middle of a pick */
     return G_SOURCE_REMOVE;
+}
+
+static void reopen_soon(guint ms) {
+    if (reopen_src) g_source_remove(reopen_src);
+    reopen_src = g_timeout_add(ms, reopen, NULL);
 }
 
 static gboolean do_paste(gpointer d) {
@@ -934,14 +942,14 @@ static gboolean do_paste(gpointer d) {
     keys_sent_at = g_get_monotonic_time();
     if (!sv_send_keys(cfg.paste_keys, prev_is_x11)) {
         keys_sent_at = 0;
-        notify("Copied — press Ctrl+V to paste",
-               "Typing it for you needs a one-time permission: open the emoji panel and click Enable.");
+        extras_toast("Copied — press Ctrl+V to paste",
+                     "Typing it for you needs a one-time permission: open the emoji panel and click Enable.");
         gtk_widget_hide(win);
         return G_SOURCE_REMOVE;
     }
     if (restore_src) g_source_remove(restore_src);
     restore_src = cfg.restore_clipboard ? g_timeout_add(2500, restore_clipboard, NULL) : 0;   /* if never asked */
-    if (reopen_after) g_timeout_add(120, reopen, NULL);
+    if (reopen_after) reopen_soon(250);   /* sooner when the app takes the emoji (emoji_get) */
     return G_SOURCE_REMOVE;
 }
 
@@ -965,6 +973,7 @@ static void insert_text(const char *text, gboolean keep_open) {
     if (item_for(s) >= 0) recent_add(s);   /* only things from the panel (not any --insert text) */
     if (paste_src) { g_source_remove(paste_src); paste_src = 0; }   /* a second pick before the first pasted */
     if (restore_src) { g_source_remove(restore_src); restore_src = 0; }
+    if (reopen_src) { g_source_remove(reopen_src); reopen_src = 0; }   /* ...or before the keyboard came back */
     keys_sent_at = 0;
     if (!gtk_widget_get_visible(win)) { take_snapshot(&snaps[0]); take_snapshot(&snaps[1]); }   /* --insert */
     gboolean keep = keep_open && gtk_widget_get_visible(win) && g_strcmp0(cfg.paste_keys, "none");
@@ -1091,161 +1100,53 @@ static const char *CSS =
     ".sd-dark .sd-banner { background-color: alpha(@sd_accent, 0.14); border: 1px solid alpha(@sd_accent, 0.35); }"
     ".sd-light .sd-banner { background-color: alpha(@sd_accent, 0.10); border: 1px solid alpha(@sd_accent, 0.30); }"
     ".sd-banner label { font-size: 0.92em; }"
-    ".sd-settings button.sd-sw { min-width: 18px; min-height: 18px; padding: 0; margin: 0 2px; border-radius: 11px;"
-    "  border: 2px solid transparent; background-image: none; box-shadow: none; }"
-    ".sd-dark .sd-settings button.sd-sw:checked { border-color: #e6ebf5; }"
-    ".sd-light .sd-settings button.sd-sw:checked { border-color: #182033; }"
     "button.sd-primary { background-image: none; border: none; box-shadow: none; text-shadow: none;"
     "  border-radius: 6px; padding: 5px 14px; font-weight: bold; }"
     ".sd-dark button.sd-primary { background-color: @sd_accent; color: @sd_bg; }"
     ".sd-light button.sd-primary { background-color: @sd_strong; color: #ffffff; }";
 
-static gboolean theme_is_dark(void) {
-    if (!g_strcmp0(cfg.theme, "dark")) return TRUE;
-    if (!g_strcmp0(cfg.theme, "light")) return FALSE;
-    GSettingsSchemaSource *src = g_settings_schema_source_get_default();
-    gboolean is_dark = FALSE;
-    GSettingsSchema *s = src ? g_settings_schema_source_lookup(src, "org.gnome.desktop.interface", TRUE) : NULL;
-    if (s) {
-        if (g_settings_schema_has_key(s, "color-scheme")) {
-            GSettings *g = g_settings_new("org.gnome.desktop.interface");
-            char *v = g_settings_get_string(g, "color-scheme");
-            is_dark = !g_strcmp0(v, "prefer-dark");
-            g_free(v); g_object_unref(g);
-        }
-        g_settings_schema_unref(s);
-    }
-    gboolean prefer_dark = FALSE;   /* set by KDE Plasma and others in GTK's settings.ini */
-    g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &prefer_dark, NULL);
-    is_dark = is_dark || prefer_dark;
-    char *name = NULL;
-    g_object_get(gtk_settings_get_default(), "gtk-theme-name", &name, NULL);
-    if (name) { char *l = g_ascii_strdown(name, -1); is_dark = is_dark || strstr(l, "dark"); g_free(l); g_free(name); }
-    const char *schemas[] = { "org.cinnamon.desktop.interface", "org.mate.interface" };
-    for (guint i = 0; i < 2 && !is_dark && src; i++) {
-        s = g_settings_schema_source_lookup(src, schemas[i], TRUE);
-        if (!s) continue;
-        if (g_settings_schema_has_key(s, "gtk-theme")) {
-            GSettings *g = g_settings_new(schemas[i]);
-            char *v = g_settings_get_string(g, "gtk-theme"), *l = g_ascii_strdown(v, -1);
-            is_dark = strstr(l, "dark") != NULL;
-            g_free(v); g_free(l); g_object_unref(g);
-        }
-        g_settings_schema_unref(s);
-    }
-    return is_dark;
-}
-
 static void update_blur(void);
 
 static void apply_theme(void) {
-    dark = theme_is_dark();
+    static char *last;   /* the screen-wide CSS is reloaded only when it changes: that restyles every SuperV window */
+    const char *d, *l;
+    dark = sv_theme_is_dark();
     rm_class(win, dark ? "sd-light" : "sd-dark");
     add_class(win, dark ? "sd-dark" : "sd-light");
-    int pi = 0;
-    for (guint k = 0; k < G_N_ELEMENTS(PALS); k++) if (!g_strcmp0(cfg.color, PALS[k].id)) pi = k;
-    const char *hex = dark ? PALS[pi].dark : PALS[pi].light;
+    sv_palette_colors(&d, &l);   /* SuperV's colour: the accent, and a tint for the panel and the glass */
+    const char *hex = dark ? d : l;
     GdkRGBA c;
     if (gdk_rgba_parse(&c, hex)) { acc[0] = c.red; acc[1] = c.green; acc[2] = c.blue; }
-    GString *css = g_string_new(NULL);
-    g_string_append_printf(css, "@define-color sd_accent %s; @define-color sd_strong %s; @define-color sd_bg mix(%s, %s, %s);",
-                           hex, PALS[pi].light, dark ? "#14161b" : "#f6f7f9", hex, dark ? "0.07" : "0.05");
-    for (guint k = 0; k < G_N_ELEMENTS(PALS); k++)
-        g_string_append_printf(css, ".sd-settings button.sd-sw%u { background-color: %s; }", k, dark ? PALS[k].dark : PALS[k].light);
-    gtk_css_provider_load_from_data(pal_css, css->str, -1, NULL);
-    g_string_free(css, TRUE);
+    char *css = g_strdup_printf("@define-color sd_accent %s; @define-color sd_strong %s; @define-color sd_bg mix(%s, %s, %s);",
+                                hex, l, dark ? "#14161b" : "#f6f7f9", hex, dark ? "0.07" : "0.05");
+    if (g_strcmp0(css, last)) {
+        gtk_css_provider_load_from_data(pal_css, css, -1, NULL);
+        g_free(last);
+        last = css;
+    } else {
+        g_free(css);
+    }
     if (cfg.glass && !gtk_style_context_has_class(gtk_widget_get_style_context(win), "sd-nocomp")) add_class(win, "sd-glass");
     else rm_class(win, "sd-glass");
     update_blur();
     gtk_widget_queue_draw(area);
 }
 
-static GtkWidget *icon(const char *a, const char *b, const char *fallback) {
-    GtkIconTheme *t = gtk_icon_theme_get_default();
-    if (gtk_icon_theme_has_icon(t, a)) return gtk_image_new_from_icon_name(a, GTK_ICON_SIZE_MENU);
-    if (b && gtk_icon_theme_has_icon(t, b)) return gtk_image_new_from_icon_name(b, GTK_ICON_SIZE_MENU);
-    return gtk_label_new(fallback);
-}
-
 static gboolean any_popover_open(void) {
     return gtk_widget_get_visible(settings_pop) || gtk_widget_get_visible(tone_pop);
 }
 
+static int at_x = -1, at_y = -1;   /* open here once (switching from the clipboard panel) */
+
 static void place_window(void) {
-    GdkDisplay *disp = gdk_display_get_default();
-    int px = 0, py = 0, W = cfg.width, H = cfg.height, x, y;
-    GdkRectangle a;
-    gtk_window_resize(GTK_WINDOW(win), W, H);
-    if (cfg.pos_x >= 0 && cfg.pos_y >= 0) {   /* where you dragged it last time */
-        gdk_monitor_get_workarea(gdk_display_get_monitor_at_point(disp, cfg.pos_x + W / 2, cfg.pos_y + 20), &a);
-        x = CLAMP(cfg.pos_x, a.x, MAX(a.x, a.x + a.width - W));
-        y = CLAMP(cfg.pos_y, a.y, MAX(a.y, a.y + a.height - H));
-        gtk_window_move(GTK_WINDOW(win), panel_x = x, panel_y = y);
-        return;
-    }
-    gdk_device_get_position(gdk_seat_get_pointer(gdk_display_get_default_seat(disp)), NULL, &px, &py);
-    GdkMonitor *m = gdk_display_get_monitor_at_point(disp, px, py);
-    if (!m) m = gdk_display_get_primary_monitor(disp);
-    if (!m) m = gdk_display_get_monitor(disp, 0);
-    gdk_monitor_get_workarea(m, &a);
-    if (sv_wayland) {   /* XWayland can't see the pointer over Wayland windows: centre on screen */
-        x = a.x + (a.width - W) / 2;
-        y = a.y + (a.height - H) / 2;
-    } else {            /* like Windows: open next to where you are working */
-        x = CLAMP(px - W / 2, a.x, a.x + a.width - W);
-        y = (py + 16 + H <= a.y + a.height) ? py + 16 : py - H - 16;
-        y = CLAMP(y, a.y, a.y + a.height - H);
-    }
-    gtk_window_move(GTK_WINDOW(win), panel_x = x, panel_y = y);
-}
-
-/* ---- resize with the mouse (the panel has no title bar): drag any edge or corner */
-static GdkWindowEdge edge_at(double xr, double yr, gboolean *hit) {
-    int ox, oy, z = gtk_style_context_has_class(gtk_widget_get_style_context(win), "sd-nocomp") ? 8 : 16;
-    gdk_window_get_origin(gtk_widget_get_window(win), &ox, &oy);
-    int x = (int)xr - ox, y = (int)yr - oy;
-    int w = gtk_widget_get_allocated_width(win), h = gtk_widget_get_allocated_height(win);
-    gboolean l = x < z, r = x >= w - z, t = y < z, b = y >= h - z;
-    *hit = l || r || t || b;
-    if (t && l) return GDK_WINDOW_EDGE_NORTH_WEST;
-    if (t && r) return GDK_WINDOW_EDGE_NORTH_EAST;
-    if (b && l) return GDK_WINDOW_EDGE_SOUTH_WEST;
-    if (b && r) return GDK_WINDOW_EDGE_SOUTH_EAST;
-    if (t) return GDK_WINDOW_EDGE_NORTH;
-    if (b) return GDK_WINDOW_EDGE_SOUTH;
-    if (l) return GDK_WINDOW_EDGE_WEST;
-    return GDK_WINDOW_EDGE_EAST;
-}
-
-static gboolean on_win_press(GtkWidget *w, GdkEventButton *e, gpointer d) {
-    gboolean hit;
-    GdkWindowEdge edge = edge_at(e->x_root, e->y_root, &hit);
-    if (e->button != 1 || e->type != GDK_BUTTON_PRESS || !hit) return FALSE;
-    geom_dirty = TRUE;
-    gtk_window_begin_resize_drag(GTK_WINDOW(win), edge, e->button, (int)e->x_root, (int)e->y_root, e->time);
-    return TRUE;
-}
-
-static gboolean on_win_motion(GtkWidget *w, GdkEventMotion *e, gpointer d) {
-    static const char *names[] = { "nw-resize", "n-resize", "ne-resize", "w-resize",
-                                   "e-resize", "sw-resize", "s-resize", "se-resize" };
-    static int last = -2;
-    gboolean hit;
-    GdkWindowEdge edge = edge_at(e->x_root, e->y_root, &hit);
-    int cur = hit ? (int)edge : -1;
-    if (cur != last) {
-        last = cur;
-        GdkCursor *c = hit ? gdk_cursor_new_from_name(gtk_widget_get_display(win), names[edge]) : NULL;
-        gdk_window_set_cursor(gtk_widget_get_window(win), c);
-        if (c) g_object_unref(c);
-    }
-    return FALSE;
+    /* switching from the clipboard panel: open where it was, like Windows 11's one panel; else where you put it */
+    int wx = at_x >= 0 ? at_x : cfg.pos_x, wy = at_x >= 0 ? at_y : cfg.pos_y;
+    at_x = at_y = -1;
+    sv_place_panel(win, cfg.width, cfg.height, wx, wy, &panel_x, &panel_y);
 }
 
 static gboolean on_header_press(GtkWidget *w, GdkEventButton *e, gpointer d) {
-    gboolean hit;
-    edge_at(e->x_root, e->y_root, &hit);
-    if (e->button != 1 || hit) return FALSE;
+    if (e->button != 1 || sv_panel_edge(win, e)) return FALSE;
     if (e->type == GDK_2BUTTON_PRESS) {   /* double-click: back to the default size and place */
         cfg.pos_x = cfg.pos_y = -1; cfg.width = WIN_W; cfg.height = WIN_H;
         save_settings();
@@ -1330,11 +1231,12 @@ static gboolean snapshot_window(gpointer path) {
 }
 
 static void update_banner(void);
-static void sync_hotkey_from_desktop(void);
 static void hotkey_status(const char *text, gboolean ok);
 static void update_hotkey_labels(void);
 static void sync_settings(void);
+static guint snaps_src;
 
+/* Everything on this path is kept short: the panel must be on screen the moment you press the shortcut. */
 static void show_popup(void) {
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     GdkWindow *aw = gdk_screen_get_active_window(gdk_screen_get_default());
@@ -1344,18 +1246,23 @@ static void show_popup(void) {
                && (!gtk_widget_get_realized(keys_win) || aw != gtk_widget_get_window(keys_win));
     if (aw) g_object_unref(aw);
     if (hide_src) { g_source_remove(hide_src); hide_src = 0; }
+    if (snaps_src) { g_source_remove(snaps_src); snaps_src = 0; }
     take_snapshot(&snaps[0]);
     take_snapshot(&snaps[1]);
-    reload_hotkey();
-    sync_hotkey_from_desktop();
     apply_theme();
     capturing = FALSE;
     hotkey_status(NULL, TRUE);
-    update_hotkey_labels();
-    sync_settings();
     update_banner();
-    if (*gtk_entry_get_text(GTK_ENTRY(search))) gtk_entry_set_text(GTK_ENTRY(search), "");
-    build_cells();   /* recently used may have changed */
+    gboolean searched = *gtk_entry_get_text(GTK_ENTRY(search)) != 0;
+    if (searched) gtk_entry_set_text(GTK_ENTRY(search), "");
+    if (searched || grid_stale) {
+        build_cells();
+    } else {   /* nothing changed since last time: back to the top */
+        sel = 0; hover = -1;
+        gtk_adjustment_set_value(gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scroll)), 0);
+        update_status();
+        update_cats();
+    }
     place_window();
     gtk_widget_show(win);
     gdk_window_raise(gtk_widget_get_window(win));
@@ -1400,23 +1307,29 @@ static void store_clipboard(void) {
     gtk_clipboard_store(clip);
 }
 
+/* A while after closing: free what was copied aside from the clipboard, unless we are still serving it. */
+static gboolean snaps_drop(gpointer d) {
+    snaps_src = 0;
+    if (gtk_widget_get_visible(win) || insert_src || paste_src || restore_src) return G_SOURCE_REMOVE;
+    for (int i = 0; i < 2; i++)
+        if (gtk_clipboard_get_owner(snaps[i].cb) != G_OBJECT(sv_app)) snap_reset(&snaps[i]);
+    malloc_trim(0);
+    return G_SOURCE_REMOVE;
+}
+
 static void on_hide(GtkWidget *w, gpointer d) {
     dropping = FALSE;
     gtk_widget_hide(keys_win);
-    if (geom_dirty) { geom_dirty = FALSE; save_settings(); }
+    if (geom_dirty || cfg_dirty) { geom_dirty = cfg_dirty = FALSE; save_settings(); }
     g_timeout_add(500, trim_memory, NULL);
+    if (snaps_src) g_source_remove(snaps_src);
+    snaps_src = g_timeout_add(4000, snaps_drop, NULL);
 }
 
 /* ------------------------------------------------------------------ shortcut */
 
-static char *accel_label(const char *accel) {
-    guint key; GdkModifierType mods;
-    gtk_accelerator_parse(accel, &key, &mods);
-    return key ? gtk_accelerator_get_label(key, mods) : g_strdup(accel);
-}
-
 static void update_hotkey_labels(void) {
-    char *label = accel_label(cfg.hotkey);
+    char *label = sv_accel_label(cfg.hotkey);
     if (!capturing) gtk_button_set_label(GTK_BUTTON(hotkey_btn), label);
     gtk_label_set_text(GTK_LABEL(hint_lbl), label);
     g_free(label);
@@ -1430,33 +1343,33 @@ static void hotkey_status(const char *text, gboolean ok) {
     gtk_widget_set_visible(hk_status, text != NULL);
 }
 
-static char *setup_path(void) { return sv_setup_path("superv-feature-setup"); }
-
 static gint64 hotkey_applied_at;
 
-static void on_hotkey_applied(gboolean ok, gpointer accel) {
+static void on_hotkey_applied(int status, gpointer accel) {
     if (!*(char *)accel) {   /* the shortcut was given back to the desktop */
         cfg.setup_done = FALSE;
-    } else if (ok) {
+    } else if (status == 0) {
         cfg.setup_done = TRUE;   /* the helper saved it too */
-        char *label = accel_label(accel), *msg = g_strdup_printf("✓ Shortcut set to %s", label);
+        char *label = sv_accel_label(accel), *msg = g_strdup_printf("✓ Shortcut set to %s", label);
         hotkey_status(msg, TRUE);
         g_free(msg); g_free(label);
+    } else if (status == 3) {
+        cfg.setup_done = TRUE;   /* nothing more we can do here */
+        hotkey_status("This desktop can't be set up automatically: add a keyboard shortcut in its settings "
+                      "that runs “superv --emoji”.", FALSE);
     } else {
         hotkey_status("Couldn't save the shortcut. Run “superv --doctor” to see why.", FALSE);
     }
     g_free(accel);
 }
 
-/* accel "" removes the shortcut (and gives the desktop back what we freed for it).
- * SuperV runs setup helpers one at a time, in order. */
+/* accel "" removes the shortcut (and gives the desktop back what we took for it). */
 static void run_helper(const char *accel) {
-    char *setup = setup_path();
     char *quoted = g_shell_quote(sv_self_exe), *cmd = g_strdup_printf("%s --emoji", quoted);
-    char *set_argv[] = { "python3", setup, "--feature", "emoji", "--setup-hotkeys", cmd, "--hotkey", (char *)accel, NULL };
-    char *rm_argv[] = { "python3", setup, "--feature", "emoji", "--remove-hotkeys", NULL };
-    sv_run_helper(*accel ? set_argv : rm_argv, on_hotkey_applied, g_strdup(accel));
-    g_free(setup); g_free(quoted); g_free(cmd);
+    char *set[] = { "--feature", "emoji", "--setup-hotkeys", cmd, "--hotkey", (char *)accel, NULL };
+    char *unset[] = { "--feature", "emoji", "--remove-hotkeys", NULL };
+    sv_run_helper(*accel ? set : unset, on_hotkey_applied, g_strdup(accel));
+    g_free(quoted); g_free(cmd);
 }
 
 static void apply_hotkey(const char *new_accel) {
@@ -1468,93 +1381,12 @@ static void apply_hotkey(const char *new_accel) {
     run_helper(accel);
 }
 
-#define GNOME_KB_SCHEMA "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding"
-#define GNOME_KB_PATH   "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/superv-emoji/"
-#define CIN_KB_SCHEMA   "org.cinnamon.desktop.keybindings.custom-keybinding"
-
-static gboolean schema_has_key(const char *schema_id, const char *key) {
-    GSettingsSchemaSource *src = g_settings_schema_source_get_default();
-    GSettingsSchema *schema = src ? g_settings_schema_source_lookup(src, schema_id, TRUE) : NULL;
-    gboolean ok = schema && g_settings_schema_has_key(schema, key);
-    if (schema) g_settings_schema_unref(schema);
-    return ok;
-}
-
-static gboolean gnome_bound(void) {
-    if (!schema_has_key("org.gnome.settings-daemon.plugins.media-keys", "custom-keybindings")) return TRUE;
-    GSettings *s = g_settings_new("org.gnome.settings-daemon.plugins.media-keys");
-    char **v = g_settings_get_strv(s, "custom-keybindings");
-    gboolean found = g_strv_contains((const char *const *)v, GNOME_KB_PATH);
-    g_strfreev(v); g_object_unref(s);
-    return found;
-}
-
-static char *gnome_hotkey(void) {
-    if (!schema_has_key("org.gnome.settings-daemon.plugins.media-keys", "custom-keybindings") || !gnome_bound())
-        return NULL;
-    GSettings *kb = g_settings_new_with_path(GNOME_KB_SCHEMA, GNOME_KB_PATH);
-    char *b = g_settings_get_string(kb, "binding");
-    g_object_unref(kb);
-    if (!*b) { g_free(b); return NULL; }
-    return b;
-}
-
-/* Cinnamon: the emoji panel's custom binding (found = TRUE when there is one), and its key */
-static char *cinnamon_hotkey(gboolean *found) {
-    *found = FALSE;
-    if (!schema_has_key("org.cinnamon.desktop.keybindings", "custom-list")) { *found = TRUE; return NULL; }
-    GSettings *s = g_settings_new("org.cinnamon.desktop.keybindings");
-    char **ids = g_settings_get_strv(s, "custom-list"), *key = NULL;
-    for (int i = 0; ids[i] && !*found; i++) {
-        char *path = g_strdup_printf("/org/cinnamon/desktop/keybindings/custom-keybindings/%s/", ids[i]);
-        GSettings *kb = g_settings_new_with_path(CIN_KB_SCHEMA, path);
-        char *name = g_settings_get_string(kb, "name");
-        if (!g_strcmp0(name, "SuperV Emoji")) {
-            *found = TRUE;
-            GVariant *v = g_settings_get_value(kb, "binding");
-            if (g_variant_is_of_type(v, G_VARIANT_TYPE_STRING_ARRAY)) {
-                const char **b = g_variant_get_strv(v, NULL);
-                if (b[0] && *b[0]) key = g_strdup(b[0]);
-                g_free(b);
-            } else if (g_variant_is_of_type(v, G_VARIANT_TYPE_STRING) && *g_variant_get_string(v, NULL)) {
-                key = g_variant_dup_string(v, NULL);
-            }
-            g_variant_unref(v);
-        }
-        g_free(name); g_object_unref(kb); g_free(path);
-    }
-    g_strfreev(ids); g_object_unref(s);
-    return key;
-}
-
-enum { DE_OTHER, DE_GNOME, DE_CINNAMON };
-static int desktop_kind(void) {
-    char *de = g_ascii_strup(g_getenv("XDG_CURRENT_DESKTOP") ? g_getenv("XDG_CURRENT_DESKTOP") : "", -1);
-    int kind = strstr(de, "CINNAMON") ? DE_CINNAMON
-             : (strstr(de, "GNOME") || strstr(de, "UNITY") || strstr(de, "BUDGIE") || strstr(de, "PANTHEON"))
-               ? DE_GNOME : DE_OTHER;
-    g_free(de);
-    return kind;
-}
-
 /* Show the shortcut the desktop really uses: people also change it in their desktop's settings. */
 static void sync_hotkey_from_desktop(void) {
     if (g_get_monotonic_time() - hotkey_applied_at < 5 * G_USEC_PER_SEC) return;   /* ours is still being applied */
-    gboolean found;
-    int kind = desktop_kind();
-    char *d = kind == DE_GNOME ? gnome_hotkey() : kind == DE_CINNAMON ? cinnamon_hotkey(&found) : NULL;
+    char *d = sv_desktop_hotkey("emoji", "SuperV Emoji");
     if (d && g_strcmp0(d, cfg.hotkey)) { g_free(cfg.hotkey); cfg.hotkey = d; config_save(); }
     else g_free(d);
-}
-
-/* Is the emoji panel's shortcut registered with the desktop? (TRUE when we can't tell: KDE, MATE, Xfce…) */
-static gboolean shortcut_bound(void) {
-    gboolean found = TRUE;
-    switch (desktop_kind()) {
-    case DE_GNOME: return gnome_bound();
-    case DE_CINNAMON: g_free(cinnamon_hotkey(&found)); return found;
-    default: return TRUE;
-    }
 }
 
 static void on_hotkey_btn(GtkButton *b, gpointer d) {
@@ -1565,29 +1397,22 @@ static void on_hotkey_btn(GtkButton *b, gpointer d) {
 }
 
 static gboolean capture_key(GdkEventKey *e) {
-    if (e->is_modifier) return TRUE;
-    if (e->keyval == GDK_KEY_Escape) { capturing = FALSE; hotkey_status(NULL, TRUE); update_hotkey_labels(); return TRUE; }
-    GdkModifierType state = e->state;
-    gdk_keymap_add_virtual_modifiers(gdk_keymap_get_for_display(gdk_display_get_default()), &state);
-    state &= gtk_accelerator_get_default_mod_mask() & ~(GDK_HYPER_MASK | GDK_META_MASK);
-    guint key = gdk_keyval_to_lower(e->keyval);
-    /* Must use Super, or Ctrl+Alt: Ctrl+…, Alt+… belong to apps (copy, paste, menus). */
-    gboolean ctrl = state & GDK_CONTROL_MASK, alt = state & GDK_MOD1_MASK, super = state & GDK_SUPER_MASK;
-    if (!super && !(ctrl && alt)) {
-        char *name = gtk_accelerator_name(key, state), *label = accel_label(name);
-        char *msg = g_strdup_printf("%s isn't allowed: apps use %s shortcuts. Use Super, or Ctrl+Alt, plus a key.",
-                                    label, ctrl ? "Ctrl" : alt ? "Alt" : "single-key");
+    char *accel = NULL, *msg = NULL;
+    switch (sv_capture_accel(e, &accel, &msg)) {
+    case SV_KEY_CANCEL:
+        capturing = FALSE; hotkey_status(NULL, TRUE); update_hotkey_labels();
+        break;
+    case SV_KEY_REFUSED:
         hotkey_status(msg, FALSE);
-        g_free(msg); g_free(label); g_free(name);
-        return TRUE;   /* keep listening for a valid combination */
+        break;
+    case SV_KEY_CHOSEN:
+        capturing = FALSE;
+        hotkey_status("Saving…", TRUE);
+        rm_class(hk_status, "sd-ok");
+        apply_hotkey(accel);
+        update_hotkey_labels();
     }
-    capturing = FALSE;
-    hotkey_status("Saving…", TRUE);
-    rm_class(hk_status, "sd-ok");
-    char *accel = gtk_accelerator_name(key, state);
-    apply_hotkey(accel);
-    g_free(accel);
-    update_hotkey_labels();
+    g_free(accel); g_free(msg);
     return TRUE;
 }
 
@@ -1679,14 +1504,6 @@ static GtkWidget *tone_menu(void) {
     return tone_btn;
 }
 
-static void on_theme_toggled(GtkToggleButton *b, gpointer which) {
-    if (syncing || !gtk_toggle_button_get_active(b)) return;
-    g_free(cfg.theme);
-    cfg.theme = g_strdup(which);
-    save_settings();
-    apply_theme();
-}
-
 static void on_paste_mode(GtkToggleButton *b, gpointer which) {
     if (syncing || !gtk_toggle_button_get_active(b)) return;
     g_free(cfg.paste_keys);
@@ -1700,34 +1517,8 @@ static gboolean on_keep_open(GtkSwitch *s, gboolean on, gpointer d) {
     return FALSE;
 }
 
-static void on_palette(GtkToggleButton *b, gpointer id) {
-    if (syncing || !gtk_toggle_button_get_active(b)) return;
-    g_free(cfg.color);
-    cfg.color = g_strdup(id);
-    save_settings();
-    apply_theme();
-}
-
-static GtkWidget *palette_control(void) {
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GSList *group = NULL;
-    for (guint k = 0; k < G_N_ELEMENTS(PALS); k++) {
-        char cls[16];
-        g_snprintf(cls, sizeof cls, "sd-sw%u", k);
-        GtkWidget *b = pal_btns[k] = gtk_radio_button_new(group);
-        group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(b));
-        gtk_toggle_button_set_mode(GTK_TOGGLE_BUTTON(b), FALSE);
-        add_class(b, "sd-sw");
-        add_class(b, cls);
-        gtk_widget_set_tooltip_text(b, PALS[k].name);
-        g_signal_connect(b, "toggled", G_CALLBACK(on_palette), (gpointer)PALS[k].id);
-        gtk_box_pack_start(GTK_BOX(box), b, FALSE, FALSE, 0);
-    }
-    return box;
-}
-
 static gboolean on_glass(GtkSwitch *s, gboolean on, gpointer d) {
-    if (!syncing) { cfg.glass = on; save_settings(); apply_theme(); }
+    if (!syncing) { cfg.glass = on; cfg.glass_chosen = TRUE; save_settings(); apply_theme(); }
     return FALSE;
 }
 
@@ -1746,6 +1537,7 @@ static void on_clear_recent(GtkButton *b, gpointer d) {
 static void on_reset(GtkButton *b, gpointer d) {
     reload_hotkey();
     config_defaults();
+    cfg_dirty = FALSE;
     if (g_strcmp0(cfg.hotkey, DEFAULT_HOTKEY)) apply_hotkey(DEFAULT_HOTKEY);   /* also saves */
     else config_save();
     apply_theme();
@@ -1757,17 +1549,11 @@ static void on_reset(GtkButton *b, gpointer d) {
 
 static void sync_settings(void) {   /* the controls show what's saved */
     syncing = TRUE;
-    static const char *themes[] = { "auto", "light", "dark" };
-    for (int i = 0; i < 3; i++)
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(theme_btns[i]), !g_strcmp0(cfg.theme, themes[i]));
     gboolean copy_only = !g_strcmp0(cfg.paste_keys, "none");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(paste_btns[copy_only]), TRUE);
     gtk_switch_set_active(GTK_SWITCH(keep_sw), cfg.keep_open);
     gtk_switch_set_active(GTK_SWITCH(restore_sw), cfg.restore_clipboard);
     gtk_switch_set_active(GTK_SWITCH(glass_sw), cfg.glass);
-    int pi = 0;
-    for (guint k = 0; k < G_N_ELEMENTS(PALS); k++) if (!g_strcmp0(cfg.color, PALS[k].id)) pi = k;
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pal_btns[pi]), TRUE);
     for (int t = 0; t < 6; t++) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(tone_buttons[t]), t == cfg.skin_tone);
     char *hand = tone_hand(cfg.skin_tone);
     gtk_label_set_text(GTK_LABEL(tone_lbl), hand);
@@ -1809,8 +1595,13 @@ static gboolean scroll_settings_down(gpointer d) {   /* bring the shortcut list 
     return G_SOURCE_REMOVE;
 }
 
-/* The menu is never taller than the panel: it scrolls inside instead of spilling out. */
+/* The menu is never taller than the panel: it scrolls inside instead of spilling out. It is brought up to date
+ * when it opens, not every time the panel does. */
 static void fit_settings(GtkWidget *pop, gpointer d) {
+    reload_hotkey();
+    sync_hotkey_from_desktop();
+    update_hotkey_labels();
+    sync_settings();
     int h = gtk_widget_get_allocated_height(win) - 110;
     gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(settings_scroll), MAX(h, 160));
 }
@@ -1867,7 +1658,7 @@ static void on_popover_closed(GtkPopover *p, gpointer d) {
 static GtkWidget *settings_button(void) {
     GtkWidget *btn = gtk_menu_button_new(), *old = gtk_bin_get_child(GTK_BIN(btn));
     if (old) gtk_container_remove(GTK_CONTAINER(btn), old);
-    gtk_container_add(GTK_CONTAINER(btn), icon("emblem-system-symbolic", "preferences-system-symbolic", "⚙"));
+    gtk_container_add(GTK_CONTAINER(btn), sv_icon("emblem-system-symbolic", "preferences-system-symbolic", "⚙"));
     add_class(btn, "sd-icon");
     gtk_widget_set_tooltip_text(btn, "Settings");
     gtk_widget_set_can_focus(btn, FALSE);
@@ -1898,12 +1689,15 @@ static GtkWidget *settings_button(void) {
     restore_sw = gtk_switch_new();
     g_signal_connect(restore_sw, "state-set", G_CALLBACK(on_restore), NULL);
     settings_row(box, "Keep my clipboard", "After typing the emoji, put back what you had copied.", restore_sw);
-    settings_row(box, "Colour", "Pick the palette that suits you; the glass takes its tint.", palette_control());
     glass_sw = gtk_switch_new();
     g_signal_connect(glass_sw, "state-set", G_CALLBACK(on_glass), NULL);
     settings_row(box, "Glass effect", "See-through panel. KDE Plasma also blurs what is behind it.", glass_sw);
-    static const char *tn[] = { "System", "Light", "Dark" }, *tv[] = { "auto", "light", "dark" };
-    settings_row(box, "Theme", NULL, segmented(tn, tv, 3, theme_btns, G_CALLBACK(on_theme_toggled)));
+    GtkWidget *looks = gtk_label_new("Theme and colour: in SuperV's settings (Super+V, then ⚙).");
+    gtk_label_set_xalign(GTK_LABEL(looks), 0);
+    gtk_label_set_line_wrap(GTK_LABEL(looks), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(looks), 34);
+    add_class(looks, "sd-keydesc");
+    gtk_box_pack_start(GTK_BOX(box), looks, FALSE, FALSE, 0);
 
     GtkWidget *actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_box_set_homogeneous(GTK_BOX(actions), TRUE);
@@ -1955,93 +1749,40 @@ static GtkWidget *settings_button(void) {
     return btn;
 }
 
-/* ---- one-time permission to type into Wayland apps, with the desktop's own password dialog */
-enum { BANNER_ASK, BANNER_FAILED, BANNER_RELOGIN };
-static int banner_state = BANNER_ASK, enable_tries;
-
-static gboolean rule_installed(void) {   /* by a package, install.sh, or the Enable button (SuperDot 1.0 too) */
-    static const char *rules[] = {
-        "/usr/lib/udev/rules.d/70-superdot-uinput.rules", "/lib/udev/rules.d/70-superdot-uinput.rules",
-        "/usr/local/lib/udev/rules.d/70-superdot-uinput.rules", "/etc/udev/rules.d/70-superdot-uinput.rules",
-        "/usr/lib/udev/rules.d/70-superv-uinput.rules", "/etc/udev/rules.d/70-superv-uinput.rules",
-    };
-    for (guint i = 0; i < G_N_ELEMENTS(rules); i++) if (g_file_test(rules[i], G_FILE_TEST_EXISTS)) return TRUE;
-    return FALSE;
-}
-
+/* ---- the one-time permission to type into Wayland apps: SuperV's, shown here in the emoji panel's words */
 static void update_banner(void) {
-    gboolean show = !sv_paste_everywhere() && g_strcmp0(cfg.paste_keys, "none");
-    if (show && banner_state == BANNER_ASK && rule_installed()) banner_state = BANNER_RELOGIN;
-    gtk_widget_set_visible(banner, show);
-    if (!show || enabling) return;
-    switch (banner_state) {
-    case BANNER_RELOGIN:
+    int st = g_strcmp0(cfg.paste_keys, "none") ? sv_paste_state() : SV_PASTE_OK;   /* "Copy only": nothing to type */
+    gtk_widget_set_visible(banner, st != SV_PASTE_OK);
+    gtk_widget_set_visible(banner_btn, st == SV_PASTE_ASK || st == SV_PASTE_FAILED || st == SV_PASTE_ENABLING);
+    gtk_widget_set_sensitive(banner_btn, st != SV_PASTE_ENABLING);
+    switch (st) {
+    case SV_PASTE_RELOGIN:
         gtk_label_set_text(GTK_LABEL(banner_lbl), "Permission added. Log out and back in once to finish.");
-        gtk_widget_set_visible(banner_btn, FALSE);
-        return;
-    case BANNER_FAILED:
+        break;
+    case SV_PASTE_FAILED:
         gtk_label_set_text(GTK_LABEL(banner_lbl), "Not enabled: the password prompt was cancelled.");
         gtk_button_set_label(GTK_BUTTON(banner_btn), "Try again");
         break;
-    default:
+    case SV_PASTE_ENABLING:
+        gtk_label_set_text(GTK_LABEL(banner_lbl), "Enter your password in the dialog…");
+        break;
+    case SV_PASTE_ASK:
         gtk_label_set_text(GTK_LABEL(banner_lbl), "Typing emoji into apps needs a one-time permission. "
                            "Until then, picking one copies it: press Ctrl+V.");
         gtk_button_set_label(GTK_BUTTON(banner_btn), "Enable");
     }
-    gtk_widget_set_visible(banner_btn, TRUE);
-    gtk_widget_set_sensitive(banner_btn, TRUE);
 }
 
-static gboolean retry_uinput(gpointer d) {
-    if (sv_uinput_open()) {
-        enabling = FALSE;
-        update_banner();
-        notify("SuperV types for you now", "Pick an emoji and it appears where you were typing.");
-        return G_SOURCE_REMOVE;
-    }
-    if (++enable_tries < 12) return G_SOURCE_CONTINUE;
-    enabling = FALSE;
-    banner_state = BANNER_RELOGIN;
-    update_banner();
-    return G_SOURCE_REMOVE;
-}
-
-static void on_enable_done(GPid pid, gint status, gpointer d) {
-    g_spawn_close_pid(pid);
-    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-        enable_tries = 0;
-        g_timeout_add(500, retry_uinput, NULL);
-    } else {
-        enabling = FALSE;
-        banner_state = BANNER_FAILED;
-        update_banner();
-    }
-}
-
-static void on_enable_paste(GtkButton *b, gpointer d) {
-    static const char *script =
-        "set -e; printf '%s\\n' 'KERNEL==\"uinput\", SUBSYSTEM==\"misc\", OPTIONS+=\"static_node=uinput\", TAG+=\"uaccess\"'"
-        " > /etc/udev/rules.d/70-superv-uinput.rules;"
-        " echo uinput > /etc/modules-load.d/superv-uinput.conf;"
-        " modprobe uinput; udevadm control --reload-rules;"
-        " udevadm trigger --action=change --sysname-match=uinput; udevadm settle";
-    char *argv[] = { "pkexec", "/bin/sh", "-c", (char *)script, NULL };
-    GPid pid;
-    GError *e = NULL;
-    if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &e)) {
-        gtk_label_set_text(GTK_LABEL(banner_lbl), "Couldn't open the password prompt. Run install.sh in a terminal instead.");
-        g_error_free(e);
-        return;
-    }
-    enabling = TRUE;
-    gtk_widget_set_sensitive(banner_btn, FALSE);
-    gtk_label_set_text(GTK_LABEL(banner_lbl), "Enter your password in the dialog…");
-    g_child_watch_add(pid, on_enable_done, NULL);
-}
+static void on_enable_paste(GtkButton *b, gpointer d) { sv_enable_paste(); }
 
 /* ------------------------------------------------------------------ window */
 
-static void on_clip_btn(GtkButton *b, gpointer d) { gtk_widget_hide(win); sv_show_clipboard(); }
+static void on_clip_btn(GtkButton *b, gpointer d) {   /* 📋: switch to the clipboard history, same spot */
+    int x, y;
+    gtk_window_get_position(GTK_WINDOW(win), &x, &y);
+    gtk_widget_hide(win);
+    sv_show_clipboard_at(x, y);
+}
 
 static void build_window(void) {
     win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -2091,7 +1832,7 @@ static void build_window(void) {
     GtkWidget *tones = tone_menu();   /* settings_button() needs tone_pop */
     gtk_box_pack_end(GTK_BOX(top), settings_button(), FALSE, FALSE, 0);
     GtkWidget *clip_btn = gtk_button_new();   /* back to the clipboard history, like Windows 11's Win+V tabs */
-    gtk_container_add(GTK_CONTAINER(clip_btn), icon("edit-paste-symbolic", "edit-copy-symbolic", "📋"));
+    gtk_container_add(GTK_CONTAINER(clip_btn), sv_icon("edit-paste-symbolic", "edit-copy-symbolic", "📋"));
     add_class(clip_btn, "sd-icon");
     gtk_widget_set_can_focus(clip_btn, FALSE);
     gtk_widget_set_tooltip_text(clip_btn, "Clipboard history");
@@ -2175,8 +1916,8 @@ static void build_window(void) {
     g_signal_connect(keys_win, "delete-event", G_CALLBACK(gtk_widget_hide_on_delete), NULL);
     g_signal_connect(win, "hide", G_CALLBACK(on_hide), NULL);
     g_signal_connect(win, "configure-event", G_CALLBACK(on_configure), NULL);
-    g_signal_connect(win, "button-press-event", G_CALLBACK(on_win_press), NULL);
-    g_signal_connect(win, "motion-notify-event", G_CALLBACK(on_win_motion), NULL);
+    g_signal_connect(win, "button-press-event", G_CALLBACK(sv_panel_press), &geom_dirty);
+    g_signal_connect(win, "motion-notify-event", G_CALLBACK(sv_panel_motion), NULL);
     g_signal_connect(win, "delete-event", G_CALLBACK(gtk_widget_hide_on_delete), NULL);
     gtk_widget_show_all(panel);
 
@@ -2235,7 +1976,7 @@ static void migrate_from_superdot(void) {
                              NULL, NULL, NULL, NULL, NULL, NULL);
                 g_free(old);
             }
-            notify("SuperDot is now part of SuperV",
+            extras_toast("SuperDot is now part of SuperV",
                    "Super+. opens SuperV's emoji panel, with your settings. You can uninstall the separate SuperDot app.");
         }
     }
@@ -2273,7 +2014,7 @@ void emoji_start(void) {
     set_tab(cfg.tab);
     g_timeout_add_seconds(2, start_checks, NULL);   /* after login settles */
     /* First start, or the shortcut was removed since: (re)create it. */
-    if (!cfg.setup_done || !shortcut_bound()) apply_hotkey(cfg.hotkey);
+    if (!cfg.setup_done || !sv_shortcut_bound("emoji", "SuperV Emoji")) apply_hotkey(cfg.hotkey);
     int per_tab[N_TABS] = { 0 };
     for (int i = 0; i < n_items; i++) per_tab[items[i].tab]++;
     logmsg("emoji panel ready: %d emoji, %d kaomoji, %d symbols",
@@ -2282,12 +2023,32 @@ void emoji_start(void) {
 
 gboolean emoji_started(void) { return started; }
 gboolean emoji_visible(void) { return started && gtk_widget_get_visible(win); }
+
+gboolean emoji_position(int *x, int *y) {
+    if (!emoji_visible()) return FALSE;
+    gtk_window_get_position(GTK_WINDOW(win), x, y);
+    return TRUE;
+}
+
+void emoji_show_at(int x, int y) {
+    if (gtk_widget_get_visible(win)) gtk_widget_hide(win);
+    at_x = x; at_y = y;
+    show_popup();
+}
 gboolean emoji_busy(void) { return started && (gtk_widget_get_visible(win) || insert_src || paste_src || restore_src); }
-void emoji_shutdown(void) { if (started) store_clipboard(); }
+void emoji_shutdown(void) {
+    if (!started) return;
+    if (geom_dirty || cfg_dirty) save_settings();
+    store_clipboard();
+}
+void emoji_paste_changed(void) { if (started) update_banner(); }
+
+void emoji_palette_changed(void) { if (started) apply_theme(); }
 
 char *emoji_hotkey_label(void) {
     reload_hotkey();
-    return accel_label(cfg.hotkey);
+    sync_hotkey_from_desktop();
+    return sv_accel_label(cfg.hotkey);
 }
 
 void emoji_set_shortcut(gboolean on) {
