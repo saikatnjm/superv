@@ -2,7 +2,7 @@
 # Arch Linux / Manjaro / EndeavourOS package, published on the AUR as "superv".
 # Build and install from this folder:  makepkg -si
 pkgname=superv
-pkgver=1.2.3
+pkgver=2.1.0
 pkgrel=1
 pkgdesc="Clipboard, emoji and more Windows shortcuts for Linux: Super+V clipboard history, Super+. emoji panel, plain-text paste, colour picker, text from screen"
 arch=('x86_64' 'aarch64')
@@ -17,7 +17,7 @@ conflicts=('superdot')
 replaces=('superdot')
 install=superv.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('a9c85757e932eaf8ae1a36f1b600b976467dcdde9e296fce35a31aa82b435a09')
+sha256sums=('d2cfe038fe71a22fa96a47f129187492b47d0aa328c0f4e3dcaee4b960213bbc')
 
 build() {
     cd "$pkgname-$pkgver"
