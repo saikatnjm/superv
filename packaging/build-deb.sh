@@ -11,7 +11,7 @@ trap 'rm -r "$PKG"' EXIT
 
 install -Dm755 "$BIN"                                       "$PKG/usr/bin/superv"
 install -Dm755 "$ROOT/superv-setup"                         "$PKG/usr/lib/superv/superv-setup"
-install -Dm755 "$ROOT/superv-emoji-setup"                   "$PKG/usr/lib/superv/superv-emoji-setup"
+install -Dm755 "$ROOT/superv-feature-setup"                 "$PKG/usr/lib/superv/superv-feature-setup"
 install -Dm644 "$ROOT/data/io.github.superv.SuperV.desktop" "$PKG/usr/share/applications/io.github.superv.SuperV.desktop"
 install -Dm644 "$ROOT/data/io.github.superv.SuperV.svg"     "$PKG/usr/share/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg"
 install -Dm644 "$ROOT/data/io.github.superv.SuperV-64.png"  "$PKG/usr/share/icons/hicolor/64x64/apps/io.github.superv.SuperV.png"
@@ -35,19 +35,22 @@ Priority: optional
 Architecture: amd64
 Depends: libc6 (>= 2.34), libgtk-3-0 (>= 3.22), python3, python3-gi, gir1.2-glib-2.0
 Recommends: fonts-noto-color-emoji, libxtst6
+Suggests: tesseract-ocr
 Provides: superdot
 Conflicts: superdot
 Replaces: superdot
 Installed-Size: $(du -sk "$PKG/usr" | cut -f1)
 Maintainer: SuperV <saikatnjm@users.noreply.github.com>
 Homepage: https://github.com/saikatnjm/superv
-Description: Clipboard and emoji for Linux: Win+V and Win+. panels
+Description: Clipboard, emoji and more Windows shortcuts for Linux: Win+V, Win+. and more
  SuperV brings two Windows panels to Linux. Super+V shows the last 25
  things you copied (text and images): pick one to paste it into the app you
  are using, pin favourites, clear the rest. Super+. opens the emoji panel:
  type to search emoji, kaomoji and symbols, and the one you pick is typed
- where you were writing. Works on GNOME, KDE Plasma, Cinnamon, MATE and Xfce
- (Wayland and X11). Never connects to the internet.
+ where you were writing. Ctrl+Super+Alt+V pastes as plain text, Super+Shift+C
+ picks a colour on screen, Super+Shift+T copies text from the screen (with
+ tesseract-ocr). Each can be turned off. Works on GNOME, KDE Plasma, Cinnamon,
+ MATE and Xfce (Wayland and X11). Never connects to the internet.
  .
  One small C program. Replaces SuperDot, which is now part of SuperV.
 EOF
@@ -80,7 +83,7 @@ if [ "$1" = remove ] || [ "$1" = purge ]; then
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
             python3 /usr/lib/superv/superv-setup --remove-hotkeys >/dev/null 2>&1 || true
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
-            python3 /usr/lib/superv/superv-emoji-setup --remove-hotkeys >/dev/null 2>&1 || true
+            python3 /usr/lib/superv/superv-feature-setup --all --remove-hotkeys >/dev/null 2>&1 || true
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
             gdbus call --session --dest io.github.superv.SuperV --object-path /io/github/superv/SuperV \
             --method org.gtk.Actions.Activate quit "[]" "{}" >/dev/null 2>&1 || true

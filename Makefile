@@ -1,4 +1,4 @@
-# SuperV: clipboard history (Win+V) and emoji panel (Win+.) for Linux
+# SuperV: clipboard history (Win+V), emoji panel (Win+.) and more Windows shortcuts for Linux
 #   make                          build ./superv
 #   sudo make install             install system-wide (default PREFIX=/usr/local)
 #   make install PREFIX=/usr DESTDIR=pkg/   staged install, used by the .deb/.rpm/Arch packages
@@ -23,9 +23,9 @@ MODLOADDIR ?= $(PREFIX)/lib/modules-load.d
 UNICODE     = https://unicode.org/Public/emoji/latest/emoji-test.txt
 CLDR        = https://raw.githubusercontent.com/unicode-org/cldr/main/common
 
-superv: superv.c emoji.c superv.h emoji-data.h
-	$(CC) -std=gnu11 $(CFLAGS) -DSETUP_DIR='"$(LIBDIR)"' -o $@ superv.c emoji.c \
-		$$(pkg-config --cflags --libs $(PKGS)) -ldl -Wl,--as-needed $(LDFLAGS)
+superv: superv.c emoji.c extras.c superv.h emoji-data.h
+	$(CC) -std=gnu11 $(CFLAGS) -DSETUP_DIR='"$(LIBDIR)"' -o $@ superv.c emoji.c extras.c \
+		$$(pkg-config --cflags --libs $(PKGS)) -ldl -lm -Wl,--as-needed $(LDFLAGS)
 
 data: tools/gen-data.py data/kaomoji.txt data/symbols.txt
 	mkdir -p tools/cache
@@ -37,7 +37,7 @@ data: tools/gen-data.py data/kaomoji.txt data/symbols.txt
 install: superv
 	install -Dm755 superv                              $(DESTDIR)$(BINDIR)/superv
 	install -Dm755 superv-setup                        $(DESTDIR)$(LIBDIR)/superv-setup
-	install -Dm755 superv-emoji-setup                  $(DESTDIR)$(LIBDIR)/superv-emoji-setup
+	install -Dm755 superv-feature-setup                $(DESTDIR)$(LIBDIR)/superv-feature-setup
 	install -Dm644 data/io.github.superv.SuperV.desktop $(DESTDIR)$(DATADIR)/applications/io.github.superv.SuperV.desktop
 	install -Dm644 data/io.github.superv.SuperV.svg    $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg
 	install -Dm644 data/io.github.superv.SuperV-64.png $(DESTDIR)$(DATADIR)/icons/hicolor/64x64/apps/io.github.superv.SuperV.png
@@ -50,7 +50,7 @@ install: superv
 	install -Dm644 LICENSES/Unicode-3.0.txt            $(DESTDIR)$(DATADIR)/licenses/superv/Unicode-3.0.txt
 
 uninstall:
-	rm -f $(DESTDIR)$(BINDIR)/superv $(DESTDIR)$(LIBDIR)/superv-setup $(DESTDIR)$(LIBDIR)/superv-emoji-setup \
+	rm -f $(DESTDIR)$(BINDIR)/superv $(DESTDIR)$(LIBDIR)/superv-setup $(DESTDIR)$(LIBDIR)/superv-feature-setup \
 	      $(DESTDIR)$(DATADIR)/applications/io.github.superv.SuperV.desktop \
 	      $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg \
 	      $(DESTDIR)$(DATADIR)/icons/hicolor/64x64/apps/io.github.superv.SuperV.png \

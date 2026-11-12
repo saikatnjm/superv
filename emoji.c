@@ -205,7 +205,7 @@ static void config_load(void) {
     config_save();
 }
 
-static void reload_hotkey(void) {   /* superv-emoji-setup --hotkey may have changed it */
+static void reload_hotkey(void) {   /* superv-feature-setup --hotkey may have changed it */
     GKeyFile *k = g_key_file_new();
     char *v = g_key_file_load_from_file(k, cfg_path, G_KEY_FILE_NONE, NULL)
               ? g_key_file_get_string(k, "emoji", "hotkey", NULL) : NULL;
@@ -1430,26 +1430,14 @@ static void hotkey_status(const char *text, gboolean ok) {
     gtk_widget_set_visible(hk_status, text != NULL);
 }
 
-static char *setup_path(void) { return sv_setup_path("superv-emoji-setup"); }
+static char *setup_path(void) { return sv_setup_path("superv-feature-setup"); }
 
 static gint64 hotkey_applied_at;
-static gboolean helper_running;
-static char *queued_accel;
-static void spawn_setup_helper(const char *accel);
 
-static void on_hotkey_applied(GPid pid, gint status, gpointer accel) {
-    g_spawn_close_pid(pid);
-    helper_running = FALSE;
-    if (queued_accel) {   /* a newer choice was made meanwhile: apply that one */
-        char *next = queued_accel;
-        queued_accel = NULL;
-        spawn_setup_helper(next);
-        g_free(next); g_free(accel);
-        return;
-    }
+static void on_hotkey_applied(gboolean ok, gpointer accel) {
     if (!*(char *)accel) {   /* the shortcut was given back to the desktop */
         cfg.setup_done = FALSE;
-    } else if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+    } else if (ok) {
         cfg.setup_done = TRUE;   /* the helper saved it too */
         char *label = accel_label(accel), *msg = g_strdup_printf("✓ Shortcut set to %s", label);
         hotkey_status(msg, TRUE);
@@ -1460,29 +1448,15 @@ static void on_hotkey_applied(GPid pid, gint status, gpointer accel) {
     g_free(accel);
 }
 
-/* accel "" removes the shortcut (and gives the desktop back what we freed for it) */
-static void spawn_setup_helper(const char *accel) {
+/* accel "" removes the shortcut (and gives the desktop back what we freed for it).
+ * SuperV runs setup helpers one at a time, in order. */
+static void run_helper(const char *accel) {
     char *setup = setup_path();
     char *quoted = g_shell_quote(sv_self_exe), *cmd = g_strdup_printf("%s --emoji", quoted);
-    char *set_argv[] = { "python3", setup, "--setup-hotkeys", cmd, "--hotkey", (char *)accel, NULL };
-    char *rm_argv[] = { "python3", setup, "--remove-hotkeys", NULL };
-    GError *e = NULL;
-    GPid pid;
-    if (g_spawn_async(NULL, *accel ? set_argv : rm_argv, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD,
-                      NULL, NULL, &pid, &e)) {
-        helper_running = TRUE;
-        g_child_watch_add(pid, on_hotkey_applied, g_strdup(accel));
-    } else {
-        logmsg("could not run %s: %s", setup, e->message);
-        hotkey_status("Couldn't save the shortcut: SuperV's emoji setup helper is missing.", FALSE);
-        g_error_free(e);
-    }
+    char *set_argv[] = { "python3", setup, "--feature", "emoji", "--setup-hotkeys", cmd, "--hotkey", (char *)accel, NULL };
+    char *rm_argv[] = { "python3", setup, "--feature", "emoji", "--remove-hotkeys", NULL };
+    sv_run_helper(*accel ? set_argv : rm_argv, on_hotkey_applied, g_strdup(accel));
     g_free(setup); g_free(quoted); g_free(cmd);
-}
-
-static void run_helper(const char *accel) {
-    if (helper_running) { g_free(queued_accel); queued_accel = g_strdup(accel); return; }
-    spawn_setup_helper(accel);
 }
 
 static void apply_hotkey(const char *new_accel) {

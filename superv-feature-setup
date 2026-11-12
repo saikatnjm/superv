@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""SuperV emoji panel setup helper: its keyboard shortcut (Super+.) + diagnostics.
+"""SuperV feature setup helper: the keyboard shortcut of each feature + diagnostics.
 
-Runs when the emoji panel is turned on or off, or when you change its shortcut. SuperV itself is C.
+Runs when a feature is turned on or off, or when you change its shortcut. SuperV itself is C.
 (superv-setup does the same for the clipboard panel's Super+V.)
 
-  superv-emoji-setup --setup-hotkeys "<command>" [--hotkey "<Super>period"]
-  superv-emoji-setup --hotkey "<Ctrl><Alt>e"      change the shortcut (any combo you like)
-  superv-emoji-setup --remove-hotkeys             put the desktop's shortcuts back
-  superv-emoji-setup --doctor                     check that everything is set up
+Features:  emoji (Super+.), plain_paste (Ctrl+Super+Alt+V), color_picker (Super+Shift+C),
+           text_extractor (Super+Shift+T)
+
+  superv-feature-setup --feature emoji --setup-hotkeys "<command>" [--hotkey "<Super>period"]
+  superv-feature-setup --feature emoji --hotkey "<Ctrl><Alt>e"   change a shortcut (any combo you like)
+  superv-feature-setup --all --remove-hotkeys                    put the desktop's shortcuts back
+  superv-feature-setup --all --doctor                            check that everything is set up
 """
 import json
 import os
@@ -19,13 +22,30 @@ import sys
 
 from gi.repository import Gio, GLib
 
-APP_NAME = "SuperV Emoji"
 APP_ID = "io.github.superv.SuperV"
 CONFIG_DIR = os.path.join(GLib.get_user_config_dir(), "superv")
-BACKUP = os.path.join(CONFIG_DIR, "emoji-hotkey-backup.json")
-CONFIG = os.path.join(CONFIG_DIR, "emoji.ini")
-DEFAULT = "<Super>period"
-GNOME_PATH = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/superv-emoji/"
+# id: (name in the desktop's shortcut list, superv argument, default shortcut, settings file, file's group)
+FEATURES = {
+    "emoji":          ("SuperV Emoji", "--emoji", "<Super>period", "emoji.ini", "emoji"),
+    "plain_paste":    ("SuperV Plain Paste", "--plain-paste", "<Primary><Super><Alt>v", "shortcuts.ini", "plain_paste"),
+    "color_picker":   ("SuperV Colour Picker", "--pick-color", "<Shift><Super>c", "shortcuts.ini", "color_picker"),
+    "text_extractor": ("SuperV Text Extractor", "--extract-text", "<Shift><Super>t", "shortcuts.ini", "text_extractor"),
+}
+
+
+def select(feature):
+    """Point the module-level settings below at one feature."""
+    global FEATURE, APP_NAME, ARG, DEFAULT, CONFIG, GROUP, BACKUP, GNOME_PATH, KDE_DESKTOP
+    FEATURE = feature
+    APP_NAME, ARG, DEFAULT, conf, GROUP = FEATURES[feature]
+    CONFIG = os.path.join(CONFIG_DIR, conf)
+    BACKUP = os.path.join(CONFIG_DIR, "%s-hotkey-backup.json" % ("emoji" if feature == "emoji" else feature))
+    slug = "emoji" if feature == "emoji" else feature.replace("_", "-")
+    GNOME_PATH = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/superv-%s/" % slug
+    KDE_DESKTOP = "superv-%s.desktop" % slug
+
+
+select("emoji")
 CIN_PATH = "/org/cinnamon/desktop/keybindings/custom-keybindings/%s/"
 # desktop shortcuts that may already use the key we want: freed (and put back on uninstall)
 CONFLICT_SCHEMAS = [
@@ -114,22 +134,22 @@ def save_config(kf):
 
 def save_hotkey_to_config(accel):
     kf = keyfile()
-    kf.set_string("emoji", "hotkey", accel)
-    kf.set_boolean("emoji", "shortcut_configured", True)
+    kf.set_string(GROUP, "hotkey", accel)
+    kf.set_boolean(GROUP, "shortcut_configured", True)
     save_config(kf)
 
 
 def mark_unconfigured():
-    """After removing the shortcut, make SuperV set it up again when the emoji panel is on."""
+    """After removing the shortcut, make SuperV set it up again when the feature is on."""
     if os.path.exists(CONFIG):
         kf = keyfile()
-        kf.set_boolean("emoji", "shortcut_configured", False)
+        kf.set_boolean(GROUP, "shortcut_configured", False)
         save_config(kf)
 
 
 def read_hotkey_from_config():
     try:
-        return keyfile().get_string("emoji", "hotkey").strip()
+        return keyfile().get_string(GROUP, "hotkey").strip()
     except GLib.Error:
         return DEFAULT
 
@@ -138,7 +158,7 @@ def default_command():
     exe = os.path.join(os.path.dirname(os.path.realpath(__file__)), "superv")
     if not os.path.exists(exe):
         exe = shutil.which("superv") or "/usr/bin/superv"
-    return shlex.quote(exe) + " --emoji"
+    return shlex.quote(exe) + " " + ARG
 
 
 def key_symbol(key):
@@ -146,7 +166,6 @@ def key_symbol(key):
 
 
 # ---------------------------------------------------------------- KDE Plasma
-KDE_DESKTOP = "superv-emoji.desktop"
 EMOJIER = "org.kde.plasma.emojier.desktop"   # Plasma's own emoji picker, on Meta+. by default
 
 
@@ -188,8 +207,8 @@ def kde_setup(command, accel, backup):
     apps = os.path.join(GLib.get_user_data_dir(), "applications")
     os.makedirs(apps, exist_ok=True)
     with open(os.path.join(apps, KDE_DESKTOP), "w") as f:
-        f.write("[Desktop Entry]\nType=Application\nName=SuperV Emoji (open/close)\nExec=%s\n"
-                "Icon=%s\nNoDisplay=true\nX-KDE-GlobalAccel-CommandShortcut=true\n" % (desktop_exec(command), APP_ID))
+        f.write("[Desktop Entry]\nType=Application\nName=%s\nExec=%s\n"
+                "Icon=%s\nNoDisplay=true\nX-KDE-GlobalAccel-CommandShortcut=true\n" % (APP_NAME, desktop_exec(command), APP_ID))
     key = kde_accel(accel)
     rc = ["--file", "kglobalshortcutsrc"]
     if ver == "6":
@@ -198,7 +217,7 @@ def kde_setup(command, accel, backup):
         subprocess.run([write] + rc + kde_group(ver, KDE_DESKTOP) + ["--key", "_k_friendly_name", APP_NAME])
         subprocess.run([write] + rc + kde_group(ver, KDE_DESKTOP) + ["--key", "_launch", "%s,none,%s" % (key, APP_NAME)])
     # Plasma's emoji picker uses Meta+. : free it, remember the old value
-    if read:
+    if read and FEATURE == "emoji":
         cur = subprocess.run([read] + rc + kde_group(ver, EMOJIER) + ["--key", "_launch"],
                              capture_output=True, text=True).stdout.strip()
         if cur.split(",")[0] == key or (not cur and key == "Meta+."):   # no entry = still on its default, Meta+.
@@ -207,7 +226,7 @@ def kde_setup(command, accel, backup):
                 "none" if ver == "6" else "none,Meta+.,Emoji Selector")
             subprocess.run([write] + rc + kde_group(ver, EMOJIER) + ["--key", "_launch", off])
     live = kde_restart_shortcuts(ver)
-    return "KDE Plasma %s: %s → SuperV Emoji%s" % (ver, key, "" if live else " (log out and back in once)")
+    return "KDE Plasma %s: %s → %s%s" % (ver, key, APP_NAME, "" if live else " (log out and back in once)")
 
 
 def kde_remove(backup):
@@ -289,7 +308,7 @@ def setup(command, accel):
         kb.set_string("name", APP_NAME)
         kb.set_string("command", command)
         kb.set_string("binding", accel)
-        out.append("GNOME: %s → SuperV Emoji" % accel)
+        out.append("GNOME: %s → %s" % (accel, APP_NAME))
 
     # Cinnamon (Linux Mint)
     cin = settings("org.cinnamon.desktop.keybindings")
@@ -310,7 +329,7 @@ def setup(command, accel):
             kb.set_strv("binding", [accel])
         else:
             kb.set_string("binding", accel)
-        out.append("Cinnamon: %s → SuperV Emoji" % accel)
+        out.append("Cinnamon: %s → %s" % (accel, APP_NAME))
 
     # MATE
     cmds = settings("org.mate.Marco.keybinding-commands")
@@ -319,7 +338,7 @@ def setup(command, accel):
         slot = None
         for n in range(1, 13):
             c = cmds.get_string("command-%d" % n)
-            if "superv" in c and "--emoji" in c:
+            if "superv" in c and ARG in c:
                 slot = n
                 break
             if slot is None and not c:
@@ -327,7 +346,7 @@ def setup(command, accel):
         if slot:
             cmds.set_string("command-%d" % slot, command)
             gkb.set_string("run-command-%d" % slot, to_mate(accel))
-            out.append("MATE: %s → SuperV Emoji" % accel)
+            out.append("MATE: %s → %s" % (accel, APP_NAME))
 
     # Xfce
     if "XFCE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper() and shutil.which("xfconf-query"):
@@ -338,7 +357,7 @@ def setup(command, accel):
         prop = "/commands/custom/" + accel
         subprocess.run(base + ["-p", prop, "-n", "-t", "string", "-s", command])
         backup["xfce_prop"] = prop
-        out.append("Xfce: %s → SuperV Emoji" % accel)
+        out.append("Xfce: %s → %s" % (accel, APP_NAME))
 
     # KDE Plasma
     if "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper():
@@ -351,7 +370,7 @@ def setup(command, accel):
     save_hotkey_to_config(accel)
     for line in out:
         print("  ✓", line)
-    if not any("→ SuperV Emoji" in line for line in out):
+    if not any(("→ " + APP_NAME) in line for line in out):
         manual_instructions(command, accel)
 
 
@@ -379,7 +398,7 @@ def remove():
     gkb = settings("org.mate.Marco.global-keybindings")
     if cmds and gkb:
         for n in range(1, 13):
-            if "--emoji" in cmds.get_string("command-%d" % n) and "superv" in cmds.get_string("command-%d" % n):
+            if ARG in cmds.get_string("command-%d" % n) and "superv" in cmds.get_string("command-%d" % n):
                 cmds.reset("command-%d" % n)
                 gkb.reset("run-command-%d" % n)
     if shutil.which("xfconf-query") and backup.get("xfce_prop"):
@@ -394,7 +413,7 @@ def remove():
         os.remove(BACKUP)
     except OSError:
         pass
-    print("  ✓ desktop shortcuts restored")
+    print("  ✓ %s: desktop shortcuts restored" % APP_NAME)
 
 
 def doctor():
@@ -433,19 +452,24 @@ def doctor():
     if not brief:
         print(mark(up or x11), "types into apps:", "yes (uinput)" if up else ("yes (XTest, X11)" if x11 else
               "not yet — run install.sh again (needs your password once), then log out/in"))
-    # a colour emoji font (fontconfig 2.13.1+ knows "color"; older ones: any font with 😀)
-    fonts = subprocess.run(["fc-list", ":charset=1f600:color=true", "family"], capture_output=True, text=True).stdout.strip() \
-        or subprocess.run(["fc-list", ":charset=1f600", "family"], capture_output=True, text=True).stdout.strip()
-    print(mark(bool(fonts)), "emoji font:", fonts.splitlines()[0] if fonts else
-          "none — install Noto Color Emoji (fonts-noto-color-emoji / google-noto-emoji-color-fonts / noto-fonts-emoji)")
     on = True
     try:
         kf = GLib.KeyFile()
         kf.load_from_file(os.path.join(CONFIG_DIR, "config.ini"), GLib.KeyFileFlags.NONE)
-        on = kf.get_boolean("superv", "emoji_panel")
+        on = kf.get_boolean("superv", "emoji_panel" if FEATURE == "emoji" else FEATURE)
     except GLib.Error:
         pass
-    print(mark(on), "emoji panel:", "on" if on else "off — turn it on in SuperV's settings (Super+V, then the gear)")
+    print(mark(on), "%s:" % APP_NAME, "on" if on else "off (turn it on in SuperV's settings: Super+V, then the gear)")
+    if FEATURE == "emoji":
+        # a colour emoji font (fontconfig 2.13.1+ knows "color"; older ones: any font with 😀)
+        fonts = subprocess.run(["fc-list", ":charset=1f600:color=true", "family"], capture_output=True, text=True).stdout.strip() \
+            or subprocess.run(["fc-list", ":charset=1f600", "family"], capture_output=True, text=True).stdout.strip()
+        print(mark(bool(fonts)), "emoji font:", fonts.splitlines()[0] if fonts else
+              "none — install Noto Color Emoji (fonts-noto-color-emoji / google-noto-emoji-color-fonts / noto-fonts-emoji)")
+    if FEATURE == "text_extractor":
+        tess = shutil.which("tesseract")
+        print(mark(bool(tess)), "text recognition:", tess or
+              "not installed — install tesseract-ocr (Debian/Ubuntu/Mint), tesseract (Fedora, Arch, openSUSE)")
     accel = read_hotkey_from_config()
     print("   shortcut (config):", accel)
     kb = settings("org.gnome.settings-daemon.plugins.media-keys.custom-keybinding", GNOME_PATH)
@@ -462,6 +486,19 @@ def doctor():
 
 
 def main(argv):
+    if "--all" in argv:   # every feature, one after the other
+        rest = [a for a in argv if a != "--all"]
+        for i, f in enumerate(FEATURES):
+            if "--doctor" in rest and i:
+                print()
+            main(["--feature", f] + rest)
+        return 0
+    if "--feature" in argv:
+        f = argv[argv.index("--feature") + 1]
+        if f not in FEATURES:
+            print("Unknown feature %s; one of: %s" % (f, ", ".join(FEATURES)), file=sys.stderr)
+            return 2
+        select(f)
     if "--doctor" in argv:
         doctor()
     elif "--remove-hotkeys" in argv:

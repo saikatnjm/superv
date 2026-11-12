@@ -10,7 +10,7 @@
 #ifndef SV_APP_ID
 #define SV_APP_ID   "io.github.superv.SuperV"   /* D-Bus name, icon and desktop file */
 #endif
-#define SV_VERSION  "2.0.0"
+#define SV_VERSION  "2.1.0"
 #define SV_REPO_URL "https://github.com/saikatnjm/superv"
 
 /* superv.c */
@@ -20,7 +20,13 @@ extern char *sv_self_exe, *sv_self_dir;
 gboolean sv_uinput_open(void);                              /* the shared virtual keyboard */
 gboolean sv_paste_everywhere(void);                         /* can we type into every app? */
 gboolean sv_send_keys(const char *combo, gboolean to_x11);  /* e.g. "shift+insert" */
-char *sv_setup_path(const char *name);                      /* superv-setup, superv-emoji-setup */
+char *sv_setup_path(const char *name);                      /* superv-setup, superv-feature-setup */
+typedef void (*SvHelperDone)(gboolean ok, gpointer data);
+void sv_run_helper(char **argv, SvHelperDone done, gpointer data);   /* setup helpers, one at a time */
+void sv_notify(const char *id, const char *title, const char *body);
+const char *sv_paste_keys(void);                            /* "shift+insert" unless changed */
+gboolean sv_focused_is_x11(void);                           /* is the app you're in an X11 one? */
+void sv_style_window(GtkWidget *win);                       /* SuperV's look and theme for a small window */
 void sv_show_clipboard(void);                               /* the emoji panel's 📋 button */
 
 /* emoji.c (loaded only while the emoji panel is turned on) */
@@ -32,5 +38,10 @@ char *emoji_hotkey_label(void);              /* "Super+." */
 gboolean emoji_visible(void);
 gboolean emoji_busy(void);                   /* open, or about to put your clipboard back */
 void emoji_shutdown(void);
+
+/* extras.c: plain-text paste, colour picker, copy text from the screen (nothing runs until you use one) */
+void extras_command(const char *what);       /* "--plain-paste", "--pick-color", "--extract-text" */
+gboolean extras_busy(void);
+gboolean extras_ocr_available(void);
 
 #endif

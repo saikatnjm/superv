@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SuperV – Clipboard and emoji for Linux | Win+V clipboard history and Win+. emoji panel for Ubuntu, Mint, Fedora, Arch</title>
 <meta name="description" content="Looking for the Windows clipboard (Win+V) or emoji panel (Win+.) on Linux? SuperV is a free, open-source clipboard history and emoji picker for Ubuntu, Linux Mint, Debian, Fedora, Arch and more. Press Super+V to paste from your last 25 copies, Super+. for emoji.">
-<meta name="keywords" content="windows clipboard for linux, win+v alternative linux, clipboard history like windows, clipboard history linux, win+v linux, clipboard manager ubuntu, clipboard manager linux mint, super+v, windows clipboard for linux, wayland clipboard manager, gnome clipboard history, clipboard manager fedora, clipboard manager arch linux, kde clipboard win+v, emoji picker linux, win+. linux, emoji keyboard ubuntu, emoji panel linux mint, kaomoji linux">
+<meta name="keywords" content="windows clipboard for linux, win+v alternative linux, clipboard history like windows, clipboard history linux, win+v linux, clipboard manager ubuntu, clipboard manager linux mint, super+v, windows clipboard for linux, wayland clipboard manager, gnome clipboard history, clipboard manager fedora, clipboard manager arch linux, kde clipboard win+v, emoji picker linux, win+. linux, emoji keyboard ubuntu, emoji panel linux mint, kaomoji linux, color picker linux, ocr screen linux, text extractor linux, paste as plain text linux">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="google-site-verification" content="RF5trxrdZtkytEnmTEsT2Wl1QqtxB0JtmKpjnZm3wFc">
 <meta name="theme-color" content="#7c3aed">
@@ -42,7 +42,7 @@
       "description": "Windows-style Win+V clipboard history and Win+. emoji panel for Linux: Ubuntu, Linux Mint, Debian, Fedora, Arch, openSUSE and more. Press Super+V to paste any of your last 25 copies, Super+. for emoji, kaomoji and symbols.",
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "Linux: Ubuntu 22.04+, Linux Mint 21+, Debian 12+, Fedora, Arch, Manjaro, openSUSE (GNOME, Cinnamon, MATE, Xfce, KDE Plasma; Wayland and X11)",
-      "softwareVersion": "2.0.0",
+      "softwareVersion": "2.1.0",
       "fileSize": "100 KB",
       "license": "https://opensource.org/licenses/MIT",
       "url": "https://saikatnjm.github.io/superv/",
@@ -64,6 +64,9 @@
         "Updates itself: restarts into a new version automatically",
         "Packages for Debian/Ubuntu, Fedora/openSUSE and Arch",
         "Emoji, kaomoji and symbol panel on Super+., like Win+. on Windows",
+        "Paste as plain text with Ctrl+Super+Alt+V",
+        "Colour picker with Super+Shift+C",
+        "Copy text from the screen (OCR) with Super+Shift+T",
         "Turn each feature on or off"
       ]
     },
@@ -295,12 +298,12 @@
       <p class="kicker">Clipboard and emoji for Linux</p>
       <div class="combo" aria-hidden="true"><span class="key">Super</span><span class="plus">+</span><span class="key hot">V</span><span class="plus">·</span><span class="key">Super</span><span class="plus">+</span><span class="key hot">.</span></div>
       <h1 id="title">Win+V and Win+.,<br>now on <em>Linux</em>.</h1>
-      <p class="lead"><b>Looking for the Windows clipboard on Linux?</b> SuperV is a free Win+V alternative for Ubuntu, Linux Mint, Debian, Fedora, Arch and more. Press <kbd>Super</kbd>+<kbd>V</kbd> to see the last 25 things you copied, then click one to paste it. Press <kbd>Super</kbd>+<kbd>.</kbd> for emoji, kaomoji and symbols. It's free, open source and tiny: one C program, about 5&nbsp;MB of memory, and you can turn off what you don't use.</p>
+      <p class="lead"><b>Looking for the Windows clipboard on Linux?</b> SuperV is a free Win+V alternative for Ubuntu, Linux Mint, Debian, Fedora, Arch and more. Press <kbd>Super</kbd>+<kbd>V</kbd> to see the last 25 things you copied, then click one to paste it. Press <kbd>Super</kbd>+<kbd>.</kbd> for emoji, kaomoji and symbols, and more Windows shortcuts besides. It's free, open source and tiny: one C program, about 5&nbsp;MB of memory, and you can turn off what you don't use.</p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb">Download for Ubuntu / Mint (.deb)</a>
         <a class="btn ghost" href="#install">Fedora, Arch &amp; others</a>
       </div>
-      <p class="meta-line"><a href="versions.html">Version 2.0.0</a> · Ubuntu · Mint · Debian · Fedora · Arch · openSUSE · Wayland &amp; X11 · MIT license</p>
+      <p class="meta-line"><a href="versions.html">Version 2.1.0</a> · Ubuntu · Mint · Debian · Fedora · Arch · openSUSE · Wayland &amp; X11 · MIT license</p>
     </div>
     <div class="shots">
       <img class="shot-dark" src="screenshot-dark.png" width="382" height="622" fetchpriority="high"
@@ -397,6 +400,31 @@
       <img class="shot-light" src="emoji-light.png" width="400" height="480" loading="lazy"
            alt="SuperV emoji panel in light mode">
     </div>
+  </div>
+</section>
+
+<section id="more" aria-labelledby="more-h">
+  <div class="wrap">
+    <p class="eyebrow">New in 2.1 · More Windows shortcuts</p>
+    <h2 id="more-h">Plain-text paste, colour picker, text from the screen</h2>
+    <p class="sub">The PowerToys shortcuts people miss most, built in. Each one has a switch in the settings, and nothing runs until you press it.</p>
+    <ul class="grid">
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></div>
+        <h3>Paste as plain text</h3>
+        <p><kbd>Ctrl</kbd>+<kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd> pastes what you copied without fonts, colours, links or images.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg></div>
+        <h3>Colour picker</h3>
+        <p><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>, then click anywhere: the colour is copied as HEX, with RGB and HSL one click away.</p>
+      </li>
+      <li class="feat">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg></div>
+        <h3>Copy text from the screen</h3>
+        <p><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>, then drag over any text, even in a picture or video: it's copied. Uses Tesseract, on your computer only.</p>
+      </li>
+    </ul>
   </div>
 </section>
 
@@ -561,6 +589,14 @@
     <details><summary>How much memory does SuperV use?</summary>
       <div class="answer">
         <p>About 5 MB with the clipboard panel, about 11 MB with the emoji panel on too. SuperV is one small C program, and it uses no CPU until the clipboard changes or you press a shortcut. Turn off the emoji panel and it isn't loaded at all.</p>
+      </div></details>
+    <details><summary>How do I copy text from an image or the screen on Linux?</summary>
+      <div class="answer">
+        <p>Press <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> and drag over the text: SuperV reads it and copies it, like Win+Shift+T on Windows. It needs Tesseract once: <code class="inl">sudo apt install tesseract-ocr</code> (Fedora: <code class="inl">sudo dnf install tesseract</code>). The text never leaves your computer.</p>
+      </div></details>
+    <details><summary>Is there a colour picker shortcut on Linux?</summary>
+      <div class="answer">
+        <p>Yes: <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>, then click anywhere on screen. The colour is copied as HEX, and a small card offers RGB and HSL.</p>
       </div></details>
     <details><summary>Is there a Win+. emoji panel for Linux?</summary>
       <div class="answer">

@@ -4,12 +4,14 @@
 pkgname=superv
 pkgver=1.2.3
 pkgrel=1
-pkgdesc="Clipboard and emoji for Linux: Super+V clipboard history and Super+. emoji panel, like Win+V and Win+. on Windows"
+pkgdesc="Clipboard, emoji and more Windows shortcuts for Linux: Super+V clipboard history, Super+. emoji panel, plain-text paste, colour picker, text from screen"
 arch=('x86_64' 'aarch64')
 url="https://github.com/saikatnjm/superv"
 license=('MIT' 'Unicode-3.0')
 depends=('gtk3' 'libx11' 'libxtst' 'python' 'python-gobject')
-optdepends=('noto-fonts-emoji: colour emoji in the emoji panel')
+optdepends=('noto-fonts-emoji: colour emoji in the emoji panel'
+            'tesseract: copy text from the screen (Super+Shift+T)'
+            'tesseract-data-eng: English text recognition')
 provides=('superdot')
 conflicts=('superdot')
 replaces=('superdot')

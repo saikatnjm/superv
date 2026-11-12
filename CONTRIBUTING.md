@@ -33,9 +33,10 @@ make
 |---|---|
 | `superv.c` | The program: clipboard history, settings, startup, updates, the shared virtual keyboard |
 | `emoji.c` | The emoji panel, started only while it is turned on |
+| `extras.c` | Plain-text paste, colour picker, copy text from the screen: nothing runs until you press one |
 | `superv.h` | What the two share |
 | `emoji-data.h` | Built-in emoji, kaomoji and symbols (generated, see below) |
-| `superv-setup`, `superv-emoji-setup` | Register Super+V and Super+. with the desktop, and `--doctor` |
+| `superv-setup`, `superv-feature-setup` | Register Super+V and every feature's shortcut with the desktop, and `--doctor` |
 
 ## Guidelines
 

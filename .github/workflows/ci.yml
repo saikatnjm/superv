@@ -28,7 +28,7 @@ jobs:
       - name: Shell scripts
         run: shellcheck -S warning install.sh uninstall.sh packaging/build-deb.sh packaging/arch/bump.sh
       - name: Python helpers
-        run: python3 -m py_compile superv-setup superv-emoji-setup tools/gen-data.py
+        run: python3 -m py_compile superv-setup superv-feature-setup tools/gen-data.py
       - name: Desktop files and app-store listing
         run: |
           desktop-file-validate data/io.github.superv.SuperV.desktop data/superv-autostart.desktop

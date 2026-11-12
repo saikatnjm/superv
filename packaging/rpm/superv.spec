@@ -3,9 +3,9 @@
 # Local build: spectool -g -R packaging/rpm/superv.spec && rpmbuild -bb packaging/rpm/superv.spec
 # The GitHub release workflow builds it too, from a local tarball of the same name.
 Name:           superv
-Version:        2.0.0
+Version:        2.1.0
 Release:        1%{?dist}
-Summary:        Clipboard and emoji for Linux: Win+V and Win+. panels
+Summary:        Clipboard, emoji and more Windows shortcuts for Linux
 License:        MIT AND Unicode-3.0
 URL:            https://github.com/saikatnjm/superv
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
@@ -27,6 +27,8 @@ Recommends:     libXtst
 Recommends:     (google-noto-color-emoji-fonts or google-noto-emoji-color-fonts or noto-coloremoji-fonts)
 # SuperDot (the Win+. emoji panel) is now part of SuperV
 Obsoletes:      superdot < 2
+# copying text from the screen (Super+Shift+T)
+Suggests:       tesseract
 Provides:       superdot = %{version}-%{release}
 
 %description
@@ -35,7 +37,10 @@ you copied, text and images: pick one to paste it into the app you are using,
 pin favourites, clear the rest. Super+. opens the emoji panel: type to search
 emoji, kaomoji and symbols, and the one you pick is typed where you were
 writing. Works on GNOME, KDE Plasma, Cinnamon, MATE and Xfce, on Wayland and
-X11. No network access, ever. Replaces SuperDot, which is now part of SuperV.
+X11. Ctrl+Super+Alt+V pastes as plain text, Super+Shift+C picks a colour on
+screen, Super+Shift+T copies text from the screen (with tesseract). Each can
+be turned off. No network access, ever. Replaces SuperDot, which is now part
+of SuperV.
 
 %prep
 %autosetup
@@ -63,7 +68,7 @@ if [ "$1" -eq 0 ]; then
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
             python3 %{_prefix}/lib/superv/superv-setup --remove-hotkeys >/dev/null 2>&1 || :
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
-            python3 %{_prefix}/lib/superv/superv-emoji-setup --remove-hotkeys >/dev/null 2>&1 || :
+            python3 %{_prefix}/lib/superv/superv-feature-setup --all --remove-hotkeys >/dev/null 2>&1 || :
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
             gdbus call --session --dest io.github.superv.SuperV --object-path /io/github/superv/SuperV \
             --method org.gtk.Actions.Activate quit "[]" "{}" >/dev/null 2>&1 || :
@@ -85,6 +90,9 @@ fi
 %{_modulesloaddir}/superv-uinput.conf
 
 %changelog
+* Thu Nov 12 2026 SuperV <saikatnjm@users.noreply.github.com> - 2.1.0-1
+- Plain-text paste, colour picker and copy text from the screen, each with an on/off switch
+
 * Thu Nov 12 2026 SuperV <saikatnjm@users.noreply.github.com> - 2.0.0-1
 - The emoji panel (Super+.), formerly SuperDot, is now part of SuperV
 

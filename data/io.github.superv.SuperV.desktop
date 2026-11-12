@@ -2,9 +2,9 @@
 Type=Application
 Name=SuperV
 GenericName=Clipboard history and emoji
-Comment=Clipboard and emoji for Linux: Super+V for your clipboard history, Super+. for emoji
+Comment=Clipboard, emoji and more Windows shortcuts for Linux: Super+V clipboard history, Super+. emoji
 Exec=superv --show
 Icon=io.github.superv.SuperV
 Categories=Utility;
-Keywords=clipboard;history;paste;copy;win+v;emoji;emoticon;kaomoji;symbol;win+.;
+Keywords=clipboard;history;paste;copy;win+v;emoji;emoticon;kaomoji;symbol;win+.;color;colour;picker;ocr;text;
 StartupNotify=false

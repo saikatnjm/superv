@@ -76,7 +76,7 @@ step "2/6  Installing to $LIB_DIR"
 mkdir -p "$LIB_DIR" "$BIN_DIR" "$APPS_DIR" "$AUTOSTART_DIR"
 install -m 755 "$BIN" "$LIB_DIR/superv"
 install -m 755 "$SRC_DIR/superv-setup" "$LIB_DIR/superv-setup"
-install -m 755 "$SRC_DIR/superv-emoji-setup" "$LIB_DIR/superv-emoji-setup"
+install -m 755 "$SRC_DIR/superv-feature-setup" "$LIB_DIR/superv-feature-setup"
 install -m 755 "$SRC_DIR/uninstall.sh" "$LIB_DIR/uninstall.sh"
 install -Dm 644 "$SRC_DIR/data/io.github.superv.SuperV.svg" \
   "$HOME/.local/share/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg"
@@ -109,7 +109,7 @@ StartupNotify=false
 EOF
 echo "  $OK done"
 
-step "4/6  Keyboard shortcuts: $HOTKEY clipboard (+ Super+Shift+S screenshot), Super+. emoji"
+step "4/6  Keyboard shortcuts: $HOTKEY clipboard (+ Super+Shift+S screenshot), Super+. emoji, and more"
 python3 "$LIB_DIR/superv-setup" --setup-hotkeys "'$LIB_DIR/superv' --toggle" --hotkey "$HOTKEY"
 if ((NO_EMOJI)); then
   python3 - <<'PY'
@@ -123,8 +123,13 @@ kf.set_boolean("superv", "emoji_panel", False); kf.save_to_file(p); os.chmod(p, 
 PY
   echo "  emoji panel off (--no-emoji): turn it on any time in SuperV's settings"
 else
-  python3 "$LIB_DIR/superv-emoji-setup" --setup-hotkeys "'$LIB_DIR/superv' --emoji" --hotkey "<Super>period"
+  python3 "$LIB_DIR/superv-feature-setup" --feature emoji --setup-hotkeys "'$LIB_DIR/superv' --emoji" --hotkey "<Super>period"
 fi
+# Ctrl+Super+Alt+V plain-text paste, Super+Shift+C colour picker, Super+Shift+T copy text from the screen
+for f in "plain_paste --plain-paste" "color_picker --pick-color" "text_extractor --extract-text"; do
+  python3 "$LIB_DIR/superv-feature-setup" --feature "${f% *}" --setup-hotkeys "'$LIB_DIR/superv' ${f#* }"
+done
+command -v tesseract >/dev/null || echo "  (copying text from the screen needs Tesseract: tesseract-ocr / tesseract from your package manager)"
 
 step "5/6  Auto-paste permission"
 RELOGIN=0

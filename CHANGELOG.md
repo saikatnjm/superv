@@ -3,6 +3,22 @@
 All notable changes to SuperV. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 Every release can be downloaded from [GitHub Releases](https://github.com/saikatnjm/superv/releases); the [versions page](https://saikatnjm.github.io/superv/versions.html) shows the stable version of each line.
 
+## [2.1.0] - 2026-11-12
+
+Three more Windows shortcuts. Each has its own switch in the settings (Super+V, then the gear, **Features**); one that is off loads nothing and leaves its keys to your desktop.
+
+### Added
+- **Paste as plain text** on <kbd>Ctrl</kbd>+<kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd> (Ctrl+Win+Alt+V, PowerToys Advanced Paste): what you copied is pasted without fonts, colours, links or images.
+- **Colour picker** on <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> (Win+Shift+C, PowerToys Color Picker): click anywhere on screen; the colour is copied as HEX and a small card offers RGB and HSL. On X11 the screen freezes with a magnifier; on Wayland the desktop's own picker is used.
+- **Copy text from the screen** on <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> (Win+Shift+T, PowerToys Text Extractor): select an area and its text is copied. Uses Tesseract when it is installed (`tesseract-ocr`), in English plus your own language when its data is installed. Nothing leaves your computer.
+- A **Features** section in the settings with the switches for the emoji panel and the three new shortcuts.
+- `superv --plain-paste`, `--pick-color`, `--extract-text`.
+
+### Changed
+- `superv-emoji-setup` is now `superv-feature-setup --feature NAME` for every feature (`--all` for all of them).
+- Desktop shortcut changes run one at a time, so two of them can no longer overwrite each other in GNOME's shortcut list.
+- Tesseract is a suggested package (`Suggests`/`optdepends`), not a requirement.
+
 ## [2.0.0] - 2026-11-12
 
 SuperV becomes "Clipboard and emoji for Linux": the Win+. emoji panel, until now the separate app SuperDot, is part of SuperV.
@@ -80,6 +96,7 @@ First public release.
 
 The emoji panel as a separate app, merged into SuperV 2.0.0. Its history is in the [SuperDot repository](https://github.com/saikatnjm/superdot).
 
+[2.1.0]: https://github.com/saikatnjm/superv/releases/tag/v2.1.0
 [2.0.0]: https://github.com/saikatnjm/superv/releases/tag/v2.0.0
 [1.2.3]: https://github.com/saikatnjm/superv/releases/tag/v1.2.3
 [1.2.2]: https://github.com/saikatnjm/superv/releases/tag/v1.2.2

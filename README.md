@@ -2,9 +2,9 @@
 
 # SuperV
 
-**Clipboard and emoji for Linux.** The Windows Win+V clipboard history and the Win+. emoji panel: same panels, same keys.
+**Clipboard, emoji and more Windows shortcuts for Linux.** The Win+V clipboard history, the Win+. emoji panel, and PowerToys' plain-text paste, colour picker and text extractor: same keys.
 
-Press <kbd>Super</kbd> + <kbd>V</kbd> for the clipboard history you know from Windows, and <kbd>Super</kbd> + <kbd>.</kbd> for emoji, kaomoji and symbols.
+Press <kbd>Super</kbd> + <kbd>V</kbd> for the clipboard history you know from Windows, <kbd>Super</kbd> + <kbd>.</kbd> for emoji, kaomoji and symbols, and a few more Windows shortcuts besides.
 Ubuntu, Linux Mint, Debian, Fedora, Arch, openSUSE and more.
 
 ![Ubuntu · Mint · Debian](https://img.shields.io/badge/Ubuntu%20·%20Mint%20·%20Debian-.deb-7c3aed?style=flat-square)
@@ -78,9 +78,17 @@ Linux has no clipboard history out of the box, some desktops lose the clipboard 
   <img src="docs/emoji-kaomoji.png" width="320" alt="The Kaomoji tab: classic emoticons, shrug, table flip and more">
 </p>
 
-### Coming next
+### More Windows shortcuts
 
-Plain-text paste (<kbd>Ctrl</kbd>+<kbd>Win</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd>), a colour picker (<kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>) and copying text from the screen (<kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>), each with its own on/off switch.
+Small, and each one off with a switch if you don't want it. Nothing runs until you press it.
+
+| Keys | Windows | What it does |
+|---|---|---|
+| <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>V</kbd> | Ctrl+Win+Alt+V (PowerToys) | **Paste as plain text**: what you copied, without fonts, colours, links or images |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> | Win+Shift+C (PowerToys) | **Colour picker**: click anywhere on screen; the colour is copied as HEX, with RGB and HSL one click away |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> | Win+Shift+T (PowerToys) | **Copy text from the screen**: select an area; its text is copied. Needs Tesseract (`sudo apt install tesseract-ocr`) |
+
+On X11 (Linux Mint, Xfce, MATE) the screen freezes while you pick, with a magnifier for colours. On Wayland (Ubuntu, Fedora, KDE) SuperV uses your desktop's own colour picker and screenshot tool, because apps can't read the screen there.
 
 ## Install
 
@@ -186,7 +194,7 @@ SuperV is a single C program built on GTK 3, which Ubuntu and Mint already have 
 | CPU when idle | 0%: it wakes only when the clipboard changes or you press a shortcut |
 | Popup | under 0.1 s from shortcut to panel |
 
-The setup helpers (`superv-setup`, `superv-emoji-setup`, Python) only run during install, when you change a shortcut or turn a panel on or off.
+The setup helpers (`superv-setup`, `superv-feature-setup`, Python) only run during install, when you change a shortcut or turn a feature on or off. Text recognition runs Tesseract only while it reads the area you selected.
 
 ## Works on
 
@@ -248,7 +256,7 @@ pos_x=-1                         # -1 = open centred / next to the pointer
 pos_y=-1
 ```
 
-`emoji_panel=true` turns the emoji panel on or off (the switch in ⚙ does the same). The emoji panel's settings are in `~/.config/superv/emoji.ini`, also editable from its own ⚙ menu:
+`emoji_panel`, `plain_paste`, `color_picker` and `text_extractor` turn each feature on or off (the switches in ⚙ do the same). Their shortcuts are in `~/.config/superv/shortcuts.ini`; change one with `superv-feature-setup --feature color_picker --hotkey '<Super>k'` (in `/usr/lib/superv/`). The emoji panel's settings are in `~/.config/superv/emoji.ini`, also editable from its own ⚙ menu:
 
 | Key | Default | |
 |---|---|---|
@@ -275,13 +283,18 @@ superv --emoji --insert "¯\_(ツ)_/¯"   type text into the focused app (bind i
 superv --daemon                 start in the background (done automatically at login)
 superv --clear                  clear history (pinned items stay)
 superv --quit                   stop SuperV
-superv --doctor                 check the setup: daemon, shortcuts, auto-paste, emoji font, memory use
+superv --plain-paste            paste what you copied as plain text (what Ctrl+Super+Alt+V runs)
+superv --pick-color             pick a colour on screen (what Super+Shift+C runs)
+superv --extract-text           copy text from an area of the screen (what Super+Shift+T runs)
+superv --doctor                 check the setup: daemon, shortcuts, auto-paste, emoji font, Tesseract, memory use
 ```
 
 ## Troubleshooting
 
 Run `superv --doctor` first.
 
+- **Super+Shift+T says it needs Tesseract.** Install it once: `sudo apt install tesseract-ocr` (Ubuntu, Mint, Debian), `sudo dnf install tesseract` (Fedora), `sudo pacman -S tesseract tesseract-data-eng` (Arch). For another language add its data, e.g. `tesseract-ocr-ben`.
+- **The colour picker or text capture says it isn't available.** On Wayland they need your desktop's portal (`xdg-desktop-portal-gnome` or `-kde`), which GNOME and KDE Plasma install by default.
 - **Super+. does nothing.** Check that **Emoji panel** is on (Super+V → ⚙). Still nothing? `superv --doctor` shows whether the shortcut is registered. No colour emoji? Install Noto Color Emoji (`fonts-noto-color-emoji`, `google-noto-color-emoji-fonts` or `noto-fonts-emoji`).
 - **Super+V does nothing.** Open SuperV once from the app menu (or log out and back in), then check `superv --doctor`. On KDE Plasma 5, log out and back in once after setup. On Sway, Hyprland, i3 or COSMIC, add the shortcut line that `superv-setup --hotkey "<Super>v"` prints.
 - **The panel still shows the old version after an update.** Run `superv --quit` and open SuperV again (only needed when updating *from* 1.1.2 or older).
