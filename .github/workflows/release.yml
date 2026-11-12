@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         run: |
-          V="$(sed -n 's/^#define VERSION "\(.*\)"/\1/p' superv.c)"
+          V="$(sed -n 's/^#define SV_VERSION *"\(.*\)"/\1/p' superv.h)"
           sed -i "s/^Version:.*/Version:        $V/" packaging/rpm/superv.spec
           mkdir -p dist
           tar --exclude=./dist --exclude=./.git --transform "s,^\.,superv-$V," -czf "dist/superv-$V.tar.gz" .
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         run: |
-          V="$(sed -n 's/^#define VERSION "\(.*\)"/\1/p' superv.c)"
+          V="$(sed -n 's/^#define SV_VERSION *"\(.*\)"/\1/p' superv.h)"
           useradd -m builder
           mkdir -p /tmp/build && cp packaging/arch/PKGBUILD packaging/arch/superv.install /tmp/build/
           sed -i "s/^pkgver=.*/pkgver=$V/" /tmp/build/PKGBUILD

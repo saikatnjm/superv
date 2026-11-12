@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Point the AUR files at a released version: updates pkgver, the checksum and .SRCINFO.
 # Works on any Linux (no makepkg needed). Run after the GitHub release vVERSION exists.
-#   packaging/arch/bump.sh 1.2.3
+#   packaging/arch/bump.sh 2.0.0   (keep pkgver at the last release until then: the checksum must match)
 set -euo pipefail
 V="${1:?usage: packaging/arch/bump.sh <version, e.g. 1.2.3>}"
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

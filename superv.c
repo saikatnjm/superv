@@ -1,8 +1,9 @@
 /*
- * SuperV — Windows-style (Win+V) clipboard history for Linux.
- * Ubuntu (GNOME, X11 + Wayland) and Linux Mint (Cinnamon, MATE, Xfce).
+ * SuperV — Windows-style (Win+V) clipboard history for Linux, plus the Win+. emoji panel (emoji.c).
+ * GNOME, KDE Plasma, Cinnamon, MATE, Xfce… on Wayland and X11.
  *
  *   Super+V (or your own shortcut)  open / close the panel
+ *   Super+. (when turned on)         the emoji panel, see emoji.c
  *   Up / Down                        move between items
  *   Enter / click                    paste into the app you were using
  *   Delete                           remove the selected item
@@ -28,10 +29,11 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #include <X11/keysym.h>
+#include "superv.h"
 
-#define APP_ID  "io.github.superv.SuperV"
-#define VERSION "1.2.3"
-#define REPO_URL "https://github.com/saikatnjm/superv"
+#define APP_ID   SV_APP_ID
+#define VERSION  SV_VERSION
+#define REPO_URL SV_REPO_URL
 #ifndef SETUP_DIR
 #define SETUP_DIR "/usr/lib/superv"   /* where packages put superv-setup (set by the Makefile) */
 #endif
@@ -47,24 +49,27 @@ typedef struct {
 static struct {
     gboolean history_enabled, clear_on_reboot, restore_on_exit;
     int max_items, max_text_bytes, paste_delay_ms, pos_x, pos_y, width, height, font_scale;
-    gboolean setup_done;
+    gboolean setup_done, emoji_panel, emoji_new;   /* emoji_new: upgraded from 1.x, say what's new once */
     char *paste_keys, *hotkey, *theme;
 } cfg;
 
 static GPtrArray *items;             /* newest first */
-static char *data_dir, *img_dir, *hist_path, *cfg_dir, *cfg_path, *self_exe, *self_dir;
+static char *data_dir, *img_dir, *hist_path, *cfg_dir, *cfg_path;
+char *sv_self_exe, *sv_self_dir;
+gboolean sv_debug, sv_wayland;
 static char *current_id, *paste_err, *image_link, *link_candidate;
-static gboolean debug_log, is_wayland, reading, had_focus, capturing, prev_is_x11, geom_dirty, enabling;
+static gboolean reading, had_focus, capturing, prev_is_x11, geom_dirty, enabling;
 static int thumb_w, enable_tries;
 static guint relayout_src;
 static gint64 ignore_until, hotkey_applied_at;
 static guint pending_src;
 static int ui_fd = -1;
 static int (*xtest_fake)(Display *, unsigned int, int, unsigned long);
-static GtkApplication *app;
+GtkApplication *sv_app;
 static GtkClipboard *clip, *prim;
 static GtkWidget *win, *listbox, *stack, *clear_btn, *switch_w, *settings_pop, *hotkey_btn, *hint_lbl;
 static GtkWidget *hk_status, *banner, *banner_lbl, *banner_btn, *theme_btns[3], *size_lbl;
+static GtkWidget *emoji_sw, *emoji_lbl, *emoji_btn;
 static GtkCssProvider *font_css;
 static gboolean syncing;
 static GHashTable *thumbs;
@@ -102,8 +107,10 @@ static void config_save(void) {
     g_key_file_set_integer(k, "superv", "pos_x", cfg.pos_x);
     g_key_file_set_integer(k, "superv", "pos_y", cfg.pos_y);
     g_key_file_set_boolean(k, "superv", "shortcut_configured", cfg.setup_done);
+    g_key_file_set_boolean(k, "superv", "emoji_panel", cfg.emoji_panel);
     g_key_file_set_comment(k, "superv", NULL,
         " SuperV settings. After editing run: superv --quit && superv --daemon &\n"
+        " emoji_panel: the Win+. emoji panel on Super+. (its own settings are in emoji.ini)\n"
         " paste_keys: shift+insert (default; works in terminals too), ctrl+v, ctrl+shift+v, none\n"
         " theme: auto (follow the desktop), light, dark      font_scale: text size in % (80-160)\n"
         " width/height/pos_x/pos_y: panel size and position (drag it; double-click its header to reset)\n"
@@ -130,9 +137,11 @@ static void config_defaults(void) {
 static void config_load(void) {
     config_defaults();
     cfg.hotkey = g_strdup(DEFAULT_HOTKEY);
+    cfg.emoji_panel = TRUE;   /* like Windows: Win+. is always there */
     GKeyFile *k = g_key_file_new();
     if (g_key_file_load_from_file(k, cfg_path, G_KEY_FILE_NONE, NULL)) {
         GError *e = NULL;
+        cfg.emoji_new = !g_key_file_has_key(k, "superv", "emoji_panel", NULL);   /* a 1.x config */
 #define KB(n, f) do { gboolean v = g_key_file_get_boolean(k, "superv", n, &e); if (!e) f = v; g_clear_error(&e); } while (0)
 #define KI(n, f) do { int v = g_key_file_get_integer(k, "superv", n, &e); if (!e && v > 0) f = v; g_clear_error(&e); } while (0)
 #define KS(n, f) do { char *v = g_key_file_get_string(k, "superv", n, NULL); if (v) { g_strstrip(v); g_free(f); f = v; } } while (0)
@@ -152,6 +161,7 @@ static void config_load(void) {
         KN("pos_x", cfg.pos_x);
         KN("pos_y", cfg.pos_y);
         KB("shortcut_configured", cfg.setup_done);
+        KB("emoji_panel", cfg.emoji_panel);
     }
     g_key_file_unref(k);
     config_save();
@@ -328,7 +338,7 @@ static const struct { const char *name; int code; KeySym sym; } KEYS[] = {
     { "v", KEY_V, XK_v },
 };
 
-static gboolean uinput_open(void) {
+gboolean sv_uinput_open(void) {
     if (ui_fd >= 0) return TRUE;
     int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK | O_CLOEXEC);
     if (fd >= 0) {
@@ -351,13 +361,14 @@ static gboolean uinput_open(void) {
 }
 
 /* Can we paste into every app? (uinput everywhere, or XTest on a pure X11 session) */
-static gboolean paste_everywhere(void) { return ui_fd >= 0 || (xtest_fake && !is_wayland); }
+gboolean sv_paste_everywhere(void) { return ui_fd >= 0 || (xtest_fake && !sv_wayland); }
+#define paste_everywhere sv_paste_everywhere
 
 static void paste_init(void) {
     void *h = dlopen("libXtst.so.6", RTLD_LAZY);   /* X11 apps, even on Wayland (XWayland) */
     if (h) xtest_fake = dlsym(h, "XTestFakeKeyEvent");
-    if (!uinput_open())
-        logmsg("paste backend: %s (%s)", xtest_fake ? (is_wayland ? "XTest for X11 apps only" : "XTest") : "none",
+    if (!sv_uinput_open())
+        logmsg("paste backend: %s (%s)", xtest_fake ? (sv_wayland ? "XTest for X11 apps only" : "XTest") : "none",
                paste_err);
 }
 
@@ -368,7 +379,8 @@ static void ui_emit(int type, int code, int value) {
     if (write(ui_fd, &ev, sizeof ev) < 0) logmsg("uinput write failed: %s", g_strerror(errno));
 }
 
-static gboolean send_keys(const char *combo) {
+/* to_x11: the app we type into is an X11 one (XTest can reach it even on Wayland) */
+gboolean sv_send_keys(const char *combo, gboolean to_x11) {
     int idx[8], n = 0;
     char **parts = g_strsplit(combo, "+", 8);
     for (int i = 0; parts[i] && n < 8; i++) {
@@ -385,7 +397,7 @@ static gboolean send_keys(const char *combo) {
         for (int i = n - 1; i >= 0; i--) { ui_emit(EV_KEY, KEYS[idx[i]].code, 0); ui_emit(EV_SYN, SYN_REPORT, 0); g_usleep(10000); }
         return TRUE;
     }
-    if (xtest_fake && (!is_wayland || prev_is_x11)) {
+    if (xtest_fake && (!sv_wayland || to_x11)) {
         Display *d = gdk_x11_display_get_xdisplay(gdk_display_get_default());
         for (int i = 0; i < n; i++) xtest_fake(d, XKeysymToKeycode(d, KEYS[idx[i]].sym), True, 0);
         for (int i = n - 1; i >= 0; i--) xtest_fake(d, XKeysymToKeycode(d, KEYS[idx[i]].sym), False, 0);
@@ -439,7 +451,7 @@ static gboolean is_bare_link(const char *text) {
 
 static void on_text(GtkClipboard *c, const char *text, gpointer has_image) {
     if (has_image && (!text || is_bare_link(text))) {
-        if (debug_log) logmsg("image + link offered: saving the image");
+        if (sv_debug) logmsg("image + link offered: saving the image");
         g_free(image_link);
         image_link = g_strdup(text ? text : "");
         gtk_clipboard_request_image(c, on_image, NULL);
@@ -448,7 +460,7 @@ static void on_text(GtkClipboard *c, const char *text, gpointer has_image) {
     reading = FALSE;
     /* When the app that copied an image quits, the desktop may keep only its link: not a new copy. */
     if (link_candidate && text && !strcmp(text, link_candidate)) {
-        if (debug_log) logmsg("link of the last image re-offered: ignored");
+        if (sv_debug) logmsg("link of the last image re-offered: ignored");
         g_clear_pointer(&link_candidate, g_free);
         return;
     }
@@ -461,7 +473,7 @@ static void on_text(GtkClipboard *c, const char *text, gpointer has_image) {
 static void on_image(GtkClipboard *c, GdkPixbuf *pb, gpointer d) {
     reading = FALSE;
     if (pb) got_item(add_image(pb));
-    else if (debug_log) logmsg("image could not be read");
+    else if (sv_debug) logmsg("image could not be read");
 }
 
 static gboolean plain_text_only(GdkAtom *atoms, gint n) {
@@ -492,7 +504,7 @@ static void on_targets(GtkClipboard *c, GdkAtom *atoms, gint n, gpointer d) {
         return;
     }
     gboolean skip = !cfg.history_enabled;
-    GString *names = debug_log ? g_string_new(NULL) : NULL;   /* format names only, never content */
+    GString *names = sv_debug ? g_string_new(NULL) : NULL;   /* format names only, never content */
     for (int i = 0; i < n; i++) {
         char *name = gdk_atom_name(atoms[i]);
         skip = skip || !g_strcmp0(name, "x-kde-passwordManagerHint")  /* password managers */
@@ -674,11 +686,11 @@ static gboolean any_menu_open(void) {
 static void paste_item(Item *it);
 
 static gboolean do_paste(gpointer d) {
-    if (!send_keys(cfg.paste_keys)) {
+    if (!sv_send_keys(cfg.paste_keys, prev_is_x11)) {
         GNotification *n = g_notification_new("Copied — press Ctrl+V to paste");
         char *b = g_strdup("Click-to-paste needs a one-time permission: open SuperV and click Enable.");
         g_notification_set_body(n, b);
-        g_application_send_notification(G_APPLICATION(app), "paste", n);
+        g_application_send_notification(G_APPLICATION(sv_app), "paste", n);
         g_object_unref(n); g_free(b);
     }
     return G_SOURCE_REMOVE;
@@ -927,7 +939,7 @@ static void place_window(void) {
     if (!m) m = gdk_display_get_primary_monitor(disp);
     if (!m) m = gdk_display_get_monitor(disp, 0);
     gdk_monitor_get_workarea(m, &a);
-    if (is_wayland) {   /* XWayland can't see the pointer over Wayland windows: centre on screen */
+    if (sv_wayland) {   /* XWayland can't see the pointer over Wayland windows: centre on screen */
         x = a.x + (a.width - W) / 2;
         y = a.y + (a.height - H) / 2;
     } else {            /* like Windows: open next to where you are working */
@@ -994,7 +1006,7 @@ static gboolean on_header_press(GtkWidget *w, GdkEventButton *e, gpointer d) {
         return TRUE;
     }
     if (e->type != GDK_BUTTON_PRESS) return FALSE;
-    if (debug_log) logmsg("header pressed: moving the panel");
+    if (sv_debug) logmsg("header pressed: moving the panel");
     geom_dirty = TRUE;
     gtk_window_begin_move_drag(GTK_WINDOW(win), e->button, (int)e->x_root, (int)e->y_root, e->time);
     return TRUE;
@@ -1057,7 +1069,24 @@ static void sync_hotkey_from_desktop(void) {
     }
 }
 
+/* Draw the panel into a picture (not read back from the screen: that trips cairo up), with transparency. */
+static gboolean snapshot_window(gpointer path) {
+    if (!gtk_widget_get_visible(win)) return G_SOURCE_REMOVE;
+    int w = gtk_widget_get_allocated_width(win), h = gtk_widget_get_allocated_height(win);
+    cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+    cairo_t *cr = cairo_create(s);
+    gtk_widget_draw(win, cr);
+    cairo_destroy(cr);
+    if (cairo_surface_write_to_png(s, path) == CAIRO_STATUS_SUCCESS) logmsg("saved %s", (char *)path);
+    cairo_surface_destroy(s);
+    return G_SOURCE_REMOVE;
+}
+
+static void update_emoji_controls(void);
+
 static void show_popup(void) {
+    if (emoji_started() && emoji_visible()) emoji_command(2, (char *[]){ "superv", "--hide", NULL });
+    update_emoji_controls();
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     GdkWindow *aw = gdk_screen_get_active_window(gdk_screen_get_default());
     G_GNUC_END_IGNORE_DEPRECATIONS
@@ -1081,19 +1110,25 @@ static void show_popup(void) {
     g_timeout_add(700, ensure_focus, GUINT_TO_POINTER(ts));
     GtkListBoxRow *row = gtk_list_box_get_row_at_index(GTK_LIST_BOX(listbox), 0);
     if (row) gtk_widget_grab_focus(GTK_WIDGET(row));
+    const char *snap = g_getenv("SUPERV_SNAPSHOT");   /* SUPERV_SNAPSHOT=file.png: for screenshots */
+    if (snap && *snap) g_timeout_add(900, snapshot_window, (gpointer)snap);
 }
 
 static void toggle(void) { if (gtk_widget_get_visible(win)) gtk_widget_hide(win); else show_popup(); }
 
-static char *setup_path(void) {
-    const char *dirs[] = { self_dir, SETUP_DIR, "/usr/lib/superv", "/usr/local/lib/superv", "/usr/libexec/superv" };
+/* The emoji panel's 📋 button, or Super+V while it is open: one panel at a time, like Windows. */
+void sv_show_clipboard(void) { if (!gtk_widget_get_visible(win)) show_popup(); }
+
+char *sv_setup_path(const char *name) {
+    const char *dirs[] = { sv_self_dir, SETUP_DIR, "/usr/lib/superv", "/usr/local/lib/superv", "/usr/libexec/superv" };
     for (guint i = 0; i < G_N_ELEMENTS(dirs); i++) {
-        char *p = g_build_filename(dirs[i], "superv-setup", NULL);
+        char *p = g_build_filename(dirs[i], name, NULL);
         if (g_file_test(p, G_FILE_TEST_EXISTS)) return p;
         g_free(p);
     }
-    return g_build_filename(SETUP_DIR, "superv-setup", NULL);
+    return g_build_filename(SETUP_DIR, name, NULL);
 }
+#define setup_path() sv_setup_path("superv-setup")
 
 static void hotkey_status(const char *text, gboolean ok) {
     if (!hk_status) return;
@@ -1152,7 +1187,7 @@ static void apply_hotkey(const char *new_accel) {
 
 static void spawn_setup_helper(const char *accel) {
     char *setup = setup_path();
-    char *quoted = g_shell_quote(self_exe), *cmd = g_strdup_printf("%s --toggle", quoted);
+    char *quoted = g_shell_quote(sv_self_exe), *cmd = g_strdup_printf("%s --toggle", quoted);
     char *argv[] = { "python3", setup, "--setup-hotkeys", cmd, "--hotkey", (char *)accel, NULL };
     GError *e = NULL;
     GPid pid;
@@ -1354,7 +1389,7 @@ static void close_menus(void) {
 /* Like Windows: a click anywhere outside closes the panel, menus included. */
 static gboolean hide_if_inactive(gpointer d) {
     if (gtk_widget_get_visible(win) && !gtk_window_is_active(GTK_WINDOW(win))) {
-        if (debug_log) logmsg("panel lost focus: closing");
+        if (sv_debug) logmsg("panel lost focus: closing");
         if (capturing) { capturing = FALSE; hotkey_status(NULL, TRUE); update_hotkey_labels(); }
         close_menus();
         gtk_widget_hide(win);
@@ -1372,17 +1407,22 @@ static GFileMonitor *exe_monitor;
 static gboolean restart_now(gpointer d) {
     restart_src = 0;
     if (gtk_widget_get_visible(win)) { restart_pending = TRUE; return G_SOURCE_REMOVE; }
+    if (emoji_started() && emoji_busy()) {   /* the emoji panel is open, or typing: try again shortly */
+        restart_src = g_timeout_add_seconds(5, restart_now, NULL);
+        return G_SOURCE_REMOVE;
+    }
     restart_pending = FALSE;
-    if (!g_file_test(self_exe, G_FILE_TEST_IS_EXECUTABLE)) return G_SOURCE_REMOVE;   /* removed, not updated */
+    if (!g_file_test(sv_self_exe, G_FILE_TEST_IS_EXECUTABLE)) return G_SOURCE_REMOVE;   /* removed, not updated */
     logmsg("SuperV was updated: restarting into the new version");
     if (geom_dirty) { geom_dirty = FALSE; reload_hotkey(); config_save(); }
     history_save();
+    if (emoji_started()) emoji_shutdown();
     char *restore = current_id ? g_strdup_printf("--restore=%s", current_id) : NULL;
-    char *argv[] = { self_exe, "--daemon", restore, NULL };
-    GDBusConnection *bus = g_application_get_dbus_connection(G_APPLICATION(app));
+    char *argv[] = { sv_self_exe, "--daemon", restore, NULL };
+    GDBusConnection *bus = g_application_get_dbus_connection(G_APPLICATION(sv_app));
     if (bus) g_dbus_connection_close_sync(bus, NULL, NULL);   /* free our D-Bus name for the new process */
     g_usleep(200000);
-    execv(self_exe, argv);
+    execv(sv_self_exe, argv);
     logmsg("restart failed (%s); still running the old version", g_strerror(errno));
     g_free(restore);
     return G_SOURCE_REMOVE;
@@ -1395,7 +1435,7 @@ static void on_exe_changed(GFileMonitor *m, GFile *f, GFile *other, GFileMonitor
 }
 
 static void watch_for_updates(void) {
-    GFile *f = g_file_new_for_path(self_exe);
+    GFile *f = g_file_new_for_path(sv_self_exe);
     exe_monitor = g_file_monitor_file(f, G_FILE_MONITOR_WATCH_MOVES, NULL, NULL);
     if (exe_monitor) g_signal_connect(exe_monitor, "changed", G_CALLBACK(on_exe_changed), NULL);
     g_object_unref(f);
@@ -1591,6 +1631,41 @@ static void fit_settings(GtkWidget *pop, gpointer scroll) {
     gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroll), MAX(h, 160));
 }
 
+/* ---- the emoji panel (emoji.c): loaded only while it is turned on */
+static void update_emoji_controls(void) {
+    if (!emoji_sw) return;
+    syncing = TRUE;
+    gtk_switch_set_active(GTK_SWITCH(emoji_sw), cfg.emoji_panel);
+    syncing = FALSE;
+    char *label = cfg.emoji_panel && emoji_started() ? emoji_hotkey_label() : NULL;
+    char *text = label ? g_strdup_printf("%s opens emoji, kaomoji, symbols", label) : g_strdup("Off: Super+. is left to your desktop");
+    gtk_label_set_text(GTK_LABEL(emoji_lbl), text);
+    g_free(text); g_free(label);
+    gtk_widget_set_visible(emoji_btn, cfg.emoji_panel);
+}
+
+static void set_emoji_panel(gboolean on) {
+    if (cfg.emoji_panel == on) return;
+    reload_hotkey();
+    cfg.emoji_panel = on;
+    config_save();
+    if (on && !emoji_started()) emoji_start();   /* sets up Super+. itself */
+    else if (emoji_started()) emoji_set_shortcut(on);
+    logmsg("emoji panel turned %s", on ? "on" : "off");
+    update_emoji_controls();
+}
+
+static gboolean on_emoji_switch(GtkSwitch *s, gboolean state, gpointer d) {
+    if (!syncing) set_emoji_panel(state);
+    return FALSE;
+}
+
+static void on_emoji_btn(GtkButton *b, gpointer d) {   /* 😊 in the header: switch to the emoji panel */
+    gtk_widget_hide(win);
+    if (!emoji_started()) emoji_start();
+    emoji_command(2, (char *[]){ "superv", "--show", NULL });
+}
+
 static GtkWidget *settings_button(void) {
     GtkWidget *btn = gtk_menu_button_new(), *old = gtk_bin_get_child(GTK_BIN(btn));
     if (old) gtk_container_remove(GTK_CONTAINER(btn), old);
@@ -1609,6 +1684,25 @@ static GtkWidget *settings_button(void) {
     g_signal_connect(switch_w, "state-set", G_CALLBACK(on_switch), NULL);
     gtk_box_pack_start(GTK_BOX(row), l, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(row), switch_w, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(box), row, FALSE, FALSE, 0);
+
+    /* Emoji panel: on/off, with its shortcut underneath */
+    row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16);
+    GtkWidget *col = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    l = gtk_label_new("Emoji panel");
+    gtk_label_set_xalign(GTK_LABEL(l), 0);
+    emoji_lbl = gtk_label_new("");
+    gtk_label_set_xalign(GTK_LABEL(emoji_lbl), 0);
+    add_class(emoji_lbl, "cbh-status");
+    gtk_box_pack_start(GTK_BOX(col), l, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(col), emoji_lbl, FALSE, FALSE, 0);
+    emoji_sw = gtk_switch_new();
+    gtk_widget_set_valign(emoji_sw, GTK_ALIGN_CENTER);
+    gtk_widget_set_tooltip_text(row, "Emoji, kaomoji and symbols, typed where you are writing (Win+. on Windows). "
+                                     "Its own settings are behind the gear in the emoji panel.");
+    g_signal_connect(emoji_sw, "state-set", G_CALLBACK(on_emoji_switch), NULL);
+    gtk_box_pack_start(GTK_BOX(row), col, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(row), emoji_sw, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(box), row, FALSE, FALSE, 0);
 
     row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16);
@@ -1689,12 +1783,12 @@ static GtkWidget *settings_button(void) {
 static void notify(const char *title, const char *body) {
     GNotification *n = g_notification_new(title);
     g_notification_set_body(n, body);
-    g_application_send_notification(G_APPLICATION(app), "superv", n);
+    g_application_send_notification(G_APPLICATION(sv_app), "superv", n);
     g_object_unref(n);
 }
 
 static gboolean retry_uinput(gpointer d) {
-    if (uinput_open()) {
+    if (sv_uinput_open()) {
         enabling = FALSE;
         update_banner();
         notify("Click-to-paste is on", "Pick an item in SuperV and it's pasted where you were typing.");
@@ -1777,6 +1871,14 @@ static void build_window(void) {
     g_signal_connect(clear_btn, "clicked", G_CALLBACK(on_clear), NULL);
     gtk_box_pack_start(GTK_BOX(header), title, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(header), clear_btn, FALSE, FALSE, 0);
+    emoji_btn = gtk_button_new();   /* like the tabs on top of Windows 11's Win+V panel */
+    gtk_container_add(GTK_CONTAINER(emoji_btn), icon("face-smile-symbolic", "emoji-people-symbolic", "☺"));
+    add_class(emoji_btn, "cbh-icon");
+    gtk_widget_set_tooltip_text(emoji_btn, "Emoji, kaomoji and symbols");
+    gtk_widget_set_no_show_all(emoji_btn, TRUE);
+    gtk_widget_show(gtk_bin_get_child(GTK_BIN(emoji_btn)));
+    g_signal_connect(emoji_btn, "clicked", G_CALLBACK(on_emoji_btn), NULL);
+    gtk_box_pack_start(GTK_BOX(header), emoji_btn, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(header), settings_button(), FALSE, FALSE, 0);
     GtkWidget *grab = gtk_event_box_new();   /* drag the header to move the panel */
     gtk_event_box_set_visible_window(GTK_EVENT_BOX(grab), FALSE);
@@ -1839,12 +1941,32 @@ static void build_window(void) {
 static void act_toggle(GSimpleAction *a, GVariant *p, gpointer d) { toggle(); }
 static void act_show(GSimpleAction *a, GVariant *p, gpointer d) { show_popup(); }
 static void act_clear(GSimpleAction *a, GVariant *p, gpointer d) { clear_all(); }
-static void act_quit(GSimpleAction *a, GVariant *p, gpointer d) { g_application_quit(G_APPLICATION(app)); }
-static gboolean on_signal(gpointer d) { g_application_quit(G_APPLICATION(app)); return G_SOURCE_REMOVE; }
+static void act_quit(GSimpleAction *a, GVariant *p, gpointer d) { g_application_quit(G_APPLICATION(sv_app)); }
+static void act_emoji(GSimpleAction *a, GVariant *p, gpointer d) {
+    char *argv[] = { "superv", "--toggle", NULL };
+    if (emoji_started()) emoji_command(2, argv);
+}
+static gboolean on_signal(gpointer d) { g_application_quit(G_APPLICATION(sv_app)); return G_SOURCE_REMOVE; }
+static void on_shutdown(GApplication *a, gpointer d) { if (emoji_started()) emoji_shutdown(); }
+
+static gboolean start_emoji(gpointer d) {   /* after the clipboard part is up: login stays quick */
+    if (!cfg.emoji_panel) return G_SOURCE_REMOVE;
+    if (!emoji_started()) emoji_start();
+    update_emoji_controls();
+    if (cfg.emoji_new) {   /* upgraded from SuperV 1.x: say once what's new and where to turn it off */
+        char *label = emoji_hotkey_label(), *body = g_strdup_printf(
+            "Press %s for emoji, kaomoji and symbols. Turn it off in SuperV's settings (the gear).", label);
+        notify("New in SuperV 2: the emoji panel", body);
+        g_free(body); g_free(label);
+        cfg.emoji_new = FALSE;
+    }
+    return G_SOURCE_REMOVE;
+}
 
 static void on_startup(GApplication *a, gpointer d) {
     static const GActionEntry actions[] = {
         { "toggle", act_toggle }, { "show", act_show }, { "clear", act_clear }, { "quit", act_quit },
+        { "emoji", act_emoji },
     };
     g_action_map_add_action_entries(G_ACTION_MAP(a), actions, G_N_ELEMENTS(actions), NULL);
     /* history and settings are private: owner-only folders, enforced on every start */
@@ -1858,6 +1980,7 @@ static void on_startup(GApplication *a, gpointer d) {
     thumbs = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     paste_init();
     build_window();
+    update_emoji_controls();
     clip = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
     prim = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
     g_signal_connect(clip, "owner-change", G_CALLBACK(on_owner_change), NULL);
@@ -1868,7 +1991,8 @@ static void on_startup(GApplication *a, gpointer d) {
     watch_for_updates();
     /* First run (e.g. installed from the .deb), or the shortcut was removed since: (re)create it. */
     if (!cfg.setup_done || !shortcut_bound()) apply_hotkey(cfg.hotkey);
-    logmsg("running (%s), history in %s", is_wayland ? "wayland via XWayland" : "x11", data_dir);
+    if (cfg.emoji_panel) g_idle_add(start_emoji, NULL);
+    logmsg("running (%s), history in %s", sv_wayland ? "wayland via XWayland" : "x11", data_dir);
 }
 
 static int on_cmdline(GApplication *a, GApplicationCommandLine *cl, gpointer d) {
@@ -1878,6 +2002,15 @@ static int on_cmdline(GApplication *a, GApplicationCommandLine *cl, gpointer d) 
     if (!strcmp(m, "--quit")) g_application_quit(a);
     else if (!strcmp(m, "--clear")) clear_all();
     else if (!strcmp(m, "--show")) show_popup();
+    else if (!strcmp(m, "--emoji")) {   /* Super+. : superv --emoji [--search heart | --tab symbols | --insert TEXT] */
+        if (!cfg.emoji_panel) {
+            notify("The emoji panel is off", "Turn it on in SuperV's settings: press Super+V, then the gear.");
+        } else {
+            if (!emoji_started()) emoji_start();
+            if (gtk_widget_get_visible(win)) gtk_widget_hide(win);   /* one panel at a time, like Windows */
+            emoji_command(argc - 1, argv + 1);
+        }
+    }
     else if (strcmp(m, "--daemon")) toggle();
     /* after restarting into a new version: keep serving what was on the clipboard */
     if (argc > 2 && g_str_has_prefix(argv[2], "--restore=") && find_item(argv[2] + 10, NULL)) {
@@ -1888,45 +2021,71 @@ static int on_cmdline(GApplication *a, GApplicationCommandLine *cl, gpointer d) 
     return 0;
 }
 
+/* Run a setup helper (superv-setup or superv-emoji-setup) with our arguments and wait for it. */
+static int run_helper(const char *name, int argc, char **argv) {
+    char *setup = sv_setup_path(name);
+    char **args = g_new0(char *, argc + 3);
+    args[0] = "python3"; args[1] = setup;
+    for (int i = 1; i < argc; i++) args[i + 1] = argv[i];
+    int status = 1;
+    GError *e = NULL;
+    if (!g_spawn_sync(NULL, args, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN, NULL, NULL,
+                      NULL, NULL, &status, &e)) {
+        fprintf(stderr, "superv: %s\n", e->message);
+        g_error_free(e);
+    }
+    g_free(args); g_free(setup);
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : 1;
+}
+
 int main(int argc, char **argv) {
     const char *m = argc > 1 ? argv[1] : "";
-    self_exe = g_file_read_link("/proc/self/exe", NULL);
-    if (!self_exe) self_exe = g_strdup(argv[0]);
-    self_dir = g_path_get_dirname(self_exe);
+    sv_self_exe = g_file_read_link("/proc/self/exe", NULL);
+    if (!sv_self_exe) sv_self_exe = g_strdup(argv[0]);
+    sv_self_dir = g_path_get_dirname(sv_self_exe);
     if (!strcmp(m, "--version")) { puts("superv " VERSION); return 0; }
     if (!strcmp(m, "--quit")) {   /* ask a running SuperV to stop; never start one just to quit */
         GDBusConnection *bus = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+        char *path = g_strdup_printf("/%s", APP_ID);
+        g_strdelimit(path, ".", '/');
+        g_strdelimit(path, "-", '_');
         if (bus) {
-            GVariant *r = g_dbus_connection_call_sync(bus, APP_ID, "/io/github/superv/SuperV", "org.gtk.Actions",
+            GVariant *r = g_dbus_connection_call_sync(bus, APP_ID, path, "org.gtk.Actions",
                 "Activate", g_variant_new_parsed("('quit', @av [], @a{sv} {})"), NULL,
                 G_DBUS_CALL_FLAGS_NO_AUTO_START, 3000, NULL, NULL);
             if (r) g_variant_unref(r);
             g_object_unref(bus);
         }
+        g_free(path);
         return 0;
     }
     if (!strcmp(m, "--help") || !strcmp(m, "-h")) {
-        puts("SuperV " VERSION " — Win+V clipboard history for Linux\n\n"
-             "  superv            open / close the panel (what the shortcut runs)\n"
-             "  superv --daemon   start in the background (runs at login)\n"
-             "  superv --show     open the panel\n"
-             "  superv --clear    clear history (pinned items stay)\n"
-             "  superv --quit     stop SuperV\n"
-             "  superv --doctor   check the setup\n\n"
-             "Settings: ~/.config/superv/config.ini");
+        puts("SuperV " VERSION " — clipboard history (Win+V) and emoji panel (Win+.) for Linux\n\n"
+             "  superv                         open / close the clipboard panel (what Super+V runs)\n"
+             "  superv --emoji                 open / close the emoji panel (what Super+. runs)\n"
+             "  superv --emoji --tab kaomoji   open it on a tab: emoji, kaomoji or symbols\n"
+             "  superv --emoji --search heart  open it with a search\n"
+             "  superv --emoji --insert TEXT   type TEXT into the focused app (bind it to a key!)\n"
+             "  superv --daemon                start in the background (runs at login)\n"
+             "  superv --show                  open the clipboard panel\n"
+             "  superv --clear                 clear history (pinned items stay)\n"
+             "  superv --quit                  stop SuperV\n"
+             "  superv --doctor                check the setup\n\n"
+             "Settings: ~/.config/superv/config.ini (clipboard), ~/.config/superv/emoji.ini (emoji panel)");
         return 0;
     }
-    if (!strcmp(m, "--doctor") || !strcmp(m, "--setup-hotkeys") || !strcmp(m, "--remove-hotkeys")) {
-        char *setup = setup_path();
-        char **args = g_new0(char *, argc + 3);
-        args[0] = "python3"; args[1] = setup;
-        for (int i = 1; i < argc; i++) args[i + 1] = argv[i];
-        execvp("python3", args);
-        perror("python3");
-        return 1;
+    if (!strcmp(m, "--doctor") || !strcmp(m, "--remove-hotkeys")) {   /* both parts */
+        if (!strcmp(m, "--doctor")) puts("Clipboard panel");
+        fflush(stdout);
+        int r = run_helper("superv-setup", argc, argv);
+        if (!strcmp(m, "--doctor")) puts("\nEmoji panel");
+        fflush(stdout);
+        g_setenv("SUPERV_DOCTOR_BRIEF", "1", TRUE);   /* system, session and memory are shown once */
+        return run_helper("superv-emoji-setup", argc, argv) | r;
     }
-    debug_log = g_getenv("SUPERV_DEBUG") != NULL;
-    is_wayland = !g_strcmp0(g_getenv("XDG_SESSION_TYPE"), "wayland") || g_getenv("WAYLAND_DISPLAY");
+    if (!strcmp(m, "--setup-hotkeys")) return run_helper("superv-setup", argc, argv);
+    sv_debug = g_getenv("SUPERV_DEBUG") != NULL;
+    sv_wayland = !g_strcmp0(g_getenv("XDG_SESSION_TYPE"), "wayland") || g_getenv("WAYLAND_DISPLAY");
     if (!g_getenv("DISPLAY")) { fputs("superv: no X11/XWayland display (DISPLAY not set)\n", stderr); return 1; }
     /* Use X11/XWayland: on GNOME Wayland only X clients may watch the clipboard in the background. */
     gdk_set_allowed_backends("x11");
@@ -1935,10 +2094,11 @@ int main(int argc, char **argv) {
     hist_path = g_build_filename(data_dir, "history.ini", NULL);
     cfg_dir = g_build_filename(g_get_user_config_dir(), "superv", NULL);
     cfg_path = g_build_filename(cfg_dir, "config.ini", NULL);
-    app = gtk_application_new(APP_ID, G_APPLICATION_HANDLES_COMMAND_LINE);
-    g_signal_connect(app, "startup", G_CALLBACK(on_startup), NULL);
-    g_signal_connect(app, "command-line", G_CALLBACK(on_cmdline), NULL);
-    int status = g_application_run(G_APPLICATION(app), argc, argv);
-    g_object_unref(app);
+    sv_app = gtk_application_new(APP_ID, G_APPLICATION_HANDLES_COMMAND_LINE);
+    g_signal_connect(sv_app, "startup", G_CALLBACK(on_startup), NULL);
+    g_signal_connect(sv_app, "command-line", G_CALLBACK(on_cmdline), NULL);
+    g_signal_connect(sv_app, "shutdown", G_CALLBACK(on_shutdown), NULL);
+    int status = g_application_run(G_APPLICATION(sv_app), argc, argv);
+    g_object_unref(sv_app);
     return status;
 }

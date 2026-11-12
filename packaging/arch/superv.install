@@ -20,6 +20,8 @@ pre_remove() {
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
             python3 /usr/lib/superv/superv-setup --remove-hotkeys >/dev/null 2>&1 || true
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
+            python3 /usr/lib/superv/superv-emoji-setup --remove-hotkeys >/dev/null 2>&1 || true
+        runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
             gdbus call --session --dest io.github.superv.SuperV --object-path /io/github/superv/SuperV \
             --method org.gtk.Actions.Activate quit "[]" "{}" >/dev/null 2>&1 || true
     done

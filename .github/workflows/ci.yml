@@ -1,0 +1,35 @@
+# Checks every push and pull request: builds with -Werror and validates scripts and metadata.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libgtk-3-dev
+      - name: Build (no warnings allowed)
+        run: make CFLAGS="-Os -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Werror"
+      - run: ./superv --version && ./superv --help
+      - name: Staged install contains everything
+        run: |
+          make install PREFIX=/usr DESTDIR="$PWD/stage"
+          find stage -type f | sort
+
+  lint:
+    runs-on: ubuntu-24.04   # newer appstream validator
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y shellcheck desktop-file-utils appstream
+      - name: Shell scripts
+        run: shellcheck -S warning install.sh uninstall.sh packaging/build-deb.sh packaging/arch/bump.sh
+      - name: Python helpers
+        run: python3 -m py_compile superv-setup superv-emoji-setup tools/gen-data.py
+      - name: Desktop files and app-store listing
+        run: |
+          desktop-file-validate data/io.github.superv.SuperV.desktop data/superv-autostart.desktop
+          appstreamcli validate --no-net data/io.github.superv.SuperV.metainfo.xml

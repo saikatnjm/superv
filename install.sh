@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# SuperV installer — Win+V clipboard history for Linux.
+# SuperV installer — clipboard history (Win+V) and emoji panel (Win+.) for Linux.
 # Ubuntu, Mint, Debian, Pop!_OS, Zorin, elementary, Fedora, Arch, Manjaro, openSUSE…
 #
-#   ./install.sh                         Super+V (like Windows), asks for your password once
-#   ./install.sh --hotkey "<Ctrl><Alt>v" use your own shortcut (change it later from the ⚙ menu)
+#   ./install.sh                         Super+V and Super+. (like Windows), asks for your password once
+#   ./install.sh --hotkey "<Ctrl><Alt>v" use your own clipboard shortcut (change it later from the ⚙ menu)
+#   ./install.sh --no-emoji              without the emoji panel (turn it on later in SuperV's settings)
 #   ./install.sh --no-sudo               skip the password step (picking an item then only copies it)
 set -euo pipefail
 
@@ -14,11 +15,13 @@ APPS_DIR="$HOME/.local/share/applications"
 AUTOSTART_DIR="$HOME/.config/autostart"
 HOTKEY="<Super>v"
 NO_SUDO=0
+NO_EMOJI=0
 while (($#)); do
   case "$1" in
     --hotkey) HOTKEY="$2"; shift 2 ;;
     --no-sudo) NO_SUDO=1; shift ;;
-    -h|--help) sed -n '2,7p' "$0"; exit 0 ;;
+    --no-emoji) NO_EMOJI=1; shift ;;
+    -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
     *) echo "unknown option: $1"; exit 2 ;;
   esac
 done
@@ -73,6 +76,7 @@ step "2/6  Installing to $LIB_DIR"
 mkdir -p "$LIB_DIR" "$BIN_DIR" "$APPS_DIR" "$AUTOSTART_DIR"
 install -m 755 "$BIN" "$LIB_DIR/superv"
 install -m 755 "$SRC_DIR/superv-setup" "$LIB_DIR/superv-setup"
+install -m 755 "$SRC_DIR/superv-emoji-setup" "$LIB_DIR/superv-emoji-setup"
 install -m 755 "$SRC_DIR/uninstall.sh" "$LIB_DIR/uninstall.sh"
 install -Dm 644 "$SRC_DIR/data/io.github.superv.SuperV.svg" \
   "$HOME/.local/share/icons/hicolor/scalable/apps/io.github.superv.SuperV.svg"
@@ -85,7 +89,7 @@ cat > "$AUTOSTART_DIR/superv.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=SuperV
-Comment=Clipboard for Linux (Super+V)
+Comment=Clipboard and emoji for Linux (Super+V, Super+.)
 Exec="$LIB_DIR/superv" --daemon
 Icon=io.github.superv.SuperV
 NoDisplay=true
@@ -95,18 +99,32 @@ cat > "$APPS_DIR/io.github.superv.SuperV.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=SuperV
-GenericName=Clipboard history
-Comment=Clipboard for Linux: press Super+V for your clipboard history
+GenericName=Clipboard history and emoji
+Comment=Clipboard and emoji for Linux: Super+V for your clipboard history, Super+. for emoji
 Exec="$LIB_DIR/superv" --show
 Icon=io.github.superv.SuperV
 Categories=Utility;
-Keywords=clipboard;history;paste;copy;win+v;
+Keywords=clipboard;history;paste;copy;win+v;emoji;emoticon;kaomoji;symbol;win+.;
 StartupNotify=false
 EOF
 echo "  $OK done"
 
-step "4/6  Keyboard shortcut: $HOTKEY  (+ Super+Shift+S screenshot)"
+step "4/6  Keyboard shortcuts: $HOTKEY clipboard (+ Super+Shift+S screenshot), Super+. emoji"
 python3 "$LIB_DIR/superv-setup" --setup-hotkeys "'$LIB_DIR/superv' --toggle" --hotkey "$HOTKEY"
+if ((NO_EMOJI)); then
+  python3 - <<'PY'
+import os
+from gi.repository import GLib
+d = os.path.join(GLib.get_user_config_dir(), "superv"); os.makedirs(d, mode=0o700, exist_ok=True)
+p = os.path.join(d, "config.ini"); kf = GLib.KeyFile()
+try: kf.load_from_file(p, GLib.KeyFileFlags.KEEP_COMMENTS)
+except GLib.Error: pass
+kf.set_boolean("superv", "emoji_panel", False); kf.save_to_file(p); os.chmod(p, 0o600)
+PY
+  echo "  emoji panel off (--no-emoji): turn it on any time in SuperV's settings"
+else
+  python3 "$LIB_DIR/superv-emoji-setup" --setup-hotkeys "'$LIB_DIR/superv' --emoji" --hotkey "<Super>period"
+fi
 
 step "5/6  Auto-paste permission"
 RELOGIN=0
@@ -132,8 +150,8 @@ fi
 step "6/6  Starting SuperV"
 setsid "$LIB_DIR/superv" --daemon >/dev/null 2>&1 < /dev/null &
 sleep 1
-"$LIB_DIR/superv-setup" --doctor | sed 's/^/  /'
+"$LIB_DIR/superv" --doctor | sed 's/^/  /'
 
-printf '\n%sSuperV is ready.%s Copy a few things, then press your shortcut.\n' "$B" "$N"
+printf '\n%sSuperV is ready.%s Copy a few things, then press your shortcut. Super+. opens the emoji panel.\n' "$B" "$N"
 ((RELOGIN)) && echo "Log out and back in once so auto-paste starts working."
 echo "Uninstall any time: ~/.local/lib/superv/uninstall.sh"

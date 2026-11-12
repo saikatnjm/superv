@@ -3,10 +3,10 @@
 # Local build: spectool -g -R packaging/rpm/superv.spec && rpmbuild -bb packaging/rpm/superv.spec
 # The GitHub release workflow builds it too, from a local tarball of the same name.
 Name:           superv
-Version:        1.2.3
+Version:        2.0.0
 Release:        1%{?dist}
-Summary:        Clipboard for Linux
-License:        MIT
+Summary:        Clipboard and emoji for Linux: Win+V and Win+. panels
+License:        MIT AND Unicode-3.0
 URL:            https://github.com/saikatnjm/superv
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
@@ -23,13 +23,19 @@ Requires:       typelib(Gio)
 %endif
 # libXtst is loaded at runtime when present (click-to-paste on X11 without /dev/uinput).
 Recommends:     libXtst
+# colour emoji in the emoji panel (Fedora: google-noto-emoji-color-fonts, openSUSE: noto-coloremoji-fonts)
+Recommends:     (google-noto-color-emoji-fonts or google-noto-emoji-color-fonts or noto-coloremoji-fonts)
+# SuperDot (the Win+. emoji panel) is now part of SuperV
+Obsoletes:      superdot < 2
+Provides:       superdot = %{version}-%{release}
 
 %description
-SuperV brings the Windows clipboard history panel (Win+V) to Linux. Press
-Super+V to see the last 25 things you copied, text and images, pick one to
-paste it into the app you are using, pin favourites and clear the rest.
-Works on GNOME, KDE Plasma, Cinnamon, MATE and Xfce, on Wayland and X11.
-No network access, ever.
+SuperV brings two Windows panels to Linux. Super+V shows the last 25 things
+you copied, text and images: pick one to paste it into the app you are using,
+pin favourites, clear the rest. Super+. opens the emoji panel: type to search
+emoji, kaomoji and symbols, and the one you pick is typed where you were
+writing. Works on GNOME, KDE Plasma, Cinnamon, MATE and Xfce, on Wayland and
+X11. No network access, ever. Replaces SuperDot, which is now part of SuperV.
 
 %prep
 %autosetup
@@ -57,13 +63,15 @@ if [ "$1" -eq 0 ]; then
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
             python3 %{_prefix}/lib/superv/superv-setup --remove-hotkeys >/dev/null 2>&1 || :
         runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
+            python3 %{_prefix}/lib/superv/superv-emoji-setup --remove-hotkeys >/dev/null 2>&1 || :
+        runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
             gdbus call --session --dest io.github.superv.SuperV --object-path /io/github/superv/SuperV \
             --method org.gtk.Actions.Activate quit "[]" "{}" >/dev/null 2>&1 || :
     done
 fi
 
 %files
-%license LICENSE
+%license LICENSE LICENSES/Unicode-3.0.txt
 %doc README.md
 %{_bindir}/superv
 %{_prefix}/lib/superv/
@@ -77,6 +85,9 @@ fi
 %{_modulesloaddir}/superv-uinput.conf
 
 %changelog
+* Thu Nov 12 2026 SuperV <saikatnjm@users.noreply.github.com> - 2.0.0-1
+- The emoji panel (Super+.), formerly SuperDot, is now part of SuperV
+
 * Tue Nov 10 2026 SuperV <saikatnjm@users.noreply.github.com> - 1.2.3-1
 - New tagline: Clipboard for Linux; packaging for COPR, the AUR and a Launchpad PPA
 

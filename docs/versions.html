@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SuperV versions – downloads | Clipboard and emoji for Linux</title>
+<meta name="description" content="The stable SuperV versions with what they include, and downloads for Ubuntu, Mint, Debian (.deb), Fedora, openSUSE (.rpm) and Arch. Download the latest SuperV or any older version.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#7c3aed">
+<link rel="canonical" href="https://saikatnjm.github.io/superv/versions.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SuperV">
+<meta property="og:url" content="https://saikatnjm.github.io/superv/versions.html">
+<meta property="og:title" content="SuperV versions – downloads">
+<meta property="og:description" content="Stable SuperV versions and downloads for .deb, .rpm and Arch.">
+<meta property="og:image" content="https://saikatnjm.github.io/superv/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+<style>
+  :root {
+    --sans: system-ui, -apple-system, "Segoe UI", Ubuntu, Cantarell, "Noto Sans", Roboto, sans-serif;
+    --mono: ui-monospace, "Ubuntu Mono", "DejaVu Sans Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --bg: #0f0d16; --bg-2: #17151f; --card: #1d1a28; --line: #2c283b; --line-2: #3a3550;
+    --text: #ece9f6; --muted: #a29db4; --dim: #7a748e;
+    --accent: #a78bfa; --accent-strong: #8b5cf6; --accent-ink: #17151f; --glow: rgba(139, 92, 246, .28);
+    --code-bg: #120f1b; --ok: #a78bfa; --no: #6b6580; --warn: #f0b45b; --fix: #5fd3a6;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #fbfaff; --bg-2: #f3f0fb; --card: #ffffff; --line: #e4e0f0; --line-2: #d6d0e8;
+      --text: #1b1726; --muted: #5d5770; --dim: #77718a;
+      --accent: #7c3aed; --accent-strong: #6d28d9; --accent-ink: #ffffff; --glow: rgba(124, 58, 237, .18);
+      --code-bg: #f6f3fd; --ok: #7c3aed; --no: #a8a2b8; --warn: #b26a00; --fix: #0f8a5f;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #fbfaff; --bg-2: #f3f0fb; --card: #ffffff; --line: #e4e0f0; --line-2: #d6d0e8;
+    --text: #1b1726; --muted: #5d5770; --dim: #77718a;
+    --accent: #7c3aed; --accent-strong: #6d28d9; --accent-ink: #ffffff; --glow: rgba(124, 58, 237, .18);
+    --code-bg: #f6f3fd; --ok: #7c3aed; --no: #a8a2b8; --warn: #b26a00; --fix: #0f8a5f;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd { font-family: var(--mono); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  h1, h2, h3 { letter-spacing: -0.02em; line-height: 1.15; margin: 0; }
+  .skip { position: absolute; left: -999px; } .skip:focus { left: 16px; top: 12px; z-index: 99; background: var(--card); padding: 8px 12px; border-radius: 8px; }
+
+  header.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 84%, transparent);
+               backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; font: 700 18px var(--sans); color: var(--text); }
+  .brand:hover { text-decoration: none; }
+  .brand svg { width: 28px; height: 28px; flex: none; }
+  nav.links { display: flex; gap: 22px; margin-left: auto; align-items: center; }
+  nav.links a { color: var(--muted); font-size: 14.5px; font-weight: 500; }
+  nav.links a:hover, nav.links a[aria-current] { color: var(--text); text-decoration: none; }
+  .theme-btn { background: none; border: 1px solid var(--line-2); color: var(--muted); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; font-size: 15px; }
+  .theme-btn:hover { color: var(--text); border-color: var(--accent); }
+
+  .hero { position: relative; padding: 64px 0 52px; overflow: hidden; }
+  .hero::before { content: ""; position: absolute; inset: -40% -10% auto auto; width: 640px; height: 640px;
+                  background: radial-gradient(closest-side, var(--glow), transparent); pointer-events: none; }
+  .hero .wrap { position: relative; }
+  .eyebrow { font: 600 13px var(--mono); color: var(--accent); text-transform: uppercase; letter-spacing: .08em; margin: 0; }
+  h1 { font-size: clamp(34px, 5vw, 52px); margin: 10px 0 14px; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lead { font-size: 18px; color: var(--muted); max-width: 680px; margin: 0 0 26px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 15px; border: 1px solid transparent; }
+  .btn:hover { text-decoration: none; }
+  .btn.primary { background: var(--accent-strong); color: #fff; }
+  .btn.primary:hover { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { border-color: var(--line-2); color: var(--text); }
+  .btn.ghost:hover { border-color: var(--accent); }
+  .cta { display: flex; gap: 10px; flex-wrap: wrap; }
+
+
+  section { padding: 56px 0; }
+  section.alt { background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  h2 { font-size: clamp(26px, 3.4vw, 34px); margin: 8px 0 12px; }
+  .sub { color: var(--muted); max-width: 700px; margin: 0 0 30px; font-size: 16.5px; }
+
+  /* feature matrix */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+  table { width: 100%; border-collapse: collapse; min-width: 420px; }
+  th, td { padding: 11px 14px; border-bottom: 1px solid var(--line); font-size: 14.5px; text-align: left; }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: none; }
+  thead th { font: 600 12.5px var(--mono); color: var(--muted); background: var(--bg-2); white-space: nowrap; }
+  thead th.now { color: var(--accent); }
+  tbody th { font-weight: 500; }
+  tbody tr.group th { font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+  td.c { text-align: center; width: 92px; }
+  .y { color: var(--ok); font-weight: 700; } .n { color: var(--no); } .p { color: var(--warn); font-weight: 600; font-size: 12.5px; }
+  td.now { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+  /* timeline */
+  .timeline { position: relative; margin: 0; padding: 0; list-style: none; }
+  .timeline::before { content: ""; position: absolute; left: 15px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
+  .rel { position: relative; padding-left: 50px; scroll-margin-top: 76px; }
+  .rel + .rel { margin-top: 12px; }
+  .rel::before { content: ""; position: absolute; left: 8px; top: 21px; width: 16px; height: 16px; border-radius: 50%;
+                 background: var(--bg); border: 3px solid var(--line-2); }
+  .rel.major::before { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 5px var(--glow); }
+  .rel.planned::before { border-style: dashed; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; scroll-margin-top: 80px; }
+  .rel.major .card { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .rel.planned .card { border-style: dashed; background: transparent; }
+  details.card { padding: 0; }
+  details.card > summary { list-style: none; cursor: pointer; padding: 16px 56px 16px 22px; position: relative; border-radius: 16px; }
+  details.card > summary::-webkit-details-marker { display: none; }
+  details.card > summary::after { content: ""; position: absolute; right: 22px; top: 22px; width: 9px; height: 9px;
+    border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .15s; }
+  details.card[open] > summary::after { transform: rotate(225deg); top: 27px; }
+  details.card > summary:hover::after { border-color: var(--accent); }
+  details.card > summary:hover h3 { color: var(--accent); }
+  details.card > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  details.card[open] > summary { border-bottom: 1px solid var(--line); border-radius: 16px 16px 0 0; }
+  .card-body { padding: 18px 22px 20px; }
+  details.card > summary .summary { display: block; margin: 4px 0 0; }
+  .tools { display: flex; justify-content: flex-end; margin: -14px 0 14px; }
+  .toggle-all { background: none; border: 1px solid var(--line-2); color: var(--muted); border-radius: 8px; padding: 5px 12px; font: 600 13px var(--mono); cursor: pointer; }
+  .toggle-all:hover { color: var(--text); border-color: var(--accent); }
+  details.matrix > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 16px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--card); font-weight: 600; }
+  details.matrix > summary::-webkit-details-marker { display: none; }
+  details.matrix > summary::before { content: "+"; color: var(--accent); font: 600 18px var(--mono); line-height: 1; }
+  details.matrix[open] > summary::before { content: "–"; }
+  details.matrix > summary:hover { border-color: var(--accent); }
+  details.matrix .hint { color: var(--dim); font: 500 13px var(--mono); }
+  details.matrix[open] > summary { margin-bottom: 16px; }
+  .card-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .card-head h3 { font: 700 21px var(--sans); transition: color .15s; }
+  .badge { font: 600 11.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); }
+  .badge.latest { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; }
+  .badge.fix { color: var(--fix); border-color: color-mix(in srgb, var(--fix) 45%, transparent); }
+  .badge.merged { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+  .summary { color: var(--muted); max-width: 760px; font-size: 15px; }
+  .cols { display: grid; grid-template-columns: 1.2fr 1fr; gap: 22px; }
+  .cols h4 { margin: 0 0 8px; font: 600 12.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+  .cols .got h4 { color: var(--ok); } .cols .lack h4 { color: var(--dim); }
+  .cols ul { margin: 0; padding: 0; list-style: none; font-size: 15px; }
+  .cols li { position: relative; padding-left: 22px; }
+  .cols li + li { margin-top: 5px; }
+  .cols .got li::before { content: "✓"; position: absolute; left: 0; color: var(--ok); font-weight: 700; }
+  .cols .lack li { color: var(--muted); }
+  .cols .lack li::before { content: "–"; position: absolute; left: 2px; color: var(--dim); font-weight: 700; }
+  .dl { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); align-items: center; }
+  .rel.planned details.card > summary { cursor: pointer; }
+  .dl a { display: inline-flex; align-items: center; gap: 7px; font: 600 13px var(--mono); padding: 7px 12px; border-radius: 9px;
+          border: 1px solid var(--line-2); color: var(--text); background: var(--bg-2); }
+  .dl a:hover { border-color: var(--accent); text-decoration: none; }
+  .dl a .os { color: var(--dim); font-weight: 500; }
+  .dl a.main { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; }
+  .dl a.main .os { color: #ffffffb3; }
+  .dl .note { color: var(--dim); font-size: 13px; margin-left: auto; }
+  kbd { display: inline-block; padding: 0 6px; border-radius: 5px; border: 1px solid var(--line-2); background: var(--bg-2); font-size: .82em; line-height: 1.6; }
+  code.inl { background: var(--bg-2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 5px; font-size: .88em; }
+
+  .more { color: var(--dim); font-size: 14.5px; margin: 22px 0 0; padding-left: 50px; }
+  .help { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .help .card { padding: 20px 22px; }
+  .help .card h3 { font-size: 18px; margin-bottom: 6px; }
+  .help .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .help .card p + p { margin-top: 8px; }
+
+  footer { border-top: 1px solid var(--line); padding: 32px 0 44px; color: var(--dim); font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+  @media (max-width: 860px) { .cols, .help { grid-template-columns: 1fr; } .dl .note { margin-left: 0; width: 100%; } }
+  @media (max-width: 600px) {
+    .wrap { padding: 0 16px; }
+    nav.links a:not(.gh) { display: none; }
+    .hero { padding: 44px 0 28px; }
+    .rel { padding-left: 34px; } .timeline::before { left: 9px; } .rel::before { left: 2px; }
+    details.card > summary { padding: 14px 44px 14px 16px; } details.card > summary::after { right: 16px; }
+    .card-body { padding: 16px; }
+    .more { padding-left: 34px; }
+    .tools { margin-top: -6px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="SuperV home"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="28" height="28" aria-hidden="true" focusable="false"><defs><linearGradient id="sv-logo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#6d28d9"/></linearGradient></defs><rect x="8" y="8" width="112" height="112" rx="26" fill="url(#sv-logo)"/><rect x="30" y="26" width="60" height="76" rx="9" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="5"/><rect x="44" y="20" width="32" height="13" rx="5" fill="#fff" fill-opacity=".55"/><path d="M48 52 L64 86 L80 52" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>SuperV</a>
+    <nav class="links" aria-label="Main">
+      <a href="./#features">Features</a>
+      <a href="./#install">Install</a>
+      <a href="versions.html" aria-current="page">Versions</a>
+      <a class="gh" href="https://github.com/saikatnjm/superv">GitHub ↗</a>
+      <button class="theme-btn" id="theme" title="Toggle light / dark" aria-label="Toggle light or dark theme">◐</button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<section class="hero" aria-labelledby="title">
+  <div class="wrap">
+    <p class="eyebrow">Versions</p>
+    <h1 id="title">SuperV versions, <em>always downloadable</em>.</h1>
+    <p class="lead">The latest version has every fix. The last stable version of each line stays here if you need it.</p>
+    <div class="cta">
+      <a class="btn primary" href="#v2.0.0">Download the latest</a>
+      <a class="btn ghost" href="#releases-h">Older versions</a>
+    </div>
+  </div>
+</section>
+
+<section class="alt" aria-labelledby="matrix-h">
+  <div class="wrap">
+    <p class="eyebrow">At a glance</p>
+    <h2 id="matrix-h">What changed in 2.0</h2>
+    <details class="matrix">
+      <summary>Compare 1.x and 2.0</summary>
+    <div class="table-wrap">
+      <table>
+        <caption style="position:absolute;left:-9999px">Features of SuperV 1.2.3 and 2.0.0</caption>
+        <thead><tr><th scope="col">Feature</th><th scope="col" class="c">1.2.3</th><th scope="col" class="c now">2.0.0</th></tr></thead>
+        <tbody>
+          <tr class="group"><th colspan="3" scope="rowgroup">Clipboard history · Super+V</th></tr>
+          <tr><th scope="row">Last 25 texts and images, click to paste</th><td class="c y">✓</td><td class="c y now">✓</td></tr>
+          <tr><th scope="row">Pin, delete, clear; clears on reboot</th><td class="c y">✓</td><td class="c y now">✓</td></tr>
+          <tr><th scope="row">Own shortcut, theme, text size</th><td class="c y">✓</td><td class="c y now">✓</td></tr>
+          <tr><th scope="row">Restarts itself after an update</th><td class="c y">✓</td><td class="c y now">✓</td></tr>
+          <tr class="group"><th colspan="3" scope="rowgroup">Emoji panel · Super+.</th></tr>
+          <tr><th scope="row">Emoji, kaomoji and symbols, typed for you</th><td class="c n">–</td><td class="c y now">✓</td></tr>
+          <tr><th scope="row">Switch between clipboard and emoji</th><td class="c n">–</td><td class="c y now">✓</td></tr>
+          <tr class="group"><th colspan="3" scope="rowgroup">Settings and installing</th></tr>
+          <tr><th scope="row">Turn each feature on or off</th><td class="c n">–</td><td class="c y now">✓</td></tr>
+          <tr><th scope="row">.deb, .rpm and Arch packages; PPA with updates</th><td class="c y">✓</td><td class="c y now">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+    </details>
+  </div>
+</section>
+
+<section aria-labelledby="releases-h">
+  <div class="wrap">
+    <p class="eyebrow">Release history</p>
+    <h2 id="releases-h">Stable versions</h2>
+    <p class="sub">Click a version to see what it has and its downloads. Prebuilt packages are for 64-bit PCs (x86_64); on anything else, build from the source archive.</p>
+    <div class="tools"><button type="button" class="toggle-all" id="toggle-all" aria-expanded="false">Expand all</button></div>
+
+    <ol class="timeline">
+      <li class="rel major" id="v2.0.0">
+        <details class="card" open>
+          <summary><span class="card-head"><h3>2.0.0</h3><span class="badge latest">Latest</span><span class="badge">Major</span></span><span class="summary"><b>Clipboard and emoji for Linux.</b> The Win+. emoji panel, until now the separate app SuperDot, joins SuperV: one program, one background process, both panels.</span></summary>
+          <div class="card-body">
+          <div class="cols">
+            <div class="got"><h4>New</h4><ul>
+              <li>Emoji panel on <kbd>Super</kbd>+<kbd>.</kbd>: emoji, kaomoji and symbols, search, recently used, skin tones; typed where you were writing, your clipboard put back</li>
+              <li>Settings switch for the emoji panel. Off, it isn't loaded at all (about 5 MB of memory instead of 11) and Super+. goes back to your desktop</li>
+              <li>☺ and 📋 buttons to switch between the two panels, like Windows 11</li>
+              <li>Replaces SuperDot and brings its settings and recently used emoji along</li>
+              <li><code class="inl">superv --emoji</code> with <code class="inl">--tab</code>, <code class="inl">--search</code> and <code class="inl">--insert</code></li>
+              <li>This versions page, a changelog, contributor guide, security policy and automatic build checks</li>
+            </ul></div>
+            <div class="lack"><h4>Still missing</h4><ul>
+              <li>Paste as plain text, colour picker, copy text from the screen (planned for 2.1)</li>
+              <li>KDE Plasma clipboard shortcut is still experimental</li>
+              <li>On Sway, Hyprland, i3 and COSMIC you add the two shortcut lines yourself</li>
+            </ul></div>
+          </div>
+          <div class="dl">
+            <a class="main" href="https://github.com/saikatnjm/superv/releases/download/v2.0.0/superv_2.0.0_amd64.deb">.deb <span class="os">Ubuntu · Mint · Debian</span></a>
+            <a href="https://github.com/saikatnjm/superv/releases/download/v2.0.0/superv-2.0.0-1.fc40.x86_64.rpm">.rpm <span class="os">Fedora · openSUSE</span></a>
+            <a href="https://github.com/saikatnjm/superv/releases/download/v2.0.0/superv-2.0.0-1-x86_64.pkg.tar.zst">.pkg.tar.zst <span class="os">Arch</span></a>
+            <a href="https://github.com/saikatnjm/superv/archive/refs/tags/v2.0.0.tar.gz">source</a>
+            <a href="https://github.com/saikatnjm/superv/releases/tag/v2.0.0">release notes ↗</a>
+            <span class="note">Ubuntu 22.04+ · Mint 21+ · Debian 12+</span>
+          </div>
+          </div>
+        </details>
+      </li>
+
+      <li class="rel" id="v1.2.3">
+        <details class="card">
+          <summary><span class="card-head"><h3>1.2.3</h3><span class="badge">Last 1.x</span></span><span class="summary">The final version of SuperV 1: the clipboard panel only, with every 1.x fix.</span></summary>
+          <div class="card-body">
+          <div class="cols">
+            <div class="got"><h4>Has</h4><ul>
+              <li>Clipboard history on <kbd>Super</kbd>+<kbd>V</kbd>: last 25 texts and images, click to paste, pin, clear on reboot</li>
+              <li>Own shortcut, System/Light/Dark theme, text size, movable panel</li>
+              <li>Packages for Ubuntu, Mint, Debian, Fedora, openSUSE and Arch; PPA with updates</li>
+              <li>Restarts itself after an update</li>
+            </ul></div>
+            <div class="lack"><h4>Still missing</h4><ul>
+              <li>No emoji panel (it was the separate SuperDot app)</li>
+              <li>No way to turn features off besides clipboard history itself</li>
+            </ul></div>
+          </div>
+          <div class="dl">
+            <a class="main" href="https://github.com/saikatnjm/superv/releases/download/v1.2.3/superv_1.2.3_amd64.deb">.deb <span class="os">Ubuntu · Mint · Debian</span></a>
+            <a href="https://github.com/saikatnjm/superv/releases/download/v1.2.3/superv-1.2.3-1.fc40.x86_64.rpm">.rpm <span class="os">Fedora · openSUSE</span></a>
+            <a href="https://github.com/saikatnjm/superv/releases/download/v1.2.3/superv-1.2.3-1-x86_64.pkg.tar.zst">.pkg.tar.zst <span class="os">Arch</span></a>
+            <a href="https://github.com/saikatnjm/superv/archive/refs/tags/v1.2.3.tar.gz">source</a>
+            <a href="https://github.com/saikatnjm/superv/releases/tag/v1.2.3">release notes ↗</a>
+          </div>
+          </div>
+        </details>
+      </li>
+
+      <li class="rel" id="superdot-1.0.0">
+        <details class="card">
+          <summary><span class="card-head"><h3>SuperDot 1.0.0</h3><span class="badge merged">Merged into 2.0</span></span><span class="summary">The Win+. emoji panel as its own app. Everything it did is in SuperV 2.0, which replaces it when installed.</span></summary>
+          <div class="card-body">
+          <div class="cols">
+            <div class="got"><h4>Had</h4><ul>
+              <li>Emoji, Kaomoji and Symbols tabs on <kbd>Super</kbd>+<kbd>.</kbd>, typed for you</li>
+              <li>Glass look, six colour palettes, skin tones, recently used</li>
+            </ul></div>
+            <div class="lack"><h4>Lacked</h4><ul><li>A second app and background process next to SuperV</li><li>No clipboard history; no way to switch to it</li></ul></div>
+          </div>
+          <div class="dl">
+            <a class="main" href="https://github.com/saikatnjm/superdot/releases/download/v1.0.0/superdot_1.0.0_amd64.deb">.deb <span class="os">Ubuntu · Mint · Debian</span></a>
+            <a href="https://github.com/saikatnjm/superdot/releases/download/v1.0.0/superdot-1.0.0-1.fc40.x86_64.rpm">.rpm <span class="os">Fedora · openSUSE</span></a>
+            <a href="https://github.com/saikatnjm/superdot/releases/download/v1.0.0/superdot-1.0.0-1-x86_64.pkg.tar.zst">.pkg.tar.zst <span class="os">Arch</span></a>
+            <a href="https://github.com/saikatnjm/superdot/releases/tag/v1.0.0">release notes ↗</a>
+          </div>
+          </div>
+        </details>
+      </li>
+    </ol>
+    <p class="more">Looking for a fix release or another build? Every release is on <a href="https://github.com/saikatnjm/superv/releases">GitHub Releases ↗</a>, and the notes for each are in the <a href="https://github.com/saikatnjm/superv/blob/main/CHANGELOG.md">changelog</a>.</p>
+  </div>
+</section>
+
+<section class="alt" id="older" aria-labelledby="older-h">
+  <div class="wrap">
+    <p class="eyebrow">Older versions</p>
+    <h2 id="older-h">Installing an older version</h2>
+    <div class="help">
+      <article class="card">
+        <h3>Install it</h3>
+        <p>Download the package above and install it as usual. On Ubuntu and Mint: <code class="inl">sudo apt install --allow-downgrades ./superv_1.2.3_amd64.deb</code>. SuperV restarts into it by itself.</p>
+      </article>
+      <article class="card">
+        <h3>Keep it</h3>
+        <p>Using the PPA? Stop it updating SuperV again with <code class="inl">sudo apt-mark hold superv</code>; <code class="inl">sudo apt-mark unhold superv</code> undoes that. Fedora: <code class="inl">sudo dnf versionlock add superv</code>.</p>
+      </article>
+      <article class="card">
+        <h3>Going back from 2.0 to 1.x</h3>
+        <p>First turn off <b>Emoji panel</b> in the settings (Super+V → ⚙), so Super+. goes back to your desktop. Your clipboard history and settings work in every version.</p>
+      </article>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>SuperV · free &amp; open source (MIT) · <a href="https://github.com/saikatnjm/superv">GitHub</a> · <a href="https://github.com/saikatnjm/superv/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://github.com/saikatnjm/superv/issues">Report an issue</a></span>
+    <span>Windows is a trademark of Microsoft. SuperV is not affiliated with Microsoft.</span>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var root = document.documentElement, btn = document.getElementById("theme");
+    try { var t = localStorage.getItem("superv-theme"); if (t) root.setAttribute("data-theme", t); } catch (e) {}
+    function openFromHash() {
+      var id = decodeURIComponent(location.hash.slice(1)), el = id && document.getElementById(id);
+      var d = el && el.querySelector("details.card");
+      if (d) { d.open = true; requestAnimationFrame(function () { el.scrollIntoView({ block: "start" }); }); }
+    }
+    window.addEventListener("hashchange", openFromHash);
+    if (document.readyState === "complete") openFromHash(); else window.addEventListener("load", openFromHash);
+    var all = document.getElementById("toggle-all"), cards = document.querySelectorAll("details.card");
+    all.addEventListener("click", function () {
+      var open = all.getAttribute("aria-expanded") !== "true";
+      cards.forEach(function (d) { d.open = open; });
+      all.setAttribute("aria-expanded", open ? "true" : "false");
+      all.textContent = open ? "Collapse all" : "Expand all";
+    });
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+      var next = cur === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("superv-theme", next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

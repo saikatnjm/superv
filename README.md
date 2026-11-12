@@ -2,28 +2,38 @@
 
 # SuperV
 
-**Clipboard for Linux.** The Windows Win+V clipboard history: same panel, same keys.
+**Clipboard and emoji for Linux.** The Windows Win+V clipboard history and the Win+. emoji panel: same panels, same keys.
 
-Press <kbd>Super</kbd> + <kbd>V</kbd> on Linux and get the clipboard history you know from Windows.
+Press <kbd>Super</kbd> + <kbd>V</kbd> for the clipboard history you know from Windows, and <kbd>Super</kbd> + <kbd>.</kbd> for emoji, kaomoji and symbols.
 Ubuntu, Linux Mint, Debian, Fedora, Arch, openSUSE and more.
 
 ![Ubuntu · Mint · Debian](https://img.shields.io/badge/Ubuntu%20·%20Mint%20·%20Debian-.deb-7c3aed?style=flat-square)
 ![Fedora · openSUSE](https://img.shields.io/badge/Fedora%20·%20openSUSE-.rpm-7c3aed?style=flat-square)
 ![Arch · Manjaro](https://img.shields.io/badge/Arch%20·%20Manjaro-PKGBUILD-7c3aed?style=flat-square)
 ![Wayland + X11](https://img.shields.io/badge/Wayland%20%2B%20X11-supported-a78bfa?style=flat-square)
-![Size](https://img.shields.io/badge/size-under%20100%20KB-a78bfa?style=flat-square)
+![Size](https://img.shields.io/badge/size-about%20300%20KB-a78bfa?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square)
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="docs/screenshot-light.png">
   <img src="docs/screenshot-dark.png" width="380" alt="SuperV clipboard history panel showing a message, an SQL query, a pinned link, a chart and a docker command">
 </picture>
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="docs/emoji-light.png">
+  <img src="docs/emoji-dark.png" width="400" alt="SuperV emoji panel: tabs for Emoji, Kaomoji and Symbols, a search box, recently used emoji and the Smileys category">
+</picture>
+
+**[Website](https://saikatnjm.github.io/superv/) · [Versions and downloads](https://saikatnjm.github.io/superv/versions.html) · [Changelog](CHANGELOG.md)**
 
 </div>
 
+> **SuperDot is now part of SuperV.** Since 2.0 the emoji panel lives here. Installing SuperV 2 replaces SuperDot and keeps its settings.
+
 ## Why SuperV
 
-Linux has no clipboard history out of the box, and some desktops lose the clipboard when you close the app you copied from. SuperV copies how Windows does it:
+Linux has no clipboard history out of the box, some desktops lose the clipboard when you close the app you copied from, and typing an emoji usually means a web search and copy-paste. SuperV copies how Windows does it. **Every part can be turned off** in the settings (Super+V, then ⚙); a part that is off uses no memory and leaves its shortcut to your desktop.
+
+### Clipboard history: <kbd>Super</kbd> + <kbd>V</kbd>
 
 | | Windows (Win+V) | SuperV |
 |---|:---:|:---:|
@@ -45,9 +55,36 @@ Linux has no clipboard history out of the box, and some desktops lose the clipbo
 | Move & resize the panel (remembered) | | ✓ |
 | Free and open source | ✗ | ✓ |
 
+### Emoji panel: <kbd>Super</kbd> + <kbd>.</kbd>
+
+| | Windows (Win+.) | SuperV |
+|---|:---:|:---:|
+| Emoji panel on <kbd>Win</kbd>/<kbd>Super</kbd> + <kbd>.</kbd> | ✓ | ✓ |
+| Typed straight into the app you were using | ✓ | ✓ |
+| Start typing to search ("heart", "cat", "party") | ✓ | ✓ |
+| Recently used first, skin tones | ✓ | ✓ |
+| Kaomoji ¯\\\_(ツ)\_/¯ and symbols (→ € ° ± Ω é…) | ✓ | ✓ |
+| Switch between clipboard and emoji (☺ / 📋 buttons) | ✓ | ✓ |
+| Search finds emoji, kaomoji **and** symbols at once | ✗ | ✓ |
+| Your clipboard is left as it was | ✓ | ✓ |
+| Hides emoji your font can't draw (no empty boxes) | ✓ | ✓ |
+| Pick several in a row; resize the panel | ✓ / ✗ | ✓ |
+| Glass look; six colour palettes | ✓ / ✗ | ✓ |
+| Turn the whole panel off | ✗ | ✓ |
+| Pick your **own** shortcut | ✗ | ✓ |
+
+<p align="center">
+  <img src="docs/emoji-search.png" width="320" alt="Searching for heart shows hearts first, then kaomoji with hearts">
+  <img src="docs/emoji-kaomoji.png" width="320" alt="The Kaomoji tab: classic emoticons, shrug, table flip and more">
+</p>
+
+### Coming next
+
+Plain-text paste (<kbd>Ctrl</kbd>+<kbd>Win</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd>), a colour picker (<kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>) and copying text from the screen (<kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>), each with its own on/off switch.
+
 ## Install
 
-Pick your Linux family. Every package is a few dozen KB and sets up click-to-paste for you.
+Pick your Linux family. Every package is about 100 KB and sets up click-to-paste for you. Need an older version? The [versions page](https://saikatnjm.github.io/superv/versions.html) keeps the last stable one of each line, and [GitHub Releases](https://github.com/saikatnjm/superv/releases) has every build.
 
 ### Ubuntu and Linux Mint: PPA (recommended, updates arrive with your system updates)
 
@@ -65,7 +102,7 @@ The PPA covers Ubuntu 22.04, 24.04, 26.04 and 26.10, Linux Mint 21 and 22, and o
 1. Download **[superv_amd64.deb](https://github.com/saikatnjm/superv/releases/latest/download/superv_amd64.deb)**.
 2. Double-click it and choose **Install** (Ubuntu Software, or Package Installer on Mint). Enter your password once.
 3. **Open SuperV once to finish setup.** Press <kbd>Super</kbd>, type **SuperV** and press <kbd>Enter</kbd> (on Mint: open the **Menu** and search for **SuperV**).
-   This first launch starts SuperV and sets up <kbd>Super</kbd> + <kbd>V</kbd>. After that, SuperV starts by itself every time you log in.
+   This first launch starts SuperV and sets up <kbd>Super</kbd> + <kbd>V</kbd> and <kbd>Super</kbd> + <kbd>.</kbd>. After that, SuperV starts by itself every time you log in.
 
 Needs Ubuntu 22.04 / Mint 21 / Debian 12 or newer. On older releases, use the source install below.
 
@@ -89,7 +126,7 @@ Or download the ready-built **[superv-x86_64.pkg.tar.zst](https://github.com/sai
 ```bash
 git clone https://github.com/saikatnjm/superv.git
 cd superv
-./install.sh                          # or: ./install.sh --hotkey "<Ctrl><Alt>v"
+./install.sh                          # or: ./install.sh --hotkey "<Ctrl><Alt>v", ./install.sh --no-emoji
 ```
 
 `install.sh` installs into your home folder, fetches any missing build tools with apt, dnf, pacman or zypper, and asks for your password **once** to turn on click-to-paste. Skip that with `./install.sh --no-sudo`; the panel then shows an **Enable** button that asks through the normal desktop password dialog when you want it.
@@ -98,10 +135,13 @@ cd superv
 
 Installed from the PPA? Updates arrive with your normal system updates (`sudo apt update && sudo apt upgrade`). Otherwise, install the new package the same way. **SuperV notices it was updated and restarts itself into the new version** as soon as the panel is closed, keeping what's on your clipboard. (Coming from 1.1.2 or older? Run `superv --quit` and open SuperV once; from 1.2.0 on, this is automatic.)
 
+**Updating to 2.0** adds the emoji panel on <kbd>Super</kbd> + <kbd>.</kbd>, and a notification says so once. Don't want it? Super+V → ⚙ → turn off **Emoji panel**. **Had SuperDot?** The SuperV 2 package replaces it and brings its settings and recently used emoji along.
+
 ### Your own shortcut, theme and text size
 
 Open the panel and click ⚙:
 
+- **Clipboard history** and **Emoji panel:** turn each one on or off. The emoji panel's own settings (shortcut, colours, glass, skin tone, what happens when you pick) are behind the ⚙ in the emoji panel.
 - **Shortcut:** click it and press a combo that uses **Super**, or **Ctrl+Alt**, plus a key (e.g. <kbd>Super</kbd>+<kbd>V</kbd>, <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd>). A green ✓ confirms it's saved; if a combo can't be used, SuperV tells you why. (Ctrl+V, Ctrl+Shift+V and Alt+V are refused because apps need them for pasting and menus.) SuperV moves conflicting desktop shortcuts out of the way and restores them if you change your mind. Changed it in your desktop's own keyboard settings instead? SuperV picks that up too.
 - **Theme:** System, Light or Dark.
 - **Text size:** A− / A+, from 80% to 160%, for the clipboard items. The default is 100%, your desktop's normal size.
@@ -121,18 +161,32 @@ Drag the panel's header to move it and drag any edge to resize it; SuperV rememb
 | <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> | Screenshot; the image appears in your history |
 | <kbd>Ctrl</kbd> + <kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> | Work as always |
 
+**Emoji panel**
+
+| Keys | What it does |
+|---|---|
+| <kbd>Super</kbd> + <kbd>.</kbd> | Open / close the emoji panel (or your own shortcut) |
+| type | Search emoji, kaomoji and symbols by name or keyword |
+| <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd>, <kbd>Page Up</kbd> / <kbd>Page Down</kbd> | Move around |
+| <kbd>Enter</kbd> or click | Insert it where you were typing; the panel stays open for the next one |
+| <kbd>Shift</kbd> + <kbd>Enter</kbd> or <kbd>Shift</kbd> + click | Insert and close the panel |
+| <kbd>Tab</kbd> | Emoji → Kaomoji → Symbols |
+| <kbd>Esc</kbd> or click outside | Clear the search, then close |
+| <kbd>Super</kbd> + <kbd>V</kbd> | Switch to the clipboard history |
+
 ## Lightweight by design
 
-SuperV is a single C program **under 100 KB** built on GTK 3, which Ubuntu and Mint already have loaded in memory. It uses no interpreter, no Electron and no runtime.
+SuperV is a single C program built on GTK 3, which Ubuntu and Mint already have loaded in memory. It uses no interpreter, no Electron and no runtime. Both panels run in **one** background process, and a panel you turn off isn't loaded at all.
 
 | | |
 |---|---|
-| Size | under 100 KB (packages around 35 KB) |
-| Memory | ~7 MB private (~27 MB RSS, most of it GTK pages shared with your desktop) |
-| CPU when idle | 0%: it wakes only when the clipboard changes |
-| Popup | ~0.1 s from shortcut to panel |
+| Size | about 300 KB with every emoji, kaomoji and symbol built in (packages about 100 KB) |
+| Memory, clipboard only | about 5 MB private |
+| Memory, both panels | about 11 MB private, up to 18 MB after browsing every emoji (most of the rest is GTK and the emoji font, shared with your desktop) |
+| CPU when idle | 0%: it wakes only when the clipboard changes or you press a shortcut |
+| Popup | under 0.1 s from shortcut to panel |
 
-The setup helper (`superv-setup`, Python) only runs during install or when you change the shortcut.
+The setup helpers (`superv-setup`, `superv-emoji-setup`, Python) only run during install, when you change a shortcut or turn a panel on or off.
 
 ## Works on
 
@@ -142,10 +196,10 @@ The setup helper (`superv-setup`, Python) only runs during install or when you c
 | Cinnamon | Linux Mint, Fedora Cinnamon, Arch | X11 | ✓ fully supported |
 | MATE, Xfce | Mint MATE/Xfce, Xubuntu, Ubuntu MATE, Fedora spins | X11 | ✓ supported |
 | Budgie, Pantheon (elementary) | Ubuntu Budgie, elementary OS | X11 / Wayland | should work (GNOME-style shortcuts) |
-| KDE Plasma 5 & 6 | Kubuntu, KDE neon, Fedora KDE, openSUSE, Manjaro KDE | Wayland & X11 | **experimental**: SuperV sets Meta+V and turns off Klipper's Meta+V for you |
+| KDE Plasma 5 & 6 | Kubuntu, KDE neon, Fedora KDE, openSUSE, Manjaro KDE | Wayland & X11 | **experimental** for the clipboard: SuperV sets Meta+V and turns off Klipper's Meta+V for you; the emoji panel frees Plasma's own Meta+. picker and gives it back when turned off |
 | Sway, Hyprland, i3, COSMIC | various | Wayland / X11 | works; add the shortcut yourself (SuperV prints the exact line) |
 
-What every setup needs: an X11 session or XWayland (on by default on GNOME, KDE and most Wayland desktops), GTK 3 and Python 3 with GObject (installed automatically by the packages). Click-to-paste uses `/dev/uinput` via systemd's `uaccess`; on distros without systemd, picking an item still copies it and X11 apps still get pasted.
+What every setup needs: an X11 session or XWayland (on by default on GNOME, KDE and most Wayland desktops), GTK 3 and Python 3 with GObject (installed automatically by the packages). Colour emoji need an emoji font such as Noto Color Emoji, which Ubuntu, Mint and Fedora already have. Click-to-paste uses `/dev/uinput` via systemd's `uaccess`; on distros without systemd, picking an item still copies it and X11 apps still get pasted.
 
 The prebuilt `.deb` needs glibc 2.34+ (Ubuntu 22.04, Mint 21, Debian 12 or newer); everything else is built for your system.
 
@@ -154,6 +208,7 @@ The prebuilt `.deb` needs glibc 2.34+ (Ubuntu 22.04, Mint 21, Debian 12 or newer
 - **Clipboard watching.** SuperV runs on X11/XWayland and listens for XFixes clipboard-owner changes. GNOME keeps the Wayland and XWayland clipboards in sync, so copies from native Wayland apps are captured too. It's event-driven, with no polling.
 - **Keeping the clipboard alive.** When the app that owns the clipboard quits, SuperV puts the last item back, as Windows does.
 - **Pasting.** After you pick an item, SuperV puts it on both CLIPBOARD and PRIMARY, refocuses your app and presses <kbd>Shift</kbd> + <kbd>Insert</kbd>, which pastes in normal apps *and* terminals on any keyboard layout. On Wayland the key press goes through a virtual keyboard (`/dev/uinput`); on X11 sessions it uses XTest.
+- **Emoji.** The emoji panel never takes keyboard focus itself (an invisible 1-pixel helper window does), so it can stay open while your app receives each emoji. It remembers your clipboard, puts the emoji there marked like a password (so clipboard histories, SuperV's included, don't record it), presses <kbd>Shift</kbd> + <kbd>Insert</kbd>, and puts your clipboard back as soon as the app has read it. The emoji list (Unicode with CLDR search keywords) is built in: no data files, no network.
 - **Storage.** History lives in `~/.local/share/superv/`, settings in `~/.config/superv/`. Details below.
 
 ## Privacy & security
@@ -193,24 +248,41 @@ pos_x=-1                         # -1 = open centred / next to the pointer
 pos_y=-1
 ```
 
+`emoji_panel=true` turns the emoji panel on or off (the switch in ⚙ does the same). The emoji panel's settings are in `~/.config/superv/emoji.ini`, also editable from its own ⚙ menu:
+
+| Key | Default | |
+|---|---|---|
+| `hotkey` | `<Super>period` | change it from the emoji panel's ⚙ menu |
+| `paste_keys` | `shift+insert` | `ctrl+v`, `ctrl+shift+v`, or `none` (copy only) |
+| `skin_tone` | `0` | 0 default yellow, 1 light … 5 dark |
+| `stay_open` | `true` | stay open after picking, to pick several |
+| `restore_clipboard` | `true` | put back what you had copied |
+| `theme` | `auto` | `light`, `dark` |
+| `color` | `violet` | `azure`, `graphite`, `emerald`, `amber`, `rose` |
+| `glass` | `true` | see-through glass panel; `false` for a solid one |
+
 After editing, restart SuperV: `superv --quit && superv --daemon &`
 
 ## Command line
 
 ```text
-superv            open / close the panel (what the shortcut runs)
-superv --show     open the panel
-superv --daemon   start in the background (done automatically at login)
-superv --clear    clear history (pinned items stay)
-superv --quit     stop SuperV
-superv --doctor   check the setup: daemon, shortcut, auto-paste, memory use
-superv-setup --hotkey "<Ctrl><Alt>v"   change the shortcut
+superv                          open / close the clipboard panel (what Super+V runs)
+superv --show                   open the clipboard panel
+superv --emoji                  open / close the emoji panel (what Super+. runs)
+superv --emoji --tab kaomoji    open it on a tab: emoji, kaomoji or symbols
+superv --emoji --search heart   open it with a search
+superv --emoji --insert "¯\_(ツ)_/¯"   type text into the focused app (bind it to a key!)
+superv --daemon                 start in the background (done automatically at login)
+superv --clear                  clear history (pinned items stay)
+superv --quit                   stop SuperV
+superv --doctor                 check the setup: daemon, shortcuts, auto-paste, emoji font, memory use
 ```
 
 ## Troubleshooting
 
 Run `superv --doctor` first.
 
+- **Super+. does nothing.** Check that **Emoji panel** is on (Super+V → ⚙). Still nothing? `superv --doctor` shows whether the shortcut is registered. No colour emoji? Install Noto Color Emoji (`fonts-noto-color-emoji`, `google-noto-color-emoji-fonts` or `noto-fonts-emoji`).
 - **Super+V does nothing.** Open SuperV once from the app menu (or log out and back in), then check `superv --doctor`. On KDE Plasma 5, log out and back in once after setup. On Sway, Hyprland, i3 or COSMIC, add the shortcut line that `superv-setup --hotkey "<Super>v"` prints.
 - **The panel still shows the old version after an update.** Run `superv --quit` and open SuperV again (only needed when updating *from* 1.1.2 or older).
 - **A copied image doesn't show up, or shows as text.** Run `superv --quit`, then `SUPERV_DEBUG=1 superv --daemon` in a terminal, and copy the image again. The log lists the clipboard *formats* the app offered (never the content), which is exactly what a bug report needs.
@@ -219,7 +291,7 @@ Run `superv --doctor` first.
 
 ## Uninstall
 
-Either way, SuperV stops, and your desktop's shortcuts go back to how they were (Super+V opens the notification list again on Ubuntu).
+Either way, SuperV stops, and your desktop's shortcuts go back to how they were (Super+V opens the notification list again on Ubuntu, and Super+. goes back to whatever used it before).
 
 **Installed a package** (pick one):
 
@@ -248,7 +320,7 @@ make                          # builds ./superv (build dependencies for each dis
 sudo make install             # installs to /usr/local (PREFIX=/usr DESTDIR=… for packaging)
 ```
 
-Packages: `packaging/build-deb.sh` (.deb), `packaging/rpm/superv.spec` (.rpm) and `packaging/arch/PKGBUILD` (Arch). Pushing a tag like `v1.2.0` makes GitHub build all three and attach them to the release (`.github/workflows/release.yml`).
+Packages: `packaging/build-deb.sh` (.deb), `packaging/rpm/superv.spec` (.rpm) and `packaging/arch/PKGBUILD` (Arch). Pushing a tag like `v2.0.0` makes GitHub build all three and attach them to the release (`.github/workflows/release.yml`). `make data` refreshes the built-in emoji list from Unicode and CLDR. Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The GitHub Pages site lives in [`docs/`](docs/). In the repository settings, set Pages to **Deploy from branch → `main` → `/docs`**.
 
@@ -258,4 +330,6 @@ If SuperV saves you time, please give the repo a ⭐. It helps other Linux users
 
 ## License
 
-MIT. Windows is a trademark of Microsoft; SuperV is an independent project and is not affiliated with Microsoft.
+MIT ([LICENSE](LICENSE)). Emoji names and keywords come from Unicode's [emoji-test.txt](https://unicode.org/Public/emoji/latest/emoji-test.txt) and [CLDR](https://github.com/unicode-org/cldr) annotations, under the Unicode License v3 ([LICENSES/Unicode-3.0.txt](LICENSES/Unicode-3.0.txt)).
+
+Windows is a trademark of Microsoft; SuperV is an independent project and is not affiliated with Microsoft.
