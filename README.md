@@ -23,7 +23,7 @@ Ubuntu, Linux Mint, Debian, Fedora, Arch, openSUSE and more.
   <img src="docs/emoji-dark.png" width="400" alt="SuperV emoji panel: tabs for Emoji, Kaomoji and Symbols, a search box, recently used emoji and the Smileys category">
 </picture>
 
-**[Website](https://saikatnjm.github.io/superv/) · [Versions and downloads](https://saikatnjm.github.io/superv/versions.html) · [Changelog](CHANGELOG.md)**
+**[Website](https://saikatnjm.github.io/superv/) · [Versions and downloads](https://saikatnjm.github.io/superv/versions.html) · [Changelog](CHANGELOG.md) · [How it was built](https://njmsaikat.hashnode.dev/i-missed-windows-win-v-on-linux-so-i-built-it-in-360-kb-of-c)**
 
 </div>
 
@@ -227,6 +227,8 @@ What every setup needs: an X11 session or XWayland (on by default on GNOME, KDE 
 The prebuilt `.deb` needs glibc 2.35+ (Ubuntu 22.04, Mint 21, Debian 12 or newer); everything else is built for your system.
 
 ## How it works
+
+The full story, with the problems along the way, is in the blog post [I missed Windows' Win+V on Linux, so I built it in 360 KB of C](https://njmsaikat.hashnode.dev/i-missed-windows-win-v-on-linux-so-i-built-it-in-360-kb-of-c). In short:
 
 - **Clipboard watching.** SuperV runs on X11/XWayland and listens for XFixes clipboard-owner changes. GNOME keeps the Wayland and XWayland clipboards in sync, so copies from native Wayland apps are captured too. It's event-driven, with no polling.
 - **Keeping the clipboard alive.** When the app that owns the clipboard quits, SuperV puts the last item back, as Windows does.
