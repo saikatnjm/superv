@@ -20,6 +20,16 @@ jobs:
       - uses: snapcore/action-build@v1
         id: build
 
+      # GitHub shows job logs only to signed-in users; annotations are public, so put snapcraft's errors there
+      - name: Show why the build failed
+        if: failure() && steps.build.outcome == 'failure'
+        run: |
+          log=$(sudo sh -c 'ls -t /root/.local/state/snapcraft/log/*.log /home/*/.local/state/snapcraft/log/*.log 2>/dev/null | head -1')
+          [ -n "$log" ] || { echo "::error title=snapcraft::no snapcraft log found"; exit 0; }
+          enc() { sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3800; }
+          echo "::error title=snapcraft errors::$(sudo grep -i -E 'error|fail|invalid|cannot|not found|unknown|denied' "$log" | tail -n 30 | enc)"
+          echo "::error title=snapcraft log end::$(sudo tail -n 30 "$log" | enc)"
+
       - name: Snap Store review checks
         run: |
           sudo snap install review-tools
