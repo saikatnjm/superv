@@ -1,0 +1,14 @@
+#!/bin/sh
+# Snap launcher. The .deb/.rpm packages start SuperV at login through /etc/xdg/autostart, which a snap can't
+# install, so on the first launch this adds the same entry to the user's own startup apps. It does that once:
+# if you remove or turn off the entry later, it stays that way.
+mark="${SNAP_USER_COMMON:-$HOME/snap/superv/common}/autostart-added"
+if [ ! -e "$mark" ]; then
+    dir="${XDG_CONFIG_HOME:-$HOME/.config}/autostart"
+    if mkdir -p "$dir" && [ ! -e "$dir/superv.desktop" ]; then
+        sed "s|^Exec=superv |Exec=/snap/bin/superv |" "$SNAP/usr/share/superv/superv-autostart.desktop" \
+            > "$dir/superv.desktop"
+    fi
+    mkdir -p "$(dirname "$mark")" && touch "$mark"
+fi
+exec "$@"

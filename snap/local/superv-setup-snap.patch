@@ -1,0 +1,26 @@
+diff --git a/superv-setup b/superv-setup
+index 2eb62fe..881f329 100755
+--- a/superv-setup
++++ b/superv-setup
+@@ -214,8 +214,20 @@ def feature_on(feature):
+         return False
+ 
+ 
++def snap_exe():
++    """Installed as a snap: the program's path through 'current', which survives snap updates (each update gets
++    a new /snap/superv/<revision>/ folder and old ones are deleted). Called directly, not through /snap/bin, so the
++    shortcut opens the panel without snap's start-up delay. None when this isn't a snap."""
++    here = os.path.realpath(__file__)
++    name = os.environ.get("SNAP_INSTANCE_NAME")
++    if not name and here.startswith("/snap/"):
++        name = here.split("/")[2]
++    exe = "/snap/%s/current/usr/bin/superv" % name if name else None
++    return exe if exe and os.path.exists(exe) else None
++
++
+ def default_command():
+-    exe = os.path.join(os.path.dirname(os.path.realpath(__file__)), "superv")
++    exe = snap_exe() or os.path.join(os.path.dirname(os.path.realpath(__file__)), "superv")
+     if not os.path.exists(exe):
+         exe = shutil.which("superv") or "/usr/bin/superv"
+     return shlex.quote(exe) + " " + ARG

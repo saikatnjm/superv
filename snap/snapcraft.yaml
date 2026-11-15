@@ -1,0 +1,51 @@
+# Snap package for the Snap Store (Ubuntu App Center). Build: snapcraft   (CI: .github/workflows/snap.yml)
+#
+# Classic confinement: SuperV types the item you pick into the app you were using (a virtual keyboard, /dev/uinput),
+# registers its keyboard shortcuts with the desktop, and uses GNOME's own screenshot. A strict snap can do none of
+# that, so it would lose its main feature. It uses the desktop's own GTK 3, like the .deb (glibc 2.35+: Ubuntu
+# 22.04, Mint 21, Debian 12, Fedora 36 or newer), which keeps it about 150 KB and themed like the rest of the desktop.
+name: superv
+base: core22
+adopt-info: superv
+grade: stable
+confinement: classic
+license: MIT AND Unicode-3.0
+website: https://saikatnjm.github.io/superv/
+source-code: https://github.com/saikatnjm/superv
+issues: https://github.com/saikatnjm/superv/issues
+contact: https://github.com/saikatnjm/superv/issues
+architectures:
+  - build-on: [amd64]
+
+apps:
+  superv:
+    command: usr/bin/superv
+    command-chain: [bin/superv-launch]
+    desktop: usr/share/applications/io.github.superv.SuperV.desktop
+    common-id: io.github.superv.SuperV
+
+parts:
+  superv:
+    plugin: nil
+    source: .
+    build-packages: [gcc, make, pkg-config, libgtk-3-dev, libx11-dev, patch]
+    parse-info: [usr/share/metainfo/io.github.superv.SuperV.metainfo.xml]
+    override-build: |
+      make superv PREFIX=/usr
+      make install PREFIX=/usr DESTDIR="$CRAFT_PART_INSTALL"
+      # next to the program, where SuperV looks first (its built-in path, /usr/lib/superv, is outside the snap).
+      # Only this copy is patched, so shortcuts point at /snap/superv/current/ and survive snap updates; the
+      # .deb/.rpm/PPA packages keep the original superv-setup.
+      install -Dm755 superv-setup "$CRAFT_PART_INSTALL/usr/bin/superv-setup"
+      patch "$CRAFT_PART_INSTALL/usr/bin/superv-setup" snap/local/superv-setup-snap.patch
+      install -Dm644 data/superv-autostart.desktop "$CRAFT_PART_INSTALL/usr/share/superv/superv-autostart.desktop"
+      install -Dm755 snap/local/superv-launch "$CRAFT_PART_INSTALL/bin/superv-launch"
+      # the app's version plus a snap packaging number, like the PPA's 2.1.0~noble1
+      craftctl set version="$(sed -n 's/^#define SV_VERSION *"\(.*\)"/\1/p' superv.h)+snap1"
+    prime:
+      # system files a snap can't use: autostart is added per user by superv-launch, and the virtual-keyboard
+      # permission is offered by SuperV's own "Enable" button (it asks for your password once)
+      - -etc
+      - -usr/lib/udev
+      - -usr/lib/modules-load.d
+      - -usr/lib/superv

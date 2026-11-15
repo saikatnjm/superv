@@ -115,6 +115,27 @@ signs and uploads it. Default targets: `jammy` (Ubuntu 22.04, Mint 21), `noble` 
 
 ---
 
+## 4. Snap Store (Ubuntu App Center)
+
+The recipe is `snap/snapcraft.yaml` (classic confinement, version `X.Y.Z+snapN`). It doesn't change the program:
+the snap-only differences live in `snap/local/` (a patch so shortcuts use `/snap/superv/current/`, which survives
+snap updates, and a launcher that adds the startup entry once). The name `superv` is registered.
+
+1. **Build and check:** push to the `snap` branch (or, once the workflow is on `main`, Actions → Snap → Run workflow).
+   It builds the snap, runs the Snap Store's review checks, installs it on a clean Ubuntu runner and keeps the
+   `.snap` as a download.
+2. **Upload** (needs `snapcraft`; your Ubuntu One account): `snapcraft login`, then
+   `snapcraft upload --release=edge superv_X.Y.Z+snap1_amd64.snap`.
+3. **Ask for classic confinement** on https://forum.snapcraft.io (category *store-requests*). Until it is
+   granted, a classic upload waits in manual review and can't be released. If it is refused, stop there: the
+   .deb/PPA stays the way to install the full SuperV.
+4. Once granted: release to `stable`, set the store page (screenshots, icon) on snapcraft.io.
+
+**Each new release:** run the Snap workflow on the release tag and upload its `.snap`. A snap-only fix with the
+same program version: bump `+snap1` to `+snap2` in `snap/snapcraft.yaml`.
+
+---
+
 ## Release checklist
 
 1. Bump the version in `superv.h` (`#define SV_VERSION`), `packaging/rpm/superv.spec` (+ `%changelog`),
@@ -126,3 +147,4 @@ signs and uploads it. Default targets: `jammy` (Ubuntu 22.04, Mint 21), `noble` 
 3. AUR: `packaging/arch/bump.sh X.Y.Z`, copy, push.
 4. COPR: set Committish to `vX.Y.Z`, Rebuild.
 5. PPA: `packaging/ppa/upload.sh <you>`.
+6. Snap: run the Snap workflow on the tag, upload the `.snap` (see section 4).

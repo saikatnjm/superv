@@ -1,0 +1,50 @@
+# Builds the snap (snap/snapcraft.yaml), installs it on a clean Ubuntu runner, runs the Snap Store's own review
+# checks on it, and keeps the .snap as a download. Nothing is uploaded to the Snap Store from here.
+name: Snap
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [snap]
+    paths: ["snap/**", ".github/workflows/snap.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  snap:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: snapcore/action-build@v1
+        id: build
+
+      - name: Snap Store review checks
+        run: |
+          sudo snap install review-tools
+          review-tools.snap-review --allow-classic "${{ steps.build.outputs.snap }}"
+
+      - name: Install it and check it runs
+        run: |
+          set -x
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb dbus-x11 libgtk-3-0 python3-gi gir1.2-glib-2.0
+          sudo snap install --dangerous --classic "${{ steps.build.outputs.snap }}"
+          snap list superv
+          /snap/bin/superv --version
+          ls /snap/superv/current/usr/bin /snap/superv/current/bin
+          # the snap's setup helper uses the update-proof path; the repo's own file is untouched
+          grep -q snap_exe /snap/superv/current/usr/bin/superv-setup
+          ! grep -q snap_exe superv-setup
+          # start it like a first launch from the menu: it should stay running and add itself to startup apps
+          xvfb-run -a dbus-run-session -- bash -c '
+            /snap/bin/superv --daemon & sleep 4
+            pgrep -a superv
+            cat ~/.config/autostart/superv.desktop
+            /snap/superv/current/usr/bin/superv --quit'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: superv-snap
+          path: ${{ steps.build.outputs.snap }}
