@@ -1,0 +1,16 @@
+superv for Debian
+-----------------
+
+SuperV registers its keyboard shortcuts (Super+V and any extras you turn on) in
+your desktop's own settings. Package removal doesn't touch your personal
+settings, so to give the desktop its shortcuts back, run this as your user
+before removing the package:
+
+    superv --remove-hotkeys
+
+Pasting into other applications uses a virtual keyboard (/dev/uinput). The
+package's udev rule lets the user at the active seat use it, the same rule
+steam-devices ships; it is write-only, so SuperV can press keys but never read
+them.
+
+ -- Saikat Roy <saikathub95@gmail.com>
