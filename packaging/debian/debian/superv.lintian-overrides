@@ -1,0 +1,3 @@
+# The udev rule grants the user at the active seat access to /dev/uinput (a virtual keyboard SuperV
+# uses to paste); it doesn't match hardware, so there is no modalias for AppStream to provide.
+superv: appstream-metadata-missing-modalias-provide usr/lib/udev/rules.d/70-superv-uinput.rules

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Let the logged-in user's SuperV paste into other apps right away: load uinput and apply the
+# package's udev rule (otherwise both happen at the next boot).
+set -e
+if [ "$1" = configure ]; then
+    modprobe uinput 2>/dev/null || true
+    if [ -d /run/udev ] && command -v udevadm >/dev/null; then
+        udevadm control --reload-rules || true
+        udevadm trigger --action=change --sysname-match=uinput || true
+    fi
+fi
+#DEBHELPER#
+exit 0

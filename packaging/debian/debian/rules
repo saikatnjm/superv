@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@
+
+# the upstream Makefile reads CFLAGS but not CPPFLAGS, so pass both (for _FORTIFY_SOURCE)
+override_dh_auto_build:
+	dh_auto_build -- PREFIX=/usr CFLAGS="$(CFLAGS) $(CPPFLAGS)"
+
+override_dh_auto_install:
+	dh_auto_install -- PREFIX=/usr UDEVDIR=/usr/lib/udev/rules.d MODLOADDIR=/usr/lib/modules-load.d
+	# the licences are in debian/copyright
+	rm -rf debian/superv/usr/share/licenses

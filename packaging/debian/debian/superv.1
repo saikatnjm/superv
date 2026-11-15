@@ -1,0 +1,85 @@
+.TH SUPERV 1 "November 2026" "superv 2.1.0" "User Commands"
+.SH NAME
+superv \- clipboard history and emoji panel with Windows-style shortcuts
+.SH SYNOPSIS
+.B superv
+.RI [ option ]
+.SH DESCRIPTION
+.B superv
+brings the Windows clipboard history (Win+V) and emoji panel (Win+.) to the
+Linux desktop. It runs in the background from login; its keyboard shortcuts
+run the commands below.
+.PP
+Only the clipboard history is on at first. The emoji panel, plain-text
+paste, colour picker, text from the screen and screenshot tool are each
+turned on in the settings (\fBSuper+V\fR, then the gear button), which also
+registers their shortcuts with the desktop.
+.SH OPTIONS
+With no option,
+.B superv
+opens or closes the clipboard panel (what \fBSuper+V\fR runs).
+.TP
+.B \-\-show
+Open the clipboard panel.
+.TP
+.B \-\-emoji
+Open or close the emoji panel (what \fBSuper+.\fR runs). Add
+\fB\-\-tab\fR \fIemoji\fR|\fIkaomoji\fR|\fIsymbols\fR to open it on a tab, or
+\fB\-\-search\fR \fItext\fR to open it with a search.
+.TP
+.BI "\-\-emoji \-\-insert " text
+Type \fItext\fR into the focused application.
+.TP
+.B \-\-daemon
+Start in the background (done at login).
+.TP
+.B \-\-clear
+Clear the history; pinned items stay.
+.TP
+.B \-\-quit
+Stop the running instance.
+.TP
+.B \-\-plain\-paste
+Paste the clipboard as plain text (\fBCtrl+Super+Alt+V\fR).
+.TP
+.B \-\-pick\-color
+Pick a colour on the screen (\fBSuper+Shift+C\fR).
+.TP
+.B \-\-extract\-text
+Copy text from an area of the screen (\fBSuper+Shift+T\fR); needs
+.BR tesseract (1).
+.TP
+.B \-\-screenshot
+Take a screenshot and mark it up (\fBSuper+Shift+S\fR);
+\fB\-\-delay\fR \fIseconds\fR waits first.
+.TP
+.B \-\-doctor
+Check the setup: background instance, shortcuts, pasting, emoji font,
+Tesseract and memory use.
+.TP
+.B \-\-remove\-hotkeys
+Remove all of SuperV's shortcuts from the desktop and give back the ones it
+replaced.
+.TP
+.B \-\-version
+Print the version.
+.TP
+.BR \-h ", " \-\-help
+Print a short help.
+.SH FILES
+.TP
+.I ~/.config/superv/
+Settings: \fIconfig.ini\fR, \fIshortcuts.ini\fR, \fIemoji.ini\fR.
+.TP
+.I ~/.local/share/superv/
+Clipboard history and pinned items. Unpinned items are removed at the next
+boot.
+.SH NOTES
+Pasting into other applications uses a write-only virtual keyboard
+(\fI/dev/uinput\fR), which the package's udev rule lets the user at the
+active seat use. SuperV never connects to the network.
+.SH SEE ALSO
+.UR https://saikatnjm.github.io/superv/
+.UE
+.SH AUTHOR
+Saikat Roy <saikathub95@gmail.com>

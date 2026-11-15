@@ -1,0 +1,4 @@
+version=4
+opts="filenamemangle=s%(?:.*?)?v?(\d[\d.]*)\.tar\.gz%superv-$1.tar.gz%, \
+      repacksuffix=+ds, dversionmangle=s/\+ds\d*$//, repack, compression=xz" \
+  https://github.com/saikatnjm/superv/tags (?:.*?/)?v?(\d[\d.]*)\.tar\.gz

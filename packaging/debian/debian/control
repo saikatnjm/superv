@@ -1,0 +1,27 @@
+Source: superv
+Section: utils
+Priority: optional
+Maintainer: Saikat Roy <saikathub95@gmail.com>
+Build-Depends: debhelper-compat (= 13), pkgconf, libgtk-3-dev, libx11-dev
+Standards-Version: 4.7.4
+Homepage: https://saikatnjm.github.io/superv/
+Vcs-Browser: https://github.com/saikatnjm/superv
+Vcs-Git: https://github.com/saikatnjm/superv.git
+
+Package: superv
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3, python3-gi, gir1.2-glib-2.0
+Recommends: fonts-noto-color-emoji, libxtst6
+Suggests: tesseract-ocr
+Description: clipboard history and emoji panel with Windows-style shortcuts
+ SuperV brings the Windows clipboard history (Win+V) and emoji panel (Win+.)
+ to the Linux desktop. Super+V shows the last 25 copied items, text and
+ images; clicking one pastes it into the application in use. Items can be
+ pinned, and unpinned history is cleared on reboot.
+ .
+ Optional extras, off until turned on in its settings: an emoji panel
+ (Super+.), plain-text paste, a colour picker, copying text from the screen
+ (with tesseract-ocr) and an annotating screenshot tool.
+ .
+ It works on GNOME, Cinnamon, MATE and Xfce, on Wayland and X11, and never
+ uses the network.
