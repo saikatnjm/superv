@@ -9,7 +9,10 @@ base: core22
 adopt-info: superv
 grade: stable
 confinement: classic
-license: MIT AND Unicode-3.0
+# SuperV is MIT. Its built-in emoji names come from Unicode data under the Unicode License v3; snapd's licence
+# list doesn't know "Unicode-3.0" yet, so the store field names SuperV's own licence and both texts ship in the
+# snap (usr/share/licenses/superv/).
+license: MIT
 website: https://saikatnjm.github.io/superv/
 source-code: https://github.com/saikatnjm/superv
 issues: https://github.com/saikatnjm/superv/issues
